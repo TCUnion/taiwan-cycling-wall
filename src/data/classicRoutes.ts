@@ -1,0 +1,68 @@
+import type { RouteTemplate } from '../types'
+
+// 經典路線模板
+export const 經典路線: RouteTemplate[] = [
+  {
+    id: 'xibin',
+    name: '西濱快樂行',
+    defaultCountyId: 'new-taipei',
+    distance: 120,
+    elevation: 200,
+    difficulty: '中等',
+    description: '沿著西部濱海公路，感受海風與夕陽',
+  },
+  {
+    id: 'beigao',
+    name: '北高長征',
+    defaultCountyId: 'taipei',
+    distance: 380,
+    elevation: 2500,
+    difficulty: '挑戰',
+    description: '從台北騎到高雄，經典長途挑戰',
+  },
+  {
+    id: 'shuangta',
+    name: '雙塔挑戰',
+    defaultCountyId: 'new-taipei',
+    distance: 520,
+    elevation: 3000,
+    difficulty: '極限',
+    description: '從富貴角燈塔到鵝鑾鼻燈塔，台灣最北到最南',
+  },
+  {
+    id: 'wuling',
+    name: '武嶺攻頂',
+    defaultCountyId: 'nantou',
+    distance: 55,
+    elevation: 2700,
+    difficulty: '極限',
+    description: '挑戰台灣公路最高點，海拔3275公尺',
+  },
+  {
+    id: 'route136',
+    name: '136縣道',
+    defaultCountyId: 'taichung',
+    distance: 45,
+    elevation: 800,
+    difficulty: '中等',
+    description: '台中經典練車路線，適合假日騎乘',
+  },
+  {
+    id: 'beiyi',
+    name: '北宜公路',
+    defaultCountyId: 'new-taipei',
+    distance: 58,
+    elevation: 900,
+    difficulty: '中等',
+    description: '九彎十八拐的經典山路挑戰',
+  },
+  {
+    id: 'blue-highway',
+    name: '藍色公路',
+    defaultCountyId: 'new-taipei',
+    distance: 90,
+    elevation: 1200,
+    difficulty: '挑戰',
+    description: '北海岸環線，壯闊海景盡收眼底',
+  },
+]

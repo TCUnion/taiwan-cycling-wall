@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@theme {
+  /* 品牌色 */
+  --color-strava: #FC4C02;
+  --color-line: #00B900;
+
+  /* 區域色 */
+  --color-region-north: #3B82F6;
+  --color-region-central: #F97316;
+  --color-region-south: #EF4444;
+  --color-region-east: #22C55E;
+
+  /* 佈告欄底色 */
+  --color-cork: #D4A574;
+  --color-cork-dark: #B8895A;
+
+  /* 便利貼色 */
+  --color-sticky-yellow: #FEF9C3;
+  --color-sticky-pink: #FCE7F3;
+  --color-sticky-blue: #DBEAFE;
+  --color-sticky-green: #DCFCE7;
+
+  /* 字體 */
+  --font-sans: "Noto Sans TC", system-ui, -apple-system, sans-serif;
+}
+
+/* 全域樣式 */
+body {
+  @apply bg-cork font-sans text-gray-800 antialiased;
+  margin: 0;
+}
+
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 便利貼旋轉角度 */
+.sticky-rotate-n2 { transform: rotate(-2deg); }
+.sticky-rotate-n1 { transform: rotate(-1deg); }
+.sticky-rotate-0  { transform: rotate(0deg); }
+.sticky-rotate-1  { transform: rotate(1deg); }
+.sticky-rotate-2  { transform: rotate(2deg); }
