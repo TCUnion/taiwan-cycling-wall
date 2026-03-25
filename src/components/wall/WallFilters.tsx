@@ -1,5 +1,6 @@
+import { useNavigate } from 'react-router-dom'
 import type { Region } from '../../types'
-import { ArrowUpDown } from 'lucide-react'
+import { ArrowUpDown, History } from 'lucide-react'
 
 type 排序方式 = '最新' | '最熱門'
 
@@ -20,12 +21,24 @@ const 區域選項: { label: string; value: Region | null; color: string; active
 ]
 
 export default function WallFilters({ 篩選區域, 排序, onChange區域, onChange排序, 活動數量 }: Props) {
+  const navigate = useNavigate()
+
   return (
     <div className="sticky top-0 z-30 bg-cork/95 backdrop-blur-sm pb-2">
       {/* 標題列 */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <h1 className="text-xl font-bold text-gray-800">🚴 約騎牆</h1>
-        <span className="text-sm text-gray-500">{活動數量} 則活動</span>
+        <h1 className="text-xl font-bold text-gray-800">🚴 約騎公布欄</h1>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/history')}
+            aria-label="歷史活動"
+            className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 cursor-pointer transition-colors"
+          >
+            <History size={14} />
+            歷史
+          </button>
+          <span className="text-sm text-gray-500">{活動數量} 則活動</span>
+        </div>
       </div>
 
       {/* 區域篩選 */}

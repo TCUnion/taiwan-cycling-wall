@@ -3,17 +3,30 @@ import { Link } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { 模擬活動 } from '../data/mockEvents'
 
+/* 軌道上的小圓點設定 */
+const 軌道點 = [
+  { size: 6,  duration: 10, delay: 0,    color: '#FC4C02' },
+  { size: 4,  duration: 14, delay: -3,   color: '#D4A574' },
+  { size: 8,  duration: 18, delay: -7,   color: '#FC4C02' },
+  { size: 5,  duration: 12, delay: -1,   color: '#B8895A' },
+  { size: 3,  duration: 16, delay: -9,   color: '#FC4C02' },
+  { size: 7,  duration: 20, delay: -5,   color: '#D4A574' },
+  { size: 4,  duration: 9,  delay: -12,  color: '#B8895A' },
+  { size: 6,  duration: 15, delay: -4,   color: '#FC4C02' },
+  { size: 3,  duration: 11, delay: -8,   color: '#D4A574' },
+  { size: 5,  duration: 17, delay: -2,   color: '#B8895A' },
+]
+
 export default function SplashPage() {
   const 已登入 = useAuthStore(s => s.已登入)
   const [階段, set階段] = useState(0)
 
   useEffect(() => {
-    // 逐步觸發動畫階段
     const timers = [
-      setTimeout(() => set階段(1), 100),   // siokiu 文字淡入
-      setTimeout(() => set階段(2), 800),   // 騎士們聚攏
-      setTimeout(() => set階段(3), 1600),  // 中文解釋出現
-      setTimeout(() => set階段(4), 2400),  // 按鈕與內容出現
+      setTimeout(() => set階段(1), 100),   // 圓圈 + 小點出現
+      setTimeout(() => set階段(2), 600),   // siokiu 文字淡入
+      setTimeout(() => set階段(3), 1200),  // 辭典解釋出現
+      setTimeout(() => set階段(4), 1800),  // CTA 按鈕出現
     ]
     return () => timers.forEach(clearTimeout)
   }, [])
@@ -21,126 +34,119 @@ export default function SplashPage() {
   const 近期活動 = 模擬活動.slice(0, 6)
 
   return (
-    <main className="flex min-h-svh flex-col items-center bg-cork overflow-hidden">
-      {/* 主視覺動畫區 */}
-      <div className="flex flex-col items-center justify-center pt-16 pb-8 px-6">
+    <main className="flex flex-col items-center bg-cream overflow-hidden">
 
-        {/* siokiu 大字 — 台語拼音 */}
-        <h1
-          className={`text-6xl sm:text-7xl font-black tracking-tight transition-all duration-1000 ${
-            階段 >= 1
-              ? 'opacity-100 scale-100 translate-y-0'
-              : 'opacity-0 scale-75 translate-y-6'
+      {/* ===== 主視覺區：佔滿整個視窗高度 ===== */}
+      <section className="relative flex flex-col items-center justify-center w-full min-h-svh px-6">
+
+        {/* 大圓圈 + 軌道小點 */}
+        <div
+          className={`absolute inset-0 flex items-center justify-center transition-opacity duration-1000 ${
+            階段 >= 1 ? 'opacity-100' : 'opacity-0'
           }`}
-          style={{
-            background: 'linear-gradient(135deg, #FC4C02 0%, #FF8A50 50%, #FC4C02 100%)',
-            backgroundSize: '200% 200%',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            animation: 階段 >= 1 ? 'shimmer 3s ease-in-out infinite' : 'none',
-          }}
         >
-          siokiu
-        </h1>
+          {/* 淡灰色細線描邊圓 */}
+          <div
+            className="rounded-full border border-gray-300/50"
+            style={{ width: 'min(70vw, 420px)', height: 'min(70vw, 420px)' }}
+          />
 
-        {/* 騎士相揪動畫 — 三個騎士從兩側聚攏到中間 */}
-        <div className="relative h-20 w-64 my-6">
-          {/* 左側騎士 */}
-          <span
-            className={`absolute top-1/2 -translate-y-1/2 text-4xl transition-all duration-1000 ease-out ${
-              階段 >= 2
-                ? 'left-[25%] opacity-100'
-                : 'left-0 opacity-0'
-            }`}
+          {/* 繞圈小點 */}
+          <div
+            className="absolute"
+            style={{ width: 'min(70vw, 420px)', height: 'min(70vw, 420px)' }}
           >
-            🚴
-          </span>
-          {/* 中間騎士 */}
-          <span
-            className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-5xl transition-all duration-700 delay-200 ${
-              階段 >= 2
-                ? 'opacity-100 scale-100'
-                : 'opacity-0 scale-0'
-            }`}
-          >
-            🤝
-          </span>
-          {/* 右側騎士 */}
-          <span
-            className={`absolute top-1/2 -translate-y-1/2 text-4xl transition-all duration-1000 ease-out ${
-              階段 >= 2
-                ? 'right-[25%] opacity-100 -scale-x-100'
-                : 'right-0 opacity-0 -scale-x-100'
-            }`}
-          >
-            🚴
-          </span>
+            {軌道點.map((dot, i) => (
+              <span
+                key={i}
+                className="absolute rounded-full"
+                style={{
+                  width: dot.size,
+                  height: dot.size,
+                  backgroundColor: dot.color,
+                  opacity: 0.6,
+                  top: '50%',
+                  left: '50%',
+                  marginTop: -dot.size / 2,
+                  marginLeft: -dot.size / 2,
+                  '--orbit-radius': 'calc(min(35vw, 210px))',
+                  animation: `orbit ${dot.duration}s linear infinite`,
+                  animationDelay: `${dot.delay}s`,
+                } as React.CSSProperties}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* 台語 + 中文解釋 */}
-        <div className={`text-center transition-all duration-800 ${
-          階段 >= 3
-            ? 'opacity-100 translate-y-0'
-            : 'opacity-0 translate-y-4'
-        }`}>
-          <p className="text-xl font-bold text-gray-800">
-            <ruby className="text-strava">相揪<rp>(</rp><rt>siō-kiu</rt><rp>)</rp></ruby>
-            {' '}來騎車
-          </p>
-          <p className="mt-2 text-gray-600 text-sm leading-relaxed max-w-xs mx-auto">
-            台語「相揪」，就是互相邀約、呼朋引伴的意思。<br />
-            揪車友、找路線、一起踩踏板！
-          </p>
-        </div>
+        {/* 文字內容（置於圓圈之上） */}
+        <div className="relative z-10 flex flex-col items-center">
 
-        {/* CTA 按鈕 */}
-        <div className={`flex flex-col items-center gap-3 mt-8 transition-all duration-700 ${
-          階段 >= 4
-            ? 'opacity-100 translate-y-0'
-            : 'opacity-0 translate-y-6'
-        }`}>
-          <Link
-            to={已登入 ? '/wall' : '/login'}
-            className="rounded-full bg-strava px-8 py-3 text-lg font-bold text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all"
+          {/* siokiu 大字 + 相揪 */}
+          <div
+            className={`relative transition-all duration-1000 ${
+              階段 >= 2
+                ? 'opacity-100 translate-y-0'
+                : 'opacity-0 translate-y-6'
+            }`}
           >
-            {已登入 ? '進入約騎牆' : '來去相揪 →'}
-          </Link>
-          {!已登入 && (
+            <h1
+              className="font-serif text-7xl sm:text-8xl md:text-9xl text-gray-900 tracking-tight leading-none select-none"
+            >
+              siokiu
+            </h1>
+            {/* 右上角紅色「相揪」 */}
+            <span
+              className="absolute -top-2 -right-10 sm:-right-14 text-strava font-bold text-lg sm:text-xl"
+            >
+              相揪
+            </span>
+          </div>
+
+          {/* 辭典式解釋框 */}
+          <div
+            className={`mt-8 sm:mt-10 border border-gray-400/60 rounded-lg px-5 py-3 max-w-xs sm:max-w-sm text-center transition-all duration-800 ${
+              階段 >= 3
+                ? 'opacity-100 translate-y-0'
+                : 'opacity-0 translate-y-4'
+            }`}
+          >
+            <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+              <span className="font-semibold text-gray-800">台語</span>
+              <span className="mx-1.5 text-gray-400">·</span>
+              <span className="text-gray-500">動詞</span>
+              <span className="mx-1.5 text-gray-400">｜</span>
+              <span className="text-gray-800">相揪，呼朋引伴一起騎車</span>
+            </p>
+          </div>
+
+          {/* CTA 按鈕 */}
+          <div
+            className={`flex flex-col items-center gap-3 mt-8 sm:mt-10 transition-all duration-700 ${
+              階段 >= 4
+                ? 'opacity-100 translate-y-0'
+                : 'opacity-0 translate-y-6'
+            }`}
+          >
             <Link
-              to="/wall"
-              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              to={已登入 ? '/wall' : '/login'}
+              className="rounded-full bg-strava px-8 py-3 text-lg font-bold text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all"
             >
-              先逛逛看
+              {已登入 ? '明天騎哪裡' : '來去相揪 →'}
             </Link>
-          )}
-        </div>
-      </div>
-
-      {/* 三個特色卡片 */}
-      <section className={`w-full max-w-lg px-6 py-8 transition-all duration-700 delay-300 ${
-        階段 >= 4 ? 'opacity-100' : 'opacity-0'
-      }`}>
-        <div className="grid grid-cols-3 gap-3 text-center">
-          {[
-            { emoji: '📌', label: '揪團約騎', desc: '發起活動' },
-            { emoji: '🗺️', label: '全台路線', desc: '22 縣市' },
-            { emoji: '🏆', label: '騎乘成就', desc: '累積里程' },
-          ].map((item, i) => (
-            <div
-              key={item.label}
-              className="rounded-xl bg-white/60 backdrop-blur p-3 shadow-sm"
-              style={{ animationDelay: `${i * 100}ms` }}
-            >
-              <div className="text-2xl mb-1">{item.emoji}</div>
-              <p className="text-sm font-semibold text-gray-800">{item.label}</p>
-              <p className="text-xs text-gray-500">{item.desc}</p>
-            </div>
-          ))}
+            {!已登入 && (
+              <Link
+                to="/wall"
+                className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                先逛逛看
+              </Link>
+            )}
+          </div>
         </div>
       </section>
 
-      {/* SEO 內容區塊 */}
-      <section className="w-full max-w-2xl px-6 pb-12 pt-4">
+      {/* ===== SEO 內容區塊 ===== */}
+      <section className="w-full max-w-2xl px-6 pb-12 pt-8">
         <h2 className="text-xl font-bold text-gray-800 mb-4">台灣單車約騎社群平台</h2>
         <p className="text-gray-700 leading-relaxed mb-6">
           Siokiu（相揪）是台語「互相邀約」的意思。
@@ -151,7 +157,7 @@ export default function SplashPage() {
 
         <h3 className="text-lg font-semibold text-gray-800 mb-3">平台特色</h3>
         <ul className="list-disc list-inside text-gray-700 space-y-1 mb-6">
-          <li>便利貼風格約騎牆，一目瞭然瀏覽各地活動</li>
+          <li>便利貼風格約騎公布欄，一目瞭然瀏覽各地活動</li>
           <li>支援台灣 22 縣市四大區域篩選</li>
           <li>Strava 路線整合，輕鬆預覽騎乘路線</li>
           <li>經典路線模板，快速建立約騎活動</li>
@@ -175,7 +181,7 @@ export default function SplashPage() {
             to="/wall"
             className="inline-block rounded-lg bg-strava px-6 py-2.5 font-semibold text-white hover:opacity-90"
           >
-            瀏覽約騎牆
+            瀏覽約騎公布欄
           </Link>
           <Link
             to="/login"

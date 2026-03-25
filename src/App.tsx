@@ -12,6 +12,7 @@ const CreateEventPage = lazy(() => import('./pages/CreateEventPage'))
 const EventDetailPage = lazy(() => import('./pages/EventDetailPage'))
 const SharePage = lazy(() => import('./pages/SharePage'))
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const HistoryPage = lazy(() => import('./pages/HistoryPage'))
 
 // 載入中畫面
 function Loading() {
@@ -41,8 +42,10 @@ export default function App() {
         <Route element={<RequireAuth><AppShell /></RequireAuth>}>
           <Route path="/wall" element={<WallPage />} />
           <Route path="/create" element={<CreateEventPage />} />
+          <Route path="/event/:id/edit" element={<CreateEventPage />} />
           <Route path="/event/:id" element={<EventDetailPage />} />
           <Route path="/event/:id/share" element={<SharePage />} />
+          <Route path="/history" element={<HistoryPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
         </Route>
 
