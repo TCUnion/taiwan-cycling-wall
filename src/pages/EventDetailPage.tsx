@@ -35,9 +35,19 @@ export default function EventDetailPage() {
   const 縣市 = 查找縣市(活動.countyId)
   const 已參加 = 使用者 ? 活動.participants.includes(使用者.id) : false
   const 已額滿 = 活動.participants.length >= 活動.maxParticipants
-  const 是發起人 = 使用者?.id === 活動.creatorId
+  // 粉絲頁發起的活動：creatorId 為 page-{pageId}，發起人是管理該頁的使用者
+  const 是粉絲頁活動 = 活動.creatorId.startsWith('page-')
+  const 粉絲頁Id = 是粉絲頁活動 ? 活動.creatorId.replace('page-', '') : ''
+  const 是發起人 = 使用者 ? (
+    活動.creatorId === 使用者.id ||
+    (是粉絲頁活動 && 使用者.managedPages?.some(p => p.pageId === 粉絲頁Id))
+  ) : false
   const 是模擬活動 = 活動.id.startsWith('evt-')
-  const 發起人 = 所有使用者.find(u => u.id === 活動.creatorId)
+  // 粉絲頁活動：顯示粉絲頁名稱/頭像；個人活動：從所有使用者查找
+  const 粉絲頁資訊 = 是粉絲頁活動 ? 所有使用者.flatMap(u => u.managedPages ?? []).find(p => p.pageId === 粉絲頁Id) : undefined
+  const 發起人 = 是粉絲頁活動
+    ? (粉絲頁資訊 ? { id: 活動.creatorId, name: 粉絲頁資訊.name, avatar: 粉絲頁資訊.pictureUrl } as { id: string; name: string; avatar: string } : undefined)
+    : 所有使用者.find(u => u.id === 活動.creatorId)
 
   const 導航連結 = 活動.meetingPoint
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(活動.meetingPoint)}`

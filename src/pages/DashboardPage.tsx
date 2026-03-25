@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Users, History, Route, MapPin, Mountain, ChevronRight, Pencil, Check, X } from 'lucide-react'
+import { LogOut, Users, History, Route, MapPin, Mountain, ChevronRight, Pencil, Check, X, ArrowLeftRight } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { useEventStore } from '../stores/eventStore'
 import { 模擬收藏路線, 模擬集合點, 模擬追蹤, 模擬粉絲 } from '../data/mockUsers'
@@ -13,8 +13,9 @@ import { zhTW } from 'date-fns/locale'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
-  const { 使用者, 登出 } = useAuthStore()
+  const { 使用者, 登出, 目前身份, 使用中的粉絲頁, 切換到粉絲頁, 切換回個人 } = useAuthStore()
   const { 活動列表 } = useEventStore()
+  const [顯示身份切換, set顯示身份切換] = useState(false)
 
   if (!使用者) return null
 
@@ -23,7 +24,9 @@ export default function DashboardPage() {
     navigate('/login', { replace: true })
   }
 
-  const 我的活動 = 活動列表.filter(e => e.creatorId === 使用者.id)
+  // 包含個人與粉絲頁發起的活動
+  const 我的粉絲頁Ids = (使用者.managedPages ?? []).map(p => `page-${p.pageId}`)
+  const 我的活動 = 活動列表.filter(e => e.creatorId === 使用者.id || 我的粉絲頁Ids.includes(e.creatorId))
   const 收藏路線 = 模擬收藏路線[使用者.id] ?? []
   const 集合點 = 模擬集合點[使用者.id] ?? []
   const 追蹤中 = 模擬追蹤[使用者.id] ?? []
@@ -52,6 +55,74 @@ export default function DashboardPage() {
             <LogOut size={20} />
           </button>
         </div>
+
+        {/* 目前身份 + 切換按鈕 */}
+        {使用者.managedPages && 使用者.managedPages.length > 0 && (
+          <div className="mt-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">目前身份：</span>
+              {目前身份 === 'page' && 使用中的粉絲頁 ? (
+                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-strava">
+                  {使用中的粉絲頁.pictureUrl ? (
+                    <img src={使用中的粉絲頁.pictureUrl} alt="" className="w-5 h-5 rounded-full object-cover" referrerPolicy="no-referrer" />
+                  ) : null}
+                  {使用中的粉絲頁.name}
+                </span>
+              ) : (
+                <span className="text-sm font-medium">個人帳號</span>
+              )}
+              <button
+                onClick={() => set顯示身份切換(!顯示身份切換)}
+                aria-label="切換身份"
+                className="ml-auto inline-flex items-center gap-1 text-xs text-strava cursor-pointer hover:text-orange-600 transition-colors"
+              >
+                <ArrowLeftRight size={14} /> 切換身份
+              </button>
+            </div>
+
+            {顯示身份切換 && (
+              <div className="mt-2 rounded-lg border border-gray-200 bg-white p-3 space-y-2">
+                {/* 個人帳號選項 */}
+                <button
+                  onClick={() => { 切換回個人(); set顯示身份切換(false) }}
+                  className={`w-full flex items-center gap-3 rounded-lg p-2 text-left cursor-pointer transition-colors ${
+                    目前身份 === 'personal' ? 'bg-strava/10 border border-strava/30' : 'hover:bg-gray-50'
+                  }`}
+                >
+                  <Avatar emoji={使用者.avatar} size="sm" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{使用者.name}</p>
+                    <p className="text-xs text-gray-500">個人帳號</p>
+                  </div>
+                  {目前身份 === 'personal' && <Check size={16} className="text-strava shrink-0" />}
+                </button>
+                {/* 粉絲頁列表 */}
+                {使用者.managedPages.map(page => (
+                  <button
+                    key={page.pageId}
+                    onClick={() => { 切換到粉絲頁(page.pageId); set顯示身份切換(false) }}
+                    className={`w-full flex items-center gap-3 rounded-lg p-2 text-left cursor-pointer transition-colors ${
+                      目前身份 === 'page' && 使用中的粉絲頁?.pageId === page.pageId ? 'bg-strava/10 border border-strava/30' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    {page.pictureUrl ? (
+                      <img src={page.pictureUrl} alt="" className="w-8 h-8 rounded-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs">📄</div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{page.name}</p>
+                      <p className="text-xs text-gray-500">粉絲頁</p>
+                    </div>
+                    {目前身份 === 'page' && 使用中的粉絲頁?.pageId === page.pageId && (
+                      <Check size={16} className="text-strava shrink-0" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="px-4 pt-4 space-y-5">

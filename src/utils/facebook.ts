@@ -11,7 +11,7 @@ declare global {
     FB: {
       init: (params: { appId: string; cookie: boolean; xfbml: boolean; version: string }) => void
       login: (callback: (response: FBLoginResponse) => void, params: { scope: string }) => void
-      api: (path: string, callback: (response: FBApiResponse) => void) => void
+      api: (path: string, paramsOrCallback: Record<string, string> | ((response: FBApiResponse) => void), callback?: (response: FBApiResponse) => void) => void
       getLoginStatus: (callback: (response: FBLoginResponse) => void) => void
     }
   }
@@ -32,6 +32,7 @@ interface FBApiResponse {
   hometown?: { name?: string }
   location?: { name?: string }
   error?: { message: string }
+  [key: string]: unknown
 }
 
 export interface FBUserInfo {
@@ -39,6 +40,14 @@ export interface FBUserInfo {
   name: string
   pictureUrl: string
   countyId: string  // 從 hometown/location 自動比對
+}
+
+// 粉絲頁資訊（從 /me/accounts API 回傳）
+export interface FBPageInfo {
+  pageId: string
+  name: string
+  pictureUrl: string
+  accessToken: string
 }
 
 // 從 FB 地點名稱比對台灣縣市 ID
@@ -125,6 +134,27 @@ export function FB登入(): Promise<FBUserInfo> {
           countyId,
         })
       })
-    }, { scope: 'public_profile,user_hometown,user_location' })
+    }, { scope: 'public_profile,user_hometown,user_location,pages_read_engagement' })
+  })
+}
+
+// 取得使用者管理的粉絲頁列表
+export function 取得粉絲頁列表(): Promise<FBPageInfo[]> {
+  return new Promise((resolve) => {
+    if (!window.FB) { resolve([]); return }
+    interface FBPagesResponse { data?: Array<{ id: string; name: string; picture?: { data?: { url?: string } }; access_token: string }>; error?: { message: string } }
+    window.FB.api('/me/accounts', { fields: 'id,name,picture.width(200).height(200),access_token' }, ((response: FBPagesResponse) => {
+      if (response.error || !response.data) {
+        // pages_show_list 未授權或無管理粉絲頁時，靜默回傳空陣列
+        resolve([])
+        return
+      }
+      resolve(response.data.map(page => ({
+        pageId: page.id,
+        name: page.name,
+        pictureUrl: page.picture?.data?.url ?? '',
+        accessToken: page.access_token,
+      })))
+    }) as unknown as (response: FBApiResponse) => void)
   })
 }

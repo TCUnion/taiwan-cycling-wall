@@ -33,6 +33,11 @@ export default function StickyNoteCard({ 活動 }: Props) {
   const 縣市 = 查找縣市(活動.countyId)
   const 旋轉class = 取得旋轉角度(活動.id)
 
+  // 粉絲頁發起人資訊
+  const 是粉絲頁活動 = 活動.creatorId.startsWith('page-')
+  const 粉絲頁Id = 是粉絲頁活動 ? 活動.creatorId.replace('page-', '') : ''
+  const 粉絲頁資訊 = 是粉絲頁活動 ? 所有使用者.flatMap(u => u.managedPages ?? []).find(p => p.pageId === 粉絲頁Id) : undefined
+
   return (
     <button
       onClick={() => navigate(`/event/${活動.id}`)}
@@ -56,7 +61,17 @@ export default function StickyNoteCard({ 活動 }: Props) {
       )}
 
       {/* 標題 */}
-      <h3 className={`font-bold text-sm leading-tight mb-2 line-clamp-2 ${活動.coverImage ? 'pr-18' : ''}`}>{活動.title}</h3>
+      <h3 className={`font-bold text-sm leading-tight mb-1 line-clamp-2 ${活動.coverImage ? 'pr-18' : ''}`}>{活動.title}</h3>
+
+      {/* 粉絲頁發起人 */}
+      {是粉絲頁活動 && 粉絲頁資訊 && (
+        <div className="flex items-center gap-1 mb-1.5">
+          {粉絲頁資訊.pictureUrl ? (
+            <img src={粉絲頁資訊.pictureUrl} alt="" className="w-4 h-4 rounded-full object-cover" referrerPolicy="no-referrer" />
+          ) : null}
+          <span className="text-[10px] text-gray-500 truncate">{粉絲頁資訊.name}</span>
+        </div>
+      )}
 
       {/* 資訊列 */}
       <div className="space-y-1.5 text-xs text-gray-600">

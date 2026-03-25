@@ -47,6 +47,8 @@ export interface User {
   stats: UserStats
   achievements: Achievement[]
   rideHistory: RideRecord[]
+  managedPages?: PageIdentity[]  // 管理的粉絲頁列表
+  activePageId?: string          // 目前使用的粉絲頁 ID（空 = 個人身份）
 }
 
 export interface UserStats {
@@ -108,6 +110,13 @@ export interface MeetingSpot {
   countyId: string
   lat: number
   lng: number
+}
+
+// 粉絲頁身份（Facebook Page）
+export interface PageIdentity {
+  pageId: string
+  name: string
+  pictureUrl: string
 }
 
 // 粉絲/追蹤關係

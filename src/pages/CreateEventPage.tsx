@@ -36,6 +36,8 @@ export default function CreateEventPage() {
   const navigate = useNavigate()
   const { id: editId } = useParams()
   const 使用者 = useAuthStore(s => s.使用者)
+  const 取得目前發文身份 = useAuthStore(s => s.取得目前發文身份)
+  const 目前身份 = 取得目前發文身份()
   const { 活動列表, 新增活動, 更新活動 } = useEventStore()
   const { 範本列表, 新增範本, 刪除範本 } = useTemplateStore()
 
@@ -62,7 +64,7 @@ export default function CreateEventPage() {
   // 表單狀態（編輯模式用既有值）
   const [date, setDate] = useState(編輯中活動?.date ?? '')
   const [time, setTime] = useState(編輯中活動?.time ?? '06:00')
-  const [發起人名稱, set發起人名稱] = useState(使用者.name)
+  const [發起人名稱, set發起人名稱] = useState(目前身份.name)
   const [routeName, setRouteName] = useState(編輯中活動?.title ?? '')
   const [routeDetail, setRouteDetail] = useState(編輯中活動 ? 解析路線描述(編輯中活動.description) : '')
   const [routeUrl, setRouteUrl] = useState(編輯中活動?.stravaRouteUrl ?? '')
@@ -213,7 +215,7 @@ export default function CreateEventPage() {
       coverImage: coverImage || undefined,
       stickyColor: 取得便利貼顏色(id),
       tags: [],
-      creatorId: 使用者.id,
+      creatorId: 目前身份.id,
       createdAt: new Date().toISOString(),
     }
     新增活動(新活動)
@@ -301,10 +303,13 @@ export default function CreateEventPage() {
         {/* ② 發起人 */}
         <區塊 title="發起人">
           <div className="flex items-center gap-3">
-            <Avatar emoji={使用者.avatar} size="md" />
+            <Avatar emoji={目前身份.avatar} size="md" />
             <input value={發起人名稱} onChange={e => set發起人名稱(e.target.value)} maxLength={30}
               className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-base bg-white focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20" />
           </div>
+          {目前身份.id.startsWith('page-') && (
+            <p className="text-xs text-strava mt-1">以粉絲頁「{目前身份.name}」身份發起</p>
+          )}
         </區塊>
 
         {/* 封面圖片 */}

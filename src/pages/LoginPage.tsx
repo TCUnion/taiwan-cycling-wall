@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
-import { 載入FacebookSDK, FB登入 } from '../utils/facebook'
+import { 載入FacebookSDK, FB登入, 取得粉絲頁列表 } from '../utils/facebook'
 import Button from '../components/ui/Button'
 
 export default function LoginPage() {
   const navigate = useNavigate()
   const FB登入Store = useAuthStore(s => s.FB登入)
+  const 設定粉絲頁列表 = useAuthStore(s => s.設定粉絲頁列表)
   const [載入中, set載入中] = useState(false)
   const [SDK就緒, setSDK就緒] = useState(false)
   const [錯誤訊息, set錯誤訊息] = useState('')
@@ -25,6 +26,11 @@ export default function LoginPage() {
     try {
       const 使用者資訊 = await FB登入()
       FB登入Store(使用者資訊.fbId, 使用者資訊.name, 使用者資訊.pictureUrl, 使用者資訊.countyId)
+      // 登入後取得管理的粉絲頁（pages_show_list 未授權時回傳空陣列）
+      const 粉絲頁 = await 取得粉絲頁列表()
+      if (粉絲頁.length > 0) {
+        設定粉絲頁列表(粉絲頁.map(p => ({ pageId: p.pageId, name: p.name, pictureUrl: p.pictureUrl })))
+      }
       navigate('/wall', { replace: true })
     } catch (err) {
       set錯誤訊息(err instanceof Error ? err.message : '登入失敗，請稍後再試')
