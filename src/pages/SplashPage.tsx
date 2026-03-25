@@ -89,8 +89,8 @@ export default function SplashPage() {
         </div>
 
         {/* 文字內容（置於圓圈之上） */}
-        <div className={`relative z-10 flex flex-col items-center transition-all duration-500 ${
-          正在跳轉 ? 'opacity-0 scale-110' : ''
+        <div className={`relative z-10 flex flex-col items-center transition-all ${
+          正在跳轉 ? 'opacity-0 scale-110 duration-1000' : 'duration-500'
         }`}>
 
           {/* siokiu 大字 + 相揪 */}
