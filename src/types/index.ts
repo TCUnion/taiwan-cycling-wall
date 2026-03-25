@@ -23,6 +23,8 @@ export interface CyclingEvent {
   date: string        // ISO 日期字串
   time: string        // HH:mm
   meetingPoint: string
+  meetingPointUrl?: string  // Google Maps 連結
+  coverImage?: string       // 封面圖片（base64 或 URL）
   distance: number    // 公里
   elevation: number   // 公尺
   pace: string        // 例如 '25-30 km/h'
@@ -68,6 +70,63 @@ export interface RideRecord {
   countyId: string
   distance: number
   elevation: number
+}
+
+// 約騎範本
+export interface RideTemplate {
+  id: string
+  name: string           // 範本名稱（如「鳥嘴潭晨騎」）
+  routeName: string      // 路線名稱
+  routeDetail: string    // 路線描述
+  routeUrl: string       // 路線連結
+  spotName: string       // 集合地點名稱
+  spotUrl: string        // Google Maps 連結
+  countyId: string
+  time: string           // 預設集合時間
+  distance: number
+  elevation: number
+  pace: string
+  maxParticipants: number
+  notes: string[]        // 注意事項
+  creatorId: string
+}
+
+// 個人收藏路線
+export interface SavedRoute {
+  id: string
+  name: string
+  distance: number     // 公里
+  elevation: number    // 公尺
+  countyId: string
+}
+
+// 集合點
+export interface MeetingSpot {
+  id: string
+  name: string
+  address: string
+  countyId: string
+  lat: number
+  lng: number
+}
+
+// 粉絲/追蹤關係
+export interface FollowRelation {
+  userId: string
+  name: string
+  avatar: string
+}
+
+// 廣告版位（來自 Supabase tcuad_internal_placements / tcuad_placements）
+export interface AdPlacement {
+  id: string
+  brand_name: string
+  product_name: string
+  product_url: string
+  placement_text: string
+  image_url: string
+  priority: number
+  is_active: boolean
 }
 
 // 經典路線模板
