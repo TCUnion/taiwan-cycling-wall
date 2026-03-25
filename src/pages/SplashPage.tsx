@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 
 /* 軌道上的小圓點設定 */
@@ -18,7 +18,9 @@ const 軌道點 = [
 
 export default function SplashPage() {
   const 已登入 = useAuthStore(s => s.已登入)
+  const navigate = useNavigate()
   const [階段, set階段] = useState(0)
+  const [正在跳轉, set正在跳轉] = useState(false)
 
   useEffect(() => {
     const timers = [
@@ -30,6 +32,13 @@ export default function SplashPage() {
     return () => timers.forEach(clearTimeout)
   }, [])
 
+  const 處理進入 = () => {
+    set正在跳轉(true)
+    setTimeout(() => {
+      navigate(已登入 ? '/wall' : '/login')
+    }, 600) // 等動畫播完再跳轉
+  }
+
   return (
     <main className="flex flex-col items-center bg-cream overflow-hidden">
 
@@ -38,8 +47,12 @@ export default function SplashPage() {
 
         {/* 大圓圈 + 軌道小點 */}
         <div
-          className={`absolute inset-0 flex items-center justify-center transition-opacity duration-1000 ${
-            階段 >= 1 ? 'opacity-100' : 'opacity-0'
+          className={`absolute inset-0 flex items-center justify-center transition-all ${
+            正在跳轉
+              ? 'scale-[8] opacity-0 duration-600'
+              : 階段 >= 1
+                ? 'opacity-100 scale-100 duration-1000'
+                : 'opacity-0 scale-100 duration-1000'
           }`}
         >
           {/* 淡灰色細線描邊圓 */}
@@ -76,7 +89,9 @@ export default function SplashPage() {
         </div>
 
         {/* 文字內容（置於圓圈之上） */}
-        <div className="relative z-10 flex flex-col items-center">
+        <div className={`relative z-10 flex flex-col items-center transition-all duration-500 ${
+          正在跳轉 ? 'opacity-0 scale-110' : ''
+        }`}>
 
           {/* siokiu 大字 + 相揪 */}
           <div
@@ -124,12 +139,13 @@ export default function SplashPage() {
                 : 'opacity-0 translate-y-6'
             }`}
           >
-            <Link
-              to={已登入 ? '/wall' : '/login'}
-              className="rounded-full bg-strava px-8 py-3 text-lg font-bold text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all"
+            <button
+              onClick={處理進入}
+              disabled={正在跳轉}
+              className="rounded-full bg-strava px-8 py-3 text-lg font-bold text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer"
             >
               {已登入 ? '明天騎哪裡' : '來去相揪 →'}
-            </Link>
+            </button>
             {!已登入 && (
               <Link
                 to="/wall"
