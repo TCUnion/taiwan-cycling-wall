@@ -134,7 +134,7 @@ export function FB登入(): Promise<FBUserInfo> {
           countyId,
         })
       })
-    }, { scope: 'public_profile,user_hometown,user_location,pages_read_engagement' })
+    }, { scope: 'public_profile,user_hometown,user_location' })
   })
 }
 
