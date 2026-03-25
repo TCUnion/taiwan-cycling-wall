@@ -1,87 +1,151 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
-
 import { 模擬活動 } from '../data/mockEvents'
 
 export default function SplashPage() {
-  const navigate = useNavigate()
   const 已登入 = useAuthStore(s => s.已登入)
-  const [顯示, set顯示] = useState(false)
+  const [階段, set階段] = useState(0)
 
   useEffect(() => {
-    // 觸發進場動畫
-    requestAnimationFrame(() => set顯示(true))
+    // 逐步觸發動畫階段
+    const timers = [
+      setTimeout(() => set階段(1), 100),   // siokiu 文字淡入
+      setTimeout(() => set階段(2), 800),   // 騎士們聚攏
+      setTimeout(() => set階段(3), 1600),  // 中文解釋出現
+      setTimeout(() => set階段(4), 2400),  // 按鈕與內容出現
+    ]
+    return () => timers.forEach(clearTimeout)
+  }, [])
 
-    const timer = setTimeout(() => {
-      navigate(已登入 ? '/wall' : '/login', { replace: true })
-    }, 2500)
-    return () => clearTimeout(timer)
-  }, [navigate, 已登入])
-
-  // 取前 6 筆活動作為近期活動摘要
   const 近期活動 = 模擬活動.slice(0, 6)
 
   return (
     <main className="flex min-h-svh flex-col items-center bg-cork overflow-hidden">
-      {/* 原有動畫 Splash 區塊 */}
-      <div className="flex flex-1 flex-col items-center justify-center">
-        <div className={`flex flex-col items-center gap-6 transition-all duration-1000 ${
-          顯示 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+      {/* 主視覺動畫區 */}
+      <div className="flex flex-col items-center justify-center pt-16 pb-8 px-6">
+
+        {/* siokiu 大字 — 台語拼音 */}
+        <h1
+          className={`text-6xl sm:text-7xl font-black tracking-tight transition-all duration-1000 ${
+            階段 >= 1
+              ? 'opacity-100 scale-100 translate-y-0'
+              : 'opacity-0 scale-75 translate-y-6'
+          }`}
+          style={{
+            background: 'linear-gradient(135deg, #FC4C02 0%, #FF8A50 50%, #FC4C02 100%)',
+            backgroundSize: '200% 200%',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            animation: 階段 >= 1 ? 'shimmer 3s ease-in-out infinite' : 'none',
+          }}
+        >
+          siokiu
+        </h1>
+
+        {/* 騎士相揪動畫 — 三個騎士從兩側聚攏到中間 */}
+        <div className="relative h-20 w-64 my-6">
+          {/* 左側騎士 */}
+          <span
+            className={`absolute top-1/2 -translate-y-1/2 text-4xl transition-all duration-1000 ease-out ${
+              階段 >= 2
+                ? 'left-[25%] opacity-100'
+                : 'left-0 opacity-0'
+            }`}
+          >
+            🚴
+          </span>
+          {/* 中間騎士 */}
+          <span
+            className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-5xl transition-all duration-700 delay-200 ${
+              階段 >= 2
+                ? 'opacity-100 scale-100'
+                : 'opacity-0 scale-0'
+            }`}
+          >
+            🤝
+          </span>
+          {/* 右側騎士 */}
+          <span
+            className={`absolute top-1/2 -translate-y-1/2 text-4xl transition-all duration-1000 ease-out ${
+              階段 >= 2
+                ? 'right-[25%] opacity-100 -scale-x-100'
+                : 'right-0 opacity-0 -scale-x-100'
+            }`}
+          >
+            🚴
+          </span>
+        </div>
+
+        {/* 台語 + 中文解釋 */}
+        <div className={`text-center transition-all duration-800 ${
+          階段 >= 3
+            ? 'opacity-100 translate-y-0'
+            : 'opacity-0 translate-y-4'
         }`}>
-          {/* 台灣輪廓 SVG */}
-          <div className="relative">
-            <svg viewBox="0 0 120 200" className="w-28 h-44" aria-label="台灣地圖">
-              <path
-                d="M60 10 C55 15, 45 25, 40 40 C35 55, 30 70, 32 85 C34 100, 28 115, 30 130 C32 145, 35 155, 40 165 C45 175, 55 185, 60 190 C65 185, 75 175, 80 165 C85 155, 88 145, 90 130 C92 115, 86 100, 88 85 C90 70, 85 55, 80 40 C75 25, 65 15, 60 10Z"
-                fill="none"
-                stroke="#8B6914"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                className="animate-[draw_2s_ease-in-out_forwards]"
-                style={{
-                  strokeDasharray: 600,
-                  strokeDashoffset: 顯示 ? 0 : 600,
-                  transition: 'stroke-dashoffset 2s ease-in-out',
-                }}
-              />
-            </svg>
-            {/* 騎行者圖示 */}
-            <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-5xl transition-all duration-700 delay-700 ${
-              顯示 ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
-            }`}>
-              🚴
-            </div>
-          </div>
+          <p className="text-xl font-bold text-gray-800">
+            <ruby className="text-strava">相揪<rp>(</rp><rt>siō-kiu</rt><rp>)</rp></ruby>
+            {' '}來騎車
+          </p>
+          <p className="mt-2 text-gray-600 text-sm leading-relaxed max-w-xs mx-auto">
+            台語「相揪」，就是互相邀約、呼朋引伴的意思。<br />
+            揪車友、找路線、一起踩踏板！
+          </p>
+        </div>
 
-          <div className={`text-center transition-all duration-700 delay-500 ${
-            顯示 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}>
-            <h1 className="text-3xl font-bold text-gray-800">台灣約騎事件簿</h1>
-            <p className="mt-2 text-gray-600">找人一起騎車吧！</p>
-          </div>
-
-          {/* 載入指示器 */}
-          <div className={`flex gap-1.5 transition-opacity duration-500 delay-1000 ${
-            顯示 ? 'opacity-100' : 'opacity-0'
-          }`}>
-            {[0, 1, 2].map(i => (
-              <div
-                key={i}
-                className="h-2 w-2 rounded-full bg-strava animate-bounce"
-                style={{ animationDelay: `${i * 150}ms` }}
-              />
-            ))}
-          </div>
+        {/* CTA 按鈕 */}
+        <div className={`flex flex-col items-center gap-3 mt-8 transition-all duration-700 ${
+          階段 >= 4
+            ? 'opacity-100 translate-y-0'
+            : 'opacity-0 translate-y-6'
+        }`}>
+          <Link
+            to={已登入 ? '/wall' : '/login'}
+            className="rounded-full bg-strava px-8 py-3 text-lg font-bold text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all"
+          >
+            {已登入 ? '進入約騎牆' : '來去相揪 →'}
+          </Link>
+          {!已登入 && (
+            <Link
+              to="/wall"
+              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              先逛逛看
+            </Link>
+          )}
         </div>
       </div>
 
-      {/* SEO 內容區塊 — 預渲染與一般訪問都顯示 */}
-      <section className="w-full max-w-2xl px-6 pb-12 pt-8">
+      {/* 三個特色卡片 */}
+      <section className={`w-full max-w-lg px-6 py-8 transition-all duration-700 delay-300 ${
+        階段 >= 4 ? 'opacity-100' : 'opacity-0'
+      }`}>
+        <div className="grid grid-cols-3 gap-3 text-center">
+          {[
+            { emoji: '📌', label: '揪團約騎', desc: '發起活動' },
+            { emoji: '🗺️', label: '全台路線', desc: '22 縣市' },
+            { emoji: '🏆', label: '騎乘成就', desc: '累積里程' },
+          ].map((item, i) => (
+            <div
+              key={item.label}
+              className="rounded-xl bg-white/60 backdrop-blur p-3 shadow-sm"
+              style={{ animationDelay: `${i * 100}ms` }}
+            >
+              <div className="text-2xl mb-1">{item.emoji}</div>
+              <p className="text-sm font-semibold text-gray-800">{item.label}</p>
+              <p className="text-xs text-gray-500">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* SEO 內容區塊 */}
+      <section className="w-full max-w-2xl px-6 pb-12 pt-4">
         <h2 className="text-xl font-bold text-gray-800 mb-4">台灣單車約騎社群平台</h2>
         <p className="text-gray-700 leading-relaxed mb-6">
-          台灣約騎事件簿是專為台灣單車愛好者打造的約騎平台。
-          無論你是公路車、登山車還是休閒騎乘，都能在這裡找到志同道合的車友。
+          Siokiu（相揪）是台語「互相邀約」的意思。
+          這裡是專為台灣單車愛好者打造的約騎平台——
+          無論你騎公路車、登山車還是休閒車，攏總來相揪！
           涵蓋北部、中部、南部、東部共 22 縣市，輕鬆瀏覽各地約騎活動。
         </p>
 

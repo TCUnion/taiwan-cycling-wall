@@ -43,3 +43,9 @@ body {
 .sticky-rotate-0  { transform: rotate(0deg); }
 .sticky-rotate-1  { transform: rotate(1deg); }
 .sticky-rotate-2  { transform: rotate(2deg); }
+
+/* siokiu 文字漸層流動動畫 */
+@keyframes shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}

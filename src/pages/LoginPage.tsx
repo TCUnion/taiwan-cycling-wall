@@ -20,8 +20,8 @@ export default function LoginPage() {
     <div className="flex min-h-svh flex-col items-center justify-center bg-cork px-6">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="text-5xl mb-3">🚴‍♂️</div>
-          <h1 className="text-2xl font-bold">台灣約騎事件簿</h1>
+          <h1 className="text-4xl font-black text-strava mb-1">siokiu</h1>
+          <p className="text-sm text-gray-500 mb-3">相揪來騎車</p>
           <p className="mt-1 text-gray-600">選擇角色開始體驗</p>
         </div>
 
