@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
-import { 模擬活動 } from '../data/mockEvents'
 
 /* 軌道上的小圓點設定 */
 const 軌道點 = [
@@ -30,8 +29,6 @@ export default function SplashPage() {
     ]
     return () => timers.forEach(clearTimeout)
   }, [])
-
-  const 近期活動 = 模擬活動.slice(0, 6)
 
   return (
     <main className="flex flex-col items-center bg-cream overflow-hidden">
@@ -145,51 +142,10 @@ export default function SplashPage() {
         </div>
       </section>
 
-      {/* ===== SEO 內容區塊 ===== */}
-      <section className="w-full max-w-2xl px-6 pb-12 pt-8">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">台灣單車約騎社群平台</h2>
-        <p className="text-gray-700 leading-relaxed mb-6">
-          Siokiu（相揪）是台語「互相邀約」的意思。
-          這裡是專為台灣單車愛好者打造的約騎平台——
-          無論你騎公路車、登山車還是休閒車，攏總來相揪！
-          涵蓋北部、中部、南部、東部共 22 縣市，輕鬆瀏覽各地約騎活動。
-        </p>
-
-        <h3 className="text-lg font-semibold text-gray-800 mb-3">平台特色</h3>
-        <ul className="list-disc list-inside text-gray-700 space-y-1 mb-6">
-          <li>便利貼風格約騎公布欄，一目瞭然瀏覽各地活動</li>
-          <li>支援台灣 22 縣市四大區域篩選</li>
-          <li>Strava 路線整合，輕鬆預覽騎乘路線</li>
-          <li>經典路線模板，快速建立約騎活動</li>
-          <li>個人騎乘統計與成就系統</li>
-          <li>PWA 支援，手機安裝如原生 App</li>
-        </ul>
-
-        <h3 className="text-lg font-semibold text-gray-800 mb-3">近期約騎活動</h3>
-        <ul className="space-y-2 mb-8">
-          {近期活動.map(活動 => (
-            <li key={活動.id} className="text-gray-700">
-              <span className="font-medium">{活動.title}</span>
-              {' — '}
-              <span className="text-gray-500">{活動.region}・{活動.distance} km・{活動.date}</span>
-            </li>
-          ))}
-        </ul>
-
-        <nav className="flex gap-4">
-          <Link
-            to="/wall"
-            className="inline-block rounded-lg bg-strava px-6 py-2.5 font-semibold text-white hover:opacity-90"
-          >
-            瀏覽約騎公布欄
-          </Link>
-          <Link
-            to="/login"
-            className="inline-block rounded-lg border-2 border-gray-400 px-6 py-2.5 font-semibold text-gray-700 hover:border-gray-600"
-          >
-            登入
-          </Link>
-        </nav>
+      {/* SEO 隱藏文字（僅供搜尋引擎） */}
+      <section className="sr-only" aria-hidden="true">
+        <h2>台灣單車約騎社群平台</h2>
+        <p>Siokiu（相揪）是台語「互相邀約」的意思。專為台灣單車愛好者打造的約騎平台，涵蓋北部、中部、南部、東部共 22 縣市。</p>
       </section>
     </main>
   )
