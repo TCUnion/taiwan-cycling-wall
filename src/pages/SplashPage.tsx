@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 
+// 預載 WallPage 和 LoginPage，讓過場動畫結束後能立即顯示
+const preloadWall = () => import('./WallPage')
+const preloadLogin = () => import('./LoginPage')
+
 /* 軌道上的小圓點設定 */
 const 軌道點 = [
   { size: 6,  duration: 10, delay: 0,    color: '#FC4C02' },
@@ -30,6 +34,12 @@ export default function SplashPage() {
       setTimeout(() => set階段(4), 1800),  // CTA 按鈕出現
     ]
     return () => timers.forEach(clearTimeout)
+  }, [])
+
+  // 首頁載入後立即預載下一頁
+  useEffect(() => {
+    preloadWall()
+    preloadLogin()
   }, [])
 
   const 處理進入 = () => {
