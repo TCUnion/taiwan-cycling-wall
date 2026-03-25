@@ -36,7 +36,7 @@ export default function SplashPage() {
     set正在跳轉(true)
     setTimeout(() => {
       navigate(已登入 ? '/wall' : '/login')
-    }, 1600) // 等動畫播完再跳轉
+    }, 1200) // 等動畫播完再跳轉
   }
 
   return (
@@ -49,7 +49,7 @@ export default function SplashPage() {
         <div
           className={`absolute inset-0 flex items-center justify-center transition-all ${
             正在跳轉
-              ? 'scale-[8] opacity-0 duration-1600'
+              ? 'scale-[8] opacity-0 duration-1200'
               : 階段 >= 1
                 ? 'opacity-100 scale-100 duration-1000'
                 : 'opacity-0 scale-100 duration-1000'
