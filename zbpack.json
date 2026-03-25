@@ -1,0 +1,6 @@
+{
+  "static": {
+    "output_dir": "dist",
+    "spa": true
+  }
+}
