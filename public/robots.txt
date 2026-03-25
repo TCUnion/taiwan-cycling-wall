@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://siokiu.zeabur.app/sitemap.xml
+Sitemap: https://siokiu.criterium.tw/sitemap.xml

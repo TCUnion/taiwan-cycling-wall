@@ -10,8 +10,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: '台灣約騎事件簿',
-        short_name: '約騎事件簿',
+        name: '約騎公布欄',
+        short_name: '約騎公布欄',
         description: '台灣單車約騎社群平台',
         theme_color: '#FC4C02',
         background_color: '#D4A574',

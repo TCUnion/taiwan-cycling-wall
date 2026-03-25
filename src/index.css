@@ -21,8 +21,12 @@
   --color-sticky-blue: #DBEAFE;
   --color-sticky-green: #DCFCE7;
 
+  /* 首頁背景色 */
+  --color-cream: #F5F0EB;
+
   /* 字體 */
   --font-sans: "Noto Sans TC", system-ui, -apple-system, sans-serif;
+  --font-serif: "DM Serif Display", "Georgia", serif;
 }
 
 /* 全域樣式 */
@@ -44,8 +48,27 @@ body {
 .sticky-rotate-1  { transform: rotate(1deg); }
 .sticky-rotate-2  { transform: rotate(2deg); }
 
+/* 隱藏滾動條（Tab 列橫向滑動用） */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
 /* siokiu 文字漸層流動動畫 */
 @keyframes shimmer {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
+}
+
+/* 首頁圓圈軌道動畫 */
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(var(--orbit-radius)) rotate(0deg); }
+  to   { transform: rotate(360deg) translateX(var(--orbit-radius)) rotate(-360deg); }
+}
+
+/* 尊重使用者減少動態偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

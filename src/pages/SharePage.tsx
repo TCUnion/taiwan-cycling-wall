@@ -1,20 +1,15 @@
-import { useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Download, Share2, MessageCircle } from 'lucide-react'
-import { toPng } from 'html-to-image'
+import { ArrowLeft, Share2, MessageCircle } from 'lucide-react'
 import { useEventStore } from '../stores/eventStore'
+import { 查找縣市 } from '../data/counties'
+import { 格式化完整日期 } from '../utils/formatters'
 import Button from '../components/ui/Button'
-import OGImageGenerator from '../components/share/OGImageGenerator'
 
 export default function SharePage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const 活動列表 = useEventStore(s => s.活動列表)
   const 活動 = 活動列表.find(e => e.id === id)
-
-  const ogRef = useRef<HTMLDivElement>(null)
-  const [預覽圖, set預覽圖] = useState<string | null>(null)
-  const [生成中, set生成中] = useState(false)
 
   if (!活動) {
     return (
@@ -24,36 +19,12 @@ export default function SharePage() {
     )
   }
 
-  // 生成 OG 圖片
-  const 生成圖片 = async () => {
-    if (!ogRef.current) return
-    set生成中(true)
-    try {
-      const dataUrl = await toPng(ogRef.current, {
-        width: 1200,
-        height: 630,
-        pixelRatio: 1,
-      })
-      set預覽圖(dataUrl)
-    } catch (err) {
-      console.error('生成圖片失敗:', err)
-    }
-    set生成中(false)
-  }
-
-  // 下載圖片
-  const 下載圖片 = () => {
-    if (!預覽圖) return
-    const link = document.createElement('a')
-    link.download = `約騎-${活動.title}.png`
-    link.href = 預覽圖
-    link.click()
-  }
+  const 縣市 = 查找縣市(活動.countyId)
 
   // Web Share API
   const 分享 = async () => {
     const shareData: ShareData = {
-      title: `🚴 ${活動.title} — 台灣約騎事件簿`,
+      title: `🚴 ${活動.title} — 約騎公布欄`,
       text: `一起來騎車！${活動.title}\n📅 ${活動.date} ${活動.time}\n📍 ${活動.meetingPoint}`,
       url: window.location.origin + `/event/${活動.id}`,
     }
@@ -80,49 +51,46 @@ export default function SharePage() {
     <div className="min-h-svh bg-cork pb-8">
       {/* 導覽 */}
       <div className="flex items-center gap-3 px-4 py-3">
-        <button onClick={() => navigate(-1)} className="p-1"><ArrowLeft size={22} /></button>
+        <button onClick={() => navigate(-1)} className="cursor-pointer p-1" aria-label="返回">
+          <ArrowLeft size={22} />
+        </button>
         <h1 className="text-lg font-bold">分享活動</h1>
       </div>
 
-      {/* 隱藏的 OG 圖片 DOM */}
-      <OGImageGenerator ref={ogRef} 活動={活動} />
-
       <div className="px-4 space-y-6">
-        {/* 預覽區 */}
-        <div className="rounded-xl overflow-hidden shadow-lg bg-white">
-          {預覽圖 ? (
-            <img src={預覽圖} alt="分享圖片預覽" className="w-full" />
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-              <p className="text-lg">📸</p>
-              <p className="text-sm mt-2">點擊下方按鈕生成分享圖片</p>
+        {/* 預覽卡片 */}
+        <div className="rounded-xl overflow-hidden shadow-lg bg-white p-6">
+          <div className="flex items-center gap-4 mb-4">
+            <img src="/favicon.svg" alt="siokiu" className="h-12 w-12" />
+            <div>
+              <div className="text-xs text-gray-400">siokiu 約騎公布欄</div>
+              <div className="text-xl font-bold text-gray-900">{活動.title}</div>
             </div>
-          )}
+          </div>
+          <div className="space-y-1 text-sm text-gray-600">
+            <div>📅 {格式化完整日期(活動.date)} {活動.time}</div>
+            <div>📍 {縣市?.name} · {活動.meetingPoint}</div>
+            {(活動.distance || 活動.elevation) && (
+              <div>
+                {活動.distance ? `🛣️ ${活動.distance}km` : ''}
+                {活動.elevation ? ` / ⛰️ ${活動.elevation}m` : ''}
+                {` / 👥 ${活動.participants.length}人`}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* 生成按鈕 */}
-        {!預覽圖 && (
-          <Button fullWidth onClick={生成圖片} disabled={生成中}>
-            {生成中 ? '生成中...' : '🖼️ 生成分享圖片'}
-          </Button>
-        )}
-
         {/* 分享按鈕群 */}
-        {預覽圖 && (
-          <div className="space-y-3">
-            <Button fullWidth onClick={下載圖片}>
-              <Download size={18} /> 下載圖片
+        <div className="space-y-3">
+          <Button fullWidth variant="outline" onClick={分享}>
+            <Share2 size={18} /> 分享連結
+          </Button>
+          <a href={LINE連結} target="_blank" rel="noopener noreferrer">
+            <Button fullWidth variant="line" className="mt-3">
+              <MessageCircle size={18} /> 分享到 LINE
             </Button>
-            <Button fullWidth variant="outline" onClick={分享}>
-              <Share2 size={18} /> 分享連結
-            </Button>
-            <a href={LINE連結} target="_blank" rel="noopener noreferrer">
-              <Button fullWidth variant="line" className="mt-3">
-                <MessageCircle size={18} /> 分享到 LINE
-              </Button>
-            </a>
-          </div>
-        )}
+          </a>
+        </div>
       </div>
     </div>
   )

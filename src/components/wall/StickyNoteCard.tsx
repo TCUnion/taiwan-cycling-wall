@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom'
-import { Calendar, MapPin, Mountain, Users, Route } from 'lucide-react'
+import { Calendar, MapPin, Mountain, Route, Bike } from 'lucide-react'
 import type { CyclingEvent, StickyColor } from '../../types'
 import { 查找縣市 } from '../../data/counties'
+import { useAuthStore } from '../../stores/authStore'
 import { 格式化日期, 格式化距離 } from '../../utils/formatters'
 import { 取得旋轉角度 } from '../../stores/eventStore'
 import Badge from '../ui/Badge'
@@ -28,6 +29,7 @@ interface Props {
 
 export default function StickyNoteCard({ 活動 }: Props) {
   const navigate = useNavigate()
+  const 所有使用者 = useAuthStore(s => s.所有使用者)
   const 縣市 = 查找縣市(活動.countyId)
   const 旋轉class = 取得旋轉角度(活動.id)
 
@@ -48,8 +50,13 @@ export default function StickyNoteCard({ 活動 }: Props) {
       {/* 圖釘裝飾 */}
       <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-red-400 border-2 border-red-600 shadow-sm z-10" />
 
+      {/* 封面圖片 — 右上角 */}
+      {活動.coverImage && (
+        <img src={活動.coverImage} alt="" className="absolute top-3 right-3 w-16 h-16 object-cover rounded shadow-sm" />
+      )}
+
       {/* 標題 */}
-      <h3 className="font-bold text-sm leading-tight mb-2 line-clamp-2">{活動.title}</h3>
+      <h3 className={`font-bold text-sm leading-tight mb-2 line-clamp-2 ${活動.coverImage ? 'pr-18' : ''}`}>{活動.title}</h3>
 
       {/* 資訊列 */}
       <div className="space-y-1.5 text-xs text-gray-600">
@@ -59,27 +66,53 @@ export default function StickyNoteCard({ 活動 }: Props) {
         </div>
         <div className="flex items-center gap-1.5">
           <MapPin size={12} className="shrink-0" />
-          <span className="truncate">{縣市?.name}</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1">
-            <Route size={12} />
-            {格式化距離(活動.distance)}
+          <span className="truncate">
+            {活動.meetingPoint ? `${活動.meetingPoint}（${縣市?.name}）` : 縣市?.name}
           </span>
-          {活動.elevation > 0 && (
-            <span className="flex items-center gap-1">
-              <Mountain size={12} />
-              {活動.elevation}m
-            </span>
-          )}
         </div>
+        {(活動.distance > 0 || 活動.elevation > 0) && (
+          <div className="flex items-center gap-3">
+            {活動.distance > 0 && (
+              <span className="flex items-center gap-1">
+                <Route size={12} />
+                {格式化距離(活動.distance)}
+              </span>
+            )}
+            {活動.elevation > 0 && (
+              <span className="flex items-center gap-1">
+                <Mountain size={12} />
+                {活動.elevation}m
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* 底部：參加人數 + 標籤 */}
+      {/* 底部：參加者頭像 + 區域標籤 */}
       <div className="mt-3 flex items-center justify-between">
-        <div className="flex items-center gap-1 text-xs text-gray-500">
-          <Users size={12} />
-          <span>{活動.participants.length}/{活動.maxParticipants}</span>
+        <div className="flex items-center -space-x-1">
+          {活動.participants.slice(0, 5).map(uid => {
+            const u = 所有使用者.find(u => u.id === uid)
+            const 是網址 = u?.avatar?.startsWith('http')
+            return (
+              <span
+                key={uid}
+                className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/80 border border-gray-200 text-xs shadow-sm overflow-hidden"
+                title={u?.name}
+              >
+                {是網址 ? (
+                  <img src={u!.avatar} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  u?.avatar ?? <Bike size={12} />
+                )}
+              </span>
+            )
+          })}
+          {活動.participants.length > 5 && (
+            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 border border-gray-200 text-[10px] font-medium text-gray-500 shadow-sm">
+              +{活動.participants.length - 5}
+            </span>
+          )}
         </div>
         <Badge variant="region" region={活動.region}>
           {活動.region}

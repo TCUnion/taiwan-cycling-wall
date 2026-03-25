@@ -2,8 +2,6 @@ import { forwardRef } from 'react'
 import type { CyclingEvent } from '../../types'
 import { 查找縣市 } from '../../data/counties'
 import { 格式化完整日期 } from '../../utils/formatters'
-import { 區域背景色 } from '../../utils/regionMapping'
-
 interface Props {
   活動: CyclingEvent
 }
@@ -13,6 +11,13 @@ const 便利貼色: Record<string, string> = {
   pink: '#FCE7F3',
   blue: '#DBEAFE',
   green: '#DCFCE7',
+}
+
+const 區域色hex: Record<string, string> = {
+  north: '#3B82F6',
+  central: '#F97316',
+  south: '#EF4444',
+  east: '#22C55E',
 }
 
 // OG 圖片模板 — 用於 html-to-image 截取
@@ -59,14 +64,14 @@ const OGImageGenerator = forwardRef<HTMLDivElement, Props>(({ 活動 }, ref) => 
             right: 0,
             height: 12,
             borderRadius: '8px 8px 0 0',
+            background: 區域色hex[活動.region] || '#3B82F6',
           }}
-          className={區域背景色[活動.region]}
         />
 
         {/* 上半部 */}
         <div>
           <div style={{ fontSize: 20, color: '#6b7280', marginBottom: 8 }}>
-            🚴 台灣約騎事件簿
+            🚴 約騎公布欄
           </div>
           <div style={{ fontSize: 48, fontWeight: 700, color: '#1f2937', lineHeight: 1.2 }}>
             {活動.title}
