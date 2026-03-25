@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
-import { 是否預渲染 } from '../utils/prerender'
+
 import { 模擬活動 } from '../data/mockEvents'
 
 export default function SplashPage() {
@@ -12,9 +12,6 @@ export default function SplashPage() {
   useEffect(() => {
     // 觸發進場動畫
     requestAnimationFrame(() => set顯示(true))
-
-    // 預渲染時不自動跳轉
-    if (是否預渲染) return
 
     const timer = setTimeout(() => {
       navigate(已登入 ? '/wall' : '/login', { replace: true })
@@ -64,20 +61,18 @@ export default function SplashPage() {
             <p className="mt-2 text-gray-600">找人一起騎車吧！</p>
           </div>
 
-          {/* 載入指示器（非預渲染時顯示） */}
-          {!是否預渲染 && (
-            <div className={`flex gap-1.5 transition-opacity duration-500 delay-1000 ${
-              顯示 ? 'opacity-100' : 'opacity-0'
-            }`}>
-              {[0, 1, 2].map(i => (
-                <div
-                  key={i}
-                  className="h-2 w-2 rounded-full bg-strava animate-bounce"
-                  style={{ animationDelay: `${i * 150}ms` }}
-                />
-              ))}
-            </div>
-          )}
+          {/* 載入指示器 */}
+          <div className={`flex gap-1.5 transition-opacity duration-500 delay-1000 ${
+            顯示 ? 'opacity-100' : 'opacity-0'
+          }`}>
+            {[0, 1, 2].map(i => (
+              <div
+                key={i}
+                className="h-2 w-2 rounded-full bg-strava animate-bounce"
+                style={{ animationDelay: `${i * 150}ms` }}
+              />
+            ))}
+          </div>
         </div>
       </div>
 

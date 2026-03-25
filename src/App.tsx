@@ -1,7 +1,7 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './stores/authStore'
-import { 是否預渲染, 觸發預渲染就緒 } from './utils/prerender'
+
 import AppShell from './components/layout/AppShell'
 
 // 延遲載入頁面
@@ -25,16 +25,11 @@ function Loading() {
 // 需要登入的路由保護（預渲染時放行）
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const 已登入 = useAuthStore(s => s.已登入)
-  if (!已登入 && !是否預渲染) return <Navigate to="/login" replace />
+  if (!已登入) return <Navigate to="/login" replace />
   return <>{children}</>
 }
 
 export default function App() {
-  useEffect(() => {
-    // 通知預渲染器頁面已就緒
-    觸發預渲染就緒()
-  }, [])
-
   return (
     <Suspense fallback={<Loading />}>
       <Routes>
