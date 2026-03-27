@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 
 // 預載 WallPage 和 LoginPage，讓過場動畫結束後能立即顯示
@@ -45,7 +45,7 @@ export default function SplashPage() {
   const 處理進入 = () => {
     set正在跳轉(true)
     setTimeout(() => {
-      navigate(已登入 ? '/wall' : '/login')
+      navigate('/wall')
     }, 1200) // 等動畫播完再跳轉
   }
 
@@ -156,14 +156,6 @@ export default function SplashPage() {
             >
               {已登入 ? '明天騎哪裡' : '來去相揪 →'}
             </button>
-            {!已登入 && (
-              <Link
-                to="/wall"
-                className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-              >
-                先逛逛看
-              </Link>
-            )}
           </div>
         </div>
       </section>

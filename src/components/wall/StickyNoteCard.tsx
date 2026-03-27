@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Calendar, MapPin, Mountain, Route, Bike } from 'lucide-react'
+import { Calendar, MapPin, Mountain, Route } from 'lucide-react'
 import type { CyclingEvent, StickyColor } from '../../types'
 import { 查找縣市 } from '../../data/counties'
 import { useAuthStore } from '../../stores/authStore'
@@ -122,33 +122,6 @@ export default function StickyNoteCard({ 活動 }: Props) {
         )}
       </div>
 
-      {/* 底部：參加者頭像 + 區域標籤（僅「全部」時顯示於左下） */}
-      <div className="mt-3 flex items-center justify-between">
-        <div className="flex items-center -space-x-1">
-          {活動.participants.slice(0, 5).map(uid => {
-            const u = 所有使用者.find(u => u.id === uid)
-            const 是網址 = u?.avatar?.startsWith('http')
-            return (
-              <span
-                key={uid}
-                className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/80 border border-gray-200 text-xs shadow-sm overflow-hidden"
-                title={u?.name}
-              >
-                {是網址 ? (
-                  <img src={u!.avatar} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                ) : (
-                  u?.avatar ?? <Bike size={12} />
-                )}
-              </span>
-            )
-          })}
-          {活動.participants.length > 5 && (
-            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 border border-gray-200 text-[10px] font-medium text-gray-500 shadow-sm">
-              +{活動.participants.length - 5}
-            </span>
-          )}
-        </div>
-      </div>
       {篩選區域 === null && (
         <div className="mt-1">
           <Badge variant="region" region={活動.region}>

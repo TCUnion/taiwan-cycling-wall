@@ -44,14 +44,18 @@ export default function App() {
         <Route path="/data-deletion" element={<DataDeletionPage />} />
         <Route path="/auth/callback" element={<OAuthCallbackPage />} />
 
+        {/* 公開瀏覽頁面 — 含底部導覽列，不需登入 */}
+        <Route element={<AppShell />}>
+          <Route path="/wall" element={<WallPage />} />
+          <Route path="/event/:id" element={<EventDetailPage />} />
+          <Route path="/history" element={<HistoryPage />} />
+        </Route>
+
         {/* 需要登入的頁面 — 含底部導覽列 */}
         <Route element={<RequireAuth><AppShell /></RequireAuth>}>
-          <Route path="/wall" element={<WallPage />} />
           <Route path="/create" element={<CreateEventPage />} />
           <Route path="/event/:id/edit" element={<CreateEventPage />} />
-          <Route path="/event/:id" element={<EventDetailPage />} />
           <Route path="/event/:id/share" element={<SharePage />} />
-          <Route path="/history" element={<HistoryPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
         </Route>
 

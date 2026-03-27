@@ -1,23 +1,25 @@
 // 活動詳情頁面
 
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Calendar, MapPin, Mountain, Route, Users, Clock, ExternalLink, Share2, Zap, Link, AlertCircle, UserPlus, PartyPopper, Pencil } from 'lucide-react'
+import { ArrowLeft, Calendar, MapPin, Mountain, Route, Clock, ExternalLink, Share2, Zap, Link, AlertCircle, Pencil } from 'lucide-react'
 import { useEventStore } from '../stores/eventStore'
 import { useAuthStore } from '../stores/authStore'
+import { useAds } from '../hooks/useAds'
 import { 查找縣市 } from '../data/counties'
 import { 格式化完整日期, 格式化距離 } from '../utils/formatters'
 import { 區域背景色 } from '../utils/regionMapping'
 import Button from '../components/ui/Button'
 import Badge from '../components/ui/Badge'
 import Avatar from '../components/ui/Avatar'
-import ParticipantMap from '../components/event/ParticipantMap'
 import MoakBadge from '../components/event/MoakBadge'
 
 export default function EventDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { 使用者, 所有使用者 } = useAuthStore()
-  const { 活動列表, 參加活動, 退出活動 } = useEventStore()
+  const { 活動列表 } = useEventStore()
+  const { 廣告列表 } = useAds()
+  const 廣告 = 廣告列表[0] // 顯示一則廣告
 
   const 活動 = 活動列表.find(e => e.id === id)
   if (!活動) {
@@ -33,8 +35,6 @@ export default function EventDetailPage() {
   }
 
   const 縣市 = 查找縣市(活動.countyId)
-  const 已參加 = 使用者 ? 活動.participants.includes(使用者.id) : false
-  const 已額滿 = 活動.participants.length >= 活動.maxParticipants
   // 粉絲頁發起的活動：creatorId 為 page-{pageId}，發起人是管理該頁的使用者
   const 是粉絲頁活動 = 活動.creatorId.startsWith('page-')
   const 粉絲頁Id = 是粉絲頁活動 ? 活動.creatorId.replace('page-', '') : ''
@@ -42,7 +42,6 @@ export default function EventDetailPage() {
     活動.creatorId === 使用者.id ||
     (是粉絲頁活動 && 使用者.managedPages?.some(p => p.pageId === 粉絲頁Id))
   ) : false
-  const 是模擬活動 = 活動.id.startsWith('evt-')
   // 粉絲頁活動：顯示粉絲頁名稱/頭像；個人活動：從所有使用者查找
   const 粉絲頁資訊 = 是粉絲頁活動 ? 所有使用者.flatMap(u => u.managedPages ?? []).find(p => p.pageId === 粉絲頁Id) : undefined
   const 發起人 = 是粉絲頁活動
@@ -52,12 +51,6 @@ export default function EventDetailPage() {
   const 導航連結 = 活動.meetingPoint
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(活動.meetingPoint)}`
     : ''
-
-  const 處理參加 = () => {
-    if (!使用者) return
-    if (已參加) { 退出活動(活動.id, 使用者.id) }
-    else { 參加活動(活動.id, 使用者.id) }
-  }
 
   // 判斷路線連結類型
   const 路線連結類型 = (url: string) => {
@@ -159,51 +152,46 @@ export default function EventDetailPage() {
         {/* MOAK 認證 */}
         {活動.moakEventId && <MoakBadge moakEventId={活動.moakEventId} />}
 
-        {/* 參加者分布 */}
-        <ParticipantMap participantIds={活動.participants} />
-
-        {/* 參加者列表 */}
-        <div className="space-y-2">
-          <h3 className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
-            <Users size={14} /> 參加者 ({活動.participants.length}/{活動.maxParticipants})
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {活動.participants.map(uid => {
-              const u = 所有使用者.find(u => u.id === uid)
-              if (!u) return null
-              return (
-                <div key={uid} className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 shadow-sm">
-                  <Avatar emoji={u.avatar} size="sm" />
-                  <span className="text-sm">{u.name}</span>
-                  {uid === 活動.creatorId && <span className="text-xs text-strava">發起人</span>}
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
         {/* 操作按鈕 */}
-        <div className="pt-2 space-y-2">
-          {是發起人 && (
+        {是發起人 && (
+          <div className="pt-2">
             <Button fullWidth variant="outline" onClick={() => navigate(`/event/${活動.id}/edit`)}>
               <Pencil size={16} /> 編輯活動
             </Button>
-          )}
-          {是模擬活動 ? (
-            <Button fullWidth variant="secondary" disabled>此為模擬活動，無法參加</Button>
-          ) : 是發起人 ? (
-            <Button fullWidth variant="secondary" disabled><PartyPopper size={16} /> 你是這場活動的發起人</Button>
-          ) : (
-            <Button
-              fullWidth
-              variant={已參加 ? 'outline' : 'primary'}
-              disabled={!已參加 && 已額滿}
-              onClick={處理參加}
-            >
-              {已參加 ? '退出活動' : 已額滿 ? '已額滿' : <><UserPlus size={16} /> 我要參加！</>}
-            </Button>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* 廣告 */}
+        {廣告 && (
+          <a
+            href={廣告.product_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block rounded-xl bg-white shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+          >
+            <div className="flex gap-4 p-4">
+              {/* 左：產品圖片 */}
+              <div className="w-28 shrink-0 self-stretch rounded-lg overflow-hidden bg-gray-50">
+                <img
+                  src={廣告.image_url}
+                  alt={廣告.product_name}
+                  className="w-full h-full object-contain"
+                  loading="lazy"
+                />
+              </div>
+              {/* 右：文字內容 */}
+              <div className="flex-1 min-w-0 flex flex-col justify-center">
+                <p className="text-xs text-strava font-medium">{廣告.brand_name}</p>
+                <h3 className="font-bold text-sm leading-snug mt-0.5 line-clamp-2">{廣告.product_name}</h3>
+                <p className="text-xs text-gray-500 mt-1 line-clamp-2">{廣告.placement_text}</p>
+              </div>
+              {/* 箭頭 */}
+              <div className="flex items-center shrink-0 text-gray-300">
+                <ExternalLink size={18} />
+              </div>
+            </div>
+          </a>
+        )}
       </div>
     </div>
   )

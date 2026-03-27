@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Calendar, MapPin, Route, Mountain } from 'lucide-react'
+import { ArrowLeft, Calendar, MapPin, Route, Mountain, ExternalLink } from 'lucide-react'
 import { useEventStore } from '../stores/eventStore'
+import { useAds } from '../hooks/useAds'
 import { 查找縣市 } from '../data/counties'
 import { 格式化日期, 格式化距離 } from '../utils/formatters'
 import Badge from '../components/ui/Badge'
@@ -8,6 +9,8 @@ import Badge from '../components/ui/Badge'
 export default function HistoryPage() {
   const navigate = useNavigate()
   const 歷史活動 = useEventStore(s => s.取得歷史活動)()
+  const { 廣告列表 } = useAds()
+  const 廣告 = 廣告列表[0]
 
   return (
     <div className="min-h-svh bg-cork">
@@ -28,6 +31,30 @@ export default function HistoryPage() {
         </div>
       ) : (
         <div className="px-4 pb-4 space-y-3">
+          {/* 廣告 */}
+          {廣告 && (
+            <a
+              href={廣告.product_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block rounded-xl bg-white shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+            >
+              <div className="flex gap-4 p-4">
+                <div className="w-28 shrink-0 self-stretch rounded-lg overflow-hidden bg-gray-50">
+                  <img src={廣告.image_url} alt={廣告.product_name} className="w-full h-full object-contain" loading="lazy" />
+                </div>
+                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                  <p className="text-xs text-strava font-medium">{廣告.brand_name}</p>
+                  <h3 className="font-bold text-sm leading-snug mt-0.5 line-clamp-2">{廣告.product_name}</h3>
+                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">{廣告.placement_text}</p>
+                </div>
+                <div className="flex items-center shrink-0 text-gray-300">
+                  <ExternalLink size={18} />
+                </div>
+              </div>
+            </a>
+          )}
+
           {歷史活動.map(活動 => {
             const 縣市 = 查找縣市(活動.countyId)
             return (
@@ -63,10 +90,6 @@ export default function HistoryPage() {
                         </div>
                       )}
                     </div>
-                    {/* 參加人數 */}
-                    <p className="text-[10px] text-gray-400 mt-1.5">
-                      {活動.participants.length} 人參加
-                    </p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <Badge variant="region" region={活動.region}>{活動.region}</Badge>

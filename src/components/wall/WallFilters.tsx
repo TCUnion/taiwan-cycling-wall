@@ -9,7 +9,7 @@ interface Props {
   排序: 排序方式
   onChange區域: (region: Region | null) => void
   onChange排序: (sort: 排序方式) => void
-  活動數量: number
+  歷史數量: number
 }
 
 const 區域選項: { label: string; value: Region | null; color: string; activeColor: string }[] = [
@@ -20,7 +20,7 @@ const 區域選項: { label: string; value: Region | null; color: string; active
   { label: '🟢 東部', value: '東部', color: 'text-region-east', activeColor: 'bg-region-east text-white' },
 ]
 
-export default function WallFilters({ 篩選區域, 排序, onChange區域, onChange排序, 活動數量 }: Props) {
+export default function WallFilters({ 篩選區域, 排序, onChange區域, onChange排序, 歷史數量 }: Props) {
   const navigate = useNavigate()
 
   return (
@@ -35,9 +35,8 @@ export default function WallFilters({ 篩選區域, 排序, onChange區域, onCh
             className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 cursor-pointer transition-colors"
           >
             <History size={14} />
-            歷史
+            歷史 {歷史數量} 則活動
           </button>
-          <span className="text-sm text-gray-500">{活動數量} 則活動</span>
         </div>
       </div>
 
