@@ -1,0 +1,9 @@
+{
+  "$schema": "https://schema.zeabur.app/template.json",
+  "build_type": "static",
+  "build_command": "npm run build",
+  "output_dir": "dist",
+  "routes": [
+    { "src": ".*", "dest": "/index.html" }
+  ]
+}
