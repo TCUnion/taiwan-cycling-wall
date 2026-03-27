@@ -1,7 +1,8 @@
 // 活動詳情頁面
 
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Calendar, MapPin, Mountain, Route, Clock, ExternalLink, Share2, Zap, Link, AlertCircle, Pencil } from 'lucide-react'
+import { ArrowLeft, Calendar, MapPin, Mountain, Route, Clock, ExternalLink, Share2, Zap, Link, AlertCircle, Pencil, Loader2 } from 'lucide-react'
 import { useEventStore } from '../stores/eventStore'
 import { useAuthStore } from '../stores/authStore'
 import { useAds } from '../hooks/useAds'
@@ -19,17 +20,42 @@ export default function EventDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { 使用者, 所有使用者 } = useAuthStore()
-  const { 活動列表 } = useEventStore()
+  const { 活動列表, 載入單一活動 } = useEventStore()
   const { 廣告列表 } = useAds()
   const 廣告 = 廣告列表[0] // 顯示一則廣告
 
+  const [載入中, set載入中] = useState(false)
+  const [載入失敗, set載入失敗] = useState(false)
+
   const 活動 = 活動列表.find(e => e.id === id)
+
+  useEffect(() => {
+    if (!id || 活動) return
+    let cancelled = false
+    set載入中(true)
+    set載入失敗(false)
+    載入單一活動(id).then((result) => {
+      if (cancelled) return
+      if (!result) set載入失敗(true)
+      set載入中(false)
+    })
+    return () => { cancelled = true }
+  }, [id, 活動, 載入單一活動])
+
+  if (載入中) {
+    return (
+      <div className="flex min-h-svh items-center justify-center bg-cork">
+        <Loader2 size={32} className="animate-spin text-strava" />
+      </div>
+    )
+  }
+
   if (!活動) {
     return (
       <div className="flex min-h-svh items-center justify-center bg-cork">
         <div className="text-center">
           <AlertCircle size={48} className="mx-auto mb-4 text-gray-400" />
-          <p className="text-lg font-medium">找不到這個活動</p>
+          <p className="text-lg font-medium">{載入失敗 ? '找不到這個活動' : '載入中…'}</p>
           <Button variant="ghost" onClick={() => navigate('/wall')} className="mt-4">回到公布欄</Button>
         </div>
       </div>

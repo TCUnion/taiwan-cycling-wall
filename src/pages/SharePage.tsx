@@ -1,5 +1,6 @@
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Share2, MessageCircle, Calendar, MapPin, Route, Mountain, Clock, Users, Zap } from 'lucide-react'
+import { ArrowLeft, Share2, MessageCircle, Calendar, MapPin, Route, Mountain, Clock, Users, Zap, Loader2 } from 'lucide-react'
 import { useEventStore } from '../stores/eventStore'
 import { useAuthStore } from '../stores/authStore'
 import { 查找縣市 } from '../data/counties'
@@ -12,13 +13,38 @@ export default function SharePage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const 活動列表 = useEventStore(s => s.活動列表)
+  const 載入單一活動 = useEventStore(s => s.載入單一活動)
   const 所有使用者 = useAuthStore(s => s.所有使用者)
   const 活動 = 活動列表.find(e => e.id === id)
+
+  const [載入中, set載入中] = useState(false)
+  const [載入失敗, set載入失敗] = useState(false)
+
+  useEffect(() => {
+    if (!id || 活動) return
+    let cancelled = false
+    set載入中(true)
+    set載入失敗(false)
+    載入單一活動(id).then((result) => {
+      if (cancelled) return
+      if (!result) set載入失敗(true)
+      set載入中(false)
+    })
+    return () => { cancelled = true }
+  }, [id, 活動, 載入單一活動])
+
+  if (載入中) {
+    return (
+      <div className="flex min-h-svh items-center justify-center bg-cork">
+        <Loader2 size={32} className="animate-spin text-strava" />
+      </div>
+    )
+  }
 
   if (!活動) {
     return (
       <div className="flex min-h-svh items-center justify-center bg-cork">
-        <p>找不到活動</p>
+        <p>{載入失敗 ? '找不到活動' : '載入中…'}</p>
       </div>
     )
   }

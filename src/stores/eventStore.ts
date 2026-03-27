@@ -20,6 +20,7 @@ interface EventState {
   設定篩選區域: (region: Region | null) => void
   設定排序: (sort: 排序方式) => void
   載入活動: () => Promise<void>
+  載入單一活動: (id: string) => Promise<CyclingEvent | null>
   新增活動: (event: CyclingEvent) => Promise<void>
   更新活動: (eventId: string, 更新: Partial<CyclingEvent>) => Promise<void>
   取得篩選後活動: () => CyclingEvent[]
@@ -131,6 +132,26 @@ export const useEventStore = create<EventState>()((set, get) => ({
 
   設定篩選區域: (region) => set({ 篩選區域: region }),
   設定排序: (sort) => set({ 排序: sort }),
+
+  載入單一活動: async (id) => {
+    // 先從 store 找
+    const 已有 = get().活動列表.find(e => e.id === id)
+    if (已有) return 已有
+    // 從 Supabase 載入
+    const { data, error } = await supabase
+      .from('cycling_events')
+      .select('*')
+      .eq('id', id)
+      .single()
+    if (error || !data) return null
+    const 活動 = 轉換為活動(data as Record<string, unknown>)
+    // merge 進 store（避免重複）
+    set((s) => {
+      if (s.活動列表.some(e => e.id === id)) return s
+      return { 活動列表: [活動, ...s.活動列表] }
+    })
+    return 活動
+  },
 
   載入活動: async () => {
     set({ 載入中: true })
