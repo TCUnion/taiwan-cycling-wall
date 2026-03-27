@@ -1,0 +1,29 @@
+# 約騎公布欄 siokiu
+
+> 台灣單車約騎社群平台，以軟木佈告欄＋便利貼風格呈現約騎活動，支援 22 縣市區域篩選。
+
+## 網站資訊
+
+- 網址：https://siokiu.criterium.tw/
+- 語言：繁體中文
+- 類型：PWA（Progressive Web App）
+- 技術：React SPA，需登入後使用
+
+## 功能
+
+- 瀏覽各縣市的單車約騎活動
+- 發起約騎（設定路線、集合點、時間、配速等）
+- 參加其他車友發起的約騎
+- 透過 Facebook / Google / LINE / Strava 社群帳號登入
+- TCU（Taiwan Cyclist United）車手認證
+- 活動分享至 LINE
+
+## 資料說明
+
+本站為前端 SPA 應用，活動資料存放於 Supabase 後端資料庫。
+AI Agent 無法直接透過瀏覽網頁取得活動列表，需透過 API 存取。
+
+## 聯絡
+
+- LINE 官方帳號：https://page.line.me/criterium
+- 組織：TCU — Taiwan Cyclist United
