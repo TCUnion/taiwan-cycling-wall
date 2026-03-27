@@ -157,6 +157,37 @@ export interface AdPlacement {
   is_active: boolean
 }
 
+// 集合點範本
+export interface SpotTemplate {
+  id: string
+  name: string        // 地點名稱
+  url: string         // Google Maps 連結
+  countyId: string    // 縣市
+  creatorId: string   // 建立者
+}
+
+// 路線與騎乘資訊範本
+export interface RouteInfoTemplate {
+  id: string
+  name: string           // 範本名稱
+  routeName: string      // 路線名稱
+  routeDetail: string    // 路線描述
+  routeUrl: string       // 路線連結
+  distance: number       // 公里
+  elevation: number      // 公尺
+  pace: string           // 配速/難度
+  maxParticipants: number
+  creatorId: string
+}
+
+// 注意事項範本
+export interface NotesTemplate {
+  id: string
+  name: string        // 範本名稱
+  notes: string       // 注意事項內容（多行文字）
+  creatorId: string
+}
+
 // 經典路線模板
 export interface RouteTemplate {
   id: string

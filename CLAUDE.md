@@ -47,7 +47,7 @@ npm run lint     # ESLint 檢查
 
 ```
 src/
-├── types/index.ts          # TS 介面（County, CyclingEvent, User, AuthProvider, StravaProfile, PageIdentity, RideTemplate, SavedRoute, MeetingSpot, FollowRelation 等）
+├── types/index.ts          # TS 介面（County, CyclingEvent, User, AuthProvider, StravaProfile, PageIdentity, RideTemplate, SpotTemplate, RouteInfoTemplate, NotesTemplate, SavedRoute, MeetingSpot, FollowRelation 等）
 ├── data/                   # 靜態 / mock 資料
 │   ├── counties.ts         # 22 縣市 + 區域對照 + 查找函式
 │   ├── classicRoutes.ts    # 7 條經典路線模板
@@ -57,6 +57,9 @@ src/
 │   ├── authStore.ts        # 登入狀態（FB / Google / LINE / Strava 登入 / 一般註冊 / 所有使用者列表 / 粉絲頁身份切換）
 │   ├── eventStore.ts       # 活動 CRUD（新增 / 更新 / 參加 / 退出）+ 篩選排序 + 歷史活動
 │   ├── templateStore.ts    # 約騎範本 CRUD（新增 / 刪除 / 更新）
+│   ├── spotTemplateStore.ts    # 集合點範本 CRUD（Supabase: spot_templates）
+│   ├── routeInfoTemplateStore.ts # 路線與騎乘資訊範本 CRUD（Supabase: route_info_templates）
+│   ├── notesTemplateStore.ts   # 注意事項範本 CRUD（Supabase: notes_templates）
 │   └── regionStore.ts      # 區域/縣市選擇
 ├── hooks/                  # 自訂 hooks
 │   └── useAds.ts           # 從 Supabase 抓取廣告（tcuad_internal_placements + tcuad_placements）
@@ -147,18 +150,21 @@ src/
 
 表單區塊順序：
 1. **日期與時間** — 約騎日期（必填）+ 集合時間
-2. **發起人** — 顯示登入者頭像，名稱可自訂
-3. **封面圖片** — 選填，上傳後裁切為 400×400 正方形 PNG（支援透明背景）
-4. **路線** — 路線名稱（必填）+ 路線描述（textarea）+ 路線連結（Strava / Garmin / 其他）
-5. **集合地點** — 地點名稱 + Google Maps 連結 + 縣市（從路線名/集合點自動推斷）
-6. **騎乘資訊** — 距離、爬升、配速、人數上限
-7. **注意事項 / 備註** — 單一 textarea，Enter 斷行，支援 Markdown，禁止 http 連結
+2. **發起人 + 活動圖章** — 左右排列，不可編輯；發起人顯示頭像+名稱，圖章自動使用個人中心設定的 `stampImage`
+3. **集合地點** — 地點名稱 + Google Maps 連結 + 縣市（從路線名/集合點自動推斷）+ 右上角集合點範本按鈕
+4. **路線與騎乘資訊** — 合併為一個區塊：路線名稱（必填）+ 路線描述（6 行）+ 路線連結 + 分隔線 + 距離/爬升/配速/人數上限 + 右上角路線範本按鈕
+5. **注意事項 / 備註** — 單一 textarea，Enter 斷行，支援 Markdown，禁止 http 連結 + 右上角備註範本按鈕
 
-### 範本功能
+### 全域約騎範本（Supabase: ride_templates）
 - 右上角書籤按鈕：從已儲存範本快速填入
 - 右上角書籤+按鈕：把當前表單儲存為範本
 - 範本儲存路線/集合點/騎乘資訊/注意事項，不含日期
-- 範本存於 localStorage（`約騎-templates`），依 `creatorId` 篩選
+
+### 區塊範本功能（各自獨立，存入 Supabase）
+各區塊右上角有範本按鈕，點擊展開/收合範本面板，支援新增、套用、inline 編輯、刪除：
+- **集合點範本**（`spot_templates`）— 儲存地點名稱 + Google Maps 連結 + 縣市
+- **路線與騎乘資訊範本**（`route_info_templates`）— 儲存路線名稱/描述/連結 + 距離/爬升/配速/人數
+- **注意事項範本**（`notes_templates`）— 儲存備註文字，名稱自動擷取前 20 字
 
 ### 編輯模式
 - 路由 `/event/:id/edit` 進入編輯模式
@@ -178,10 +184,10 @@ src/
 
 ## 約騎公布欄便利貼（StickyNoteCard）
 
-- 標題 + 封面圖片縮圖（右上角 64×64px）
+- 標題 + 活動圖章（右上角，高度佔卡片 80%，正方形，自動縮放）
 - 日期時間 + 集合地點含縣市 + 距離/爬升（有值才顯示）
 - 參加者頭像（支援 FB 大頭照 URL）
-- 區域 Badge
+- 區域 Badge — 僅在「全部」區域時顯示於左下角，選擇特定區域時隱藏
 - 活動日期隔天凌晨後自動從公布欄消失，移入歷史頁面
 - 模擬活動（`evt-` 開頭）無法參加
 
@@ -191,7 +197,7 @@ src/
 - 只顯示 `is_active=true` 且 `image_url` 不為 null 的廣告
 - `useAds` hook 抓取後隨機洗牌
 - 公布欄每 5 個活動穿插 1 則廣告（循環使用），不足 5 個至少顯示 1 則
-- AdCard 右上角標示「AD」，點擊開新分頁到商品頁
+- AdCard 右上角標示「AD」，點擊開新分頁到商品頁；左側產品圖片高度撐滿 100%
 
 ## 設計系統色彩（定義在 src/index.css @theme）
 
@@ -219,9 +225,15 @@ src/
 
 使用 Zustand `persist` middleware → localStorage。Store key：
 - `約騎-auth` — 登入狀態 + 所有使用者列表（含 FB 登入建立的）
-- `約騎-events` — 活動列表（含 coverImage base64）
+- `約騎-events` — 活動列表（coverImage 自動使用 stampImage）
 - `約騎-region` — 區域選擇
 - `約騎-templates` — 約騎範本列表
+
+Supabase 資料表（無 persist，每次 mount 載入）：
+- `ride_templates` — 全域約騎範本
+- `spot_templates` — 集合點範本
+- `route_info_templates` — 路線與騎乘資訊範本
+- `notes_templates` — 注意事項範本
 
 首次載入從 mockEvents/mockUsers 取得種子資料。
 

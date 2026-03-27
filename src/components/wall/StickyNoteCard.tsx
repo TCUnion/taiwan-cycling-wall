@@ -6,6 +6,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { 格式化日期, 格式化距離 } from '../../utils/formatters'
 import { 取得旋轉角度 } from '../../stores/eventStore'
 import Badge from '../ui/Badge'
+import { useEventStore } from '../../stores/eventStore'
 
 // 便利貼背景色對照
 const 背景色: Record<StickyColor, string> = {
@@ -30,6 +31,7 @@ interface Props {
 export default function StickyNoteCard({ 活動 }: Props) {
   const navigate = useNavigate()
   const 所有使用者 = useAuthStore(s => s.所有使用者)
+  const 篩選區域 = useEventStore(s => s.篩選區域)
   const 縣市 = 查找縣市(活動.countyId)
   const 旋轉class = 取得旋轉角度(活動.id)
 
@@ -61,7 +63,7 @@ export default function StickyNoteCard({ 活動 }: Props) {
         const 圖章 = 發起人?.stampImage
         if (圖章) {
           return (
-            <span className="absolute top-3 right-3 w-10 h-10 rounded-xl bg-white/80 border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center">
+            <span className="absolute top-4 bottom-[20%] right-3 aspect-square rounded-xl bg-white/80 border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center">
               <img src={圖章} alt="活動圖章" className="w-full h-full object-cover" />
             </span>
           )
@@ -78,7 +80,7 @@ export default function StickyNoteCard({ 活動 }: Props) {
       })()}
 
       {/* 標題 */}
-      <h3 className="font-bold text-sm leading-tight mb-1 line-clamp-2 pr-12">{活動.title}</h3>
+      <h3 className="font-bold text-sm leading-tight mb-1 line-clamp-2 pr-22">{活動.title}</h3>
 
       {/* 粉絲頁發起人 */}
       {是粉絲頁活動 && 粉絲頁資訊 && (
@@ -120,7 +122,7 @@ export default function StickyNoteCard({ 活動 }: Props) {
         )}
       </div>
 
-      {/* 底部：參加者頭像 + 區域標籤 */}
+      {/* 底部：參加者頭像 + 區域標籤（僅「全部」時顯示於左下） */}
       <div className="mt-3 flex items-center justify-between">
         <div className="flex items-center -space-x-1">
           {活動.participants.slice(0, 5).map(uid => {
@@ -146,10 +148,14 @@ export default function StickyNoteCard({ 活動 }: Props) {
             </span>
           )}
         </div>
-        <Badge variant="region" region={活動.region}>
-          {活動.region}
-        </Badge>
       </div>
+      {篩選區域 === null && (
+        <div className="mt-1">
+          <Badge variant="region" region={活動.region}>
+            {活動.region}
+          </Badge>
+        </div>
+      )}
     </button>
   )
 }

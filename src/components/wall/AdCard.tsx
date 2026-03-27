@@ -27,7 +27,7 @@ export default function AdCard({ 廣告 }: Props) {
       {/* 左右佈局：圖片 + 文字 */}
       <div className="flex gap-3">
         {/* 左：產品圖片 */}
-        <div className="w-24 h-24 shrink-0 rounded overflow-hidden bg-gray-50">
+        <div className="w-24 self-stretch shrink-0 rounded overflow-hidden bg-gray-50">
           <img
             src={廣告.image_url}
             alt={廣告.product_name}
