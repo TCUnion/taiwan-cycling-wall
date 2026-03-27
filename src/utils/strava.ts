@@ -27,7 +27,8 @@ export function 發起Strava登入(): void {
   }
 
   const state = `strava-${產生State()}`
-  sessionStorage.setItem('strava_state', state)
+  localStorage.setItem('strava_oauth_state', state)
+  localStorage.setItem('strava_oauth_expires', String(Date.now() + 10 * 60 * 1000))
 
   const params = new URLSearchParams({
     client_id: STRAVA_CLIENT_ID,
@@ -43,14 +44,18 @@ export function 發起Strava登入(): void {
 
 /** 處理 Strava 回調（透過 n8n 後端換 token） */
 export async function 處理Strava回調(code: string, state: string): Promise<StravaUserInfo> {
-  // 驗證 state（sessionStorage 可能因瀏覽器切換而遺失）
-  const 預期State = sessionStorage.getItem('strava_state')
+  // 驗證 state（localStorage 跨瀏覽器切換仍可讀取）
+  const 過期時間 = localStorage.getItem('strava_oauth_expires')
+  const 已過期 = 過期時間 && Date.now() > Number(過期時間)
+  const 預期State = 已過期 ? null : (localStorage.getItem('strava_oauth_state') ?? sessionStorage.getItem('strava_state'))
   if (預期State && state !== 預期State) {
     throw new Error('Strava 登入驗證失敗（state 不符）')
   }
   if (!預期State && !state.startsWith('strava-')) {
     throw new Error('Strava 登入驗證失敗（state 來源不明）')
   }
+  localStorage.removeItem('strava_oauth_state')
+  localStorage.removeItem('strava_oauth_expires')
   sessionStorage.removeItem('strava_state')
 
   if (!STRAVA_CALLBACK_URL) {
