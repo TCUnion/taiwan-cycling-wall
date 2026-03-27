@@ -8,6 +8,7 @@ import { 載入GoogleSDK, Google登入 } from '../utils/google'
 import { 發起LINE登入 } from '../utils/line'
 import { 發起Strava登入 } from '../utils/strava'
 import SocialLoginButton from '../components/ui/SocialLoginButton'
+import { usePageMeta } from '../hooks/usePageMeta'
 
 // 檢查環境變數是否已設定
 const 有GoogleClientId = !!import.meta.env.VITE_GOOGLE_CLIENT_ID
@@ -22,6 +23,8 @@ export default function LoginPage() {
   const [載入中Provider, set載入中Provider] = useState<string | null>(null)
   const [SDK就緒, setSDK就緒] = useState({ facebook: false, google: false })
   const [錯誤訊息, set錯誤訊息] = useState('')
+
+  usePageMeta('登入 — 約騎公布欄', '使用 Facebook、Google、LINE 或 Strava 帳號登入約騎公布欄。')
 
   // 載入各 SDK
   useEffect(() => {
@@ -83,8 +86,9 @@ export default function LoginPage() {
     }
   }
 
+  // main landmark：提升無障礙性，讓螢幕閱讀器可跳至主要內容
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center bg-cork px-6">
+    <main className="flex min-h-svh flex-col items-center justify-center bg-cork px-6">
       <div className="w-full max-w-sm text-center">
         {/* 標題 */}
         <h1 className="text-5xl font-black text-strava mb-2">siokiu</h1>
@@ -128,6 +132,6 @@ export default function LoginPage() {
           <a href="/privacy" className="underline cursor-pointer">隱私政策</a>
         </p>
       </div>
-    </div>
+    </main>
   )
 }

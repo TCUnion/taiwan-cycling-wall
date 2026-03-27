@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant-TW">
   <head>
+    <!-- charset 必須是 head 的第一個元素 -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>約騎公布欄 — 單車約騎社群平台 | 涵蓋北中南東 22 縣市，找人一起騎車吧！</title>
@@ -29,11 +30,22 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
   </head>
   <body>
+    <!-- 未啟用 JavaScript 時顯示的備用內容 -->
     <noscript>
       <h1>約騎公布欄 — 單車約騎社群平台</h1>
       <p>台灣最活躍的單車約騎社群平台，涵蓋北中南東 22 縣市路線，輕鬆發起或加入約騎活動，與車友一起探索台灣最美的自行車路線。本網站需要啟用 JavaScript 才能運作。</p>
+      <!-- 法規頁面連結（靜態可訪問） -->
+      <a href="/privacy">隱私政策</a>
+      <a href="/data-deletion">資料刪除</a>
     </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <!-- 靜態 footer：提供搜尋引擎可索引的法規頁面連結 -->
+    <footer>
+      <nav aria-label="法規資訊">
+        <a href="/privacy">隱私政策</a>
+        <a href="/data-deletion">資料刪除</a>
+      </nav>
+    </footer>
   </body>
 </html>

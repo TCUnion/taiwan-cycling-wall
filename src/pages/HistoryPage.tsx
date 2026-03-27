@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Calendar, MapPin, Route, Mountain, ExternalLink } from 'lucide-react'
 import { useEventStore } from '../stores/eventStore'
+import { usePageMeta } from '../hooks/usePageMeta'
 import { useAds } from '../hooks/useAds'
 import { 查找縣市 } from '../data/counties'
 import { 格式化日期, 格式化距離 } from '../utils/formatters'
@@ -12,6 +13,8 @@ export default function HistoryPage() {
   const 載入活動 = useEventStore(s => s.載入活動)
   const 歷史活動 = useEventStore(s => s.取得歷史活動)()
   const { 廣告列表 } = useAds()
+
+  usePageMeta('歷史活動 — 約騎公布欄', '查看已結束的約騎活動紀錄。')
 
   useEffect(() => {
     載入活動()
