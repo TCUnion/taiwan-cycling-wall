@@ -262,7 +262,7 @@ export default function CreateEventPage() {
             <div className="flex items-center gap-2">
               <MapPin size={14} className="text-gray-400 shrink-0" />
               <select name="tpl-county" value={範本縣市} onChange={e => set範本縣市(e.target.value)}
-                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20">
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white cursor-pointer focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20 focus-visible:ring-2 focus-visible:ring-strava/40">
                 <option value="">全部縣市</option>
                 {縣市列表.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -320,8 +320,8 @@ export default function CreateEventPage() {
         {/* ① 日期與時間 */}
         <區塊 title="日期與時間">
           <div className="grid grid-cols-2 gap-3">
-            <Input label="約騎日期 *" type="date" value={date} onChange={e => setDate(e.target.value)} min={今天} />
-            <Input label="集合時間" type="time" value={time} onChange={e => setTime(e.target.value)} />
+            <Input name="ride-date" label="約騎日期 *" type="date" value={date} onChange={e => setDate(e.target.value)} min={今天} />
+            <Input name="ride-time" label="集合時間" type="time" value={time} onChange={e => setTime(e.target.value)} />
           </div>
         </區塊>
 
@@ -369,14 +369,14 @@ export default function CreateEventPage() {
                       {編輯中集合點 === t.id ? (
                         /* 編輯模式 */
                         <div className="rounded-lg border border-strava/30 bg-white p-2.5 space-y-2">
-                          <input value={編輯集合點名} onChange={e => set編輯集合點名(e.target.value)}
+                          <input name="edit-spot-name" autoComplete="off" value={編輯集合點名} onChange={e => set編輯集合點名(e.target.value)}
                             placeholder="地點名稱…" maxLength={50}
-                            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none" />
-                          <input value={編輯集合點URL} onChange={e => set編輯集合點URL(e.target.value)}
+                            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none focus-visible:ring-2 focus-visible:ring-strava/40" />
+                          <input name="edit-spot-url" autoComplete="url" value={編輯集合點URL} onChange={e => set編輯集合點URL(e.target.value)}
                             placeholder="Google Maps 連結…"
-                            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none" />
+                            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none focus-visible:ring-2 focus-visible:ring-strava/40" />
                           <select name="edit-spot-county" value={編輯集合點縣市} onChange={e => set編輯集合點縣市(e.target.value)}
-                            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none">
+                            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white cursor-pointer focus:border-strava focus:outline-none focus-visible:ring-2 focus-visible:ring-strava/40">
                             <option value="">選擇縣市</option>
                             {縣市列表.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                           </select>
@@ -452,10 +452,10 @@ export default function CreateEventPage() {
             </div>
           )}
 
-          <Input label="地點名稱" value={spotName} onChange={e => 處理集合點(e.target.value, spotUrl)}
+          <Input name="spot-name" autoComplete="off" label="地點名稱" value={spotName} onChange={e => 處理集合點(e.target.value, spotUrl)}
             placeholder="例：7-11 樹王門市、VELOSTUDIO…" />
           <div className="mt-3">
-            <Input label="Google Maps 連結" value={spotUrl} onChange={e => 處理集合點(spotName, e.target.value)}
+            <Input name="spot-url" autoComplete="url" label="Google Maps 連結" value={spotUrl} onChange={e => 處理集合點(spotName, e.target.value)}
               placeholder="貼上 Google Maps 分享連結…" />
             {spotUrl && (
               <a href={spotUrl} target="_blank" rel="noopener noreferrer"
@@ -467,7 +467,7 @@ export default function CreateEventPage() {
           <div className="mt-3 flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700 flex items-center gap-1"><MapPin size={14} /> 縣市</label>
             <select name="county" value={countyId} onChange={e => setCountyId(e.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-base bg-white focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20">
+              className="rounded-lg border border-gray-300 px-3 py-2 text-base bg-white cursor-pointer focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20 focus-visible:ring-2 focus-visible:ring-strava/40">
               <option value="">自動帶入或手動選擇</option>
               {縣市列表.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
@@ -498,30 +498,30 @@ export default function CreateEventPage() {
                       {編輯中路線 === t.id ? (
                         /* 編輯模式 */
                         <div className="rounded-lg border border-strava/30 bg-white p-2.5 space-y-2">
-                          <input value={編輯路線名} onChange={e => set編輯路線名(e.target.value)}
+                          <input name="edit-route-name" autoComplete="off" value={編輯路線名} onChange={e => set編輯路線名(e.target.value)}
                             placeholder="路線名稱…" maxLength={50}
-                            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none" />
-                          <textarea value={編輯路線描述} onChange={e => set編輯路線描述(e.target.value)}
+                            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none focus-visible:ring-2 focus-visible:ring-strava/40" />
+                          <textarea name="edit-route-description" value={編輯路線描述} onChange={e => set編輯路線描述(e.target.value)}
                             placeholder="路線描述…" rows={3}
-                            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none" />
-                          <input value={編輯路線URL} onChange={e => set編輯路線URL(e.target.value)}
+                            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none focus-visible:ring-2 focus-visible:ring-strava/40" />
+                          <input name="edit-route-url" autoComplete="url" value={編輯路線URL} onChange={e => set編輯路線URL(e.target.value)}
                             placeholder="路線連結…"
-                            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none" />
+                            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none focus-visible:ring-2 focus-visible:ring-strava/40" />
                           <div className="grid grid-cols-2 gap-2">
-                            <input type="number" value={編輯路線距離 || ''} onChange={e => set編輯路線距離(Math.max(0, Number(e.target.value)))}
+                            <input name="edit-route-distance" type="number" value={編輯路線距離 || ''} onChange={e => set編輯路線距離(Math.max(0, Number(e.target.value)))}
                               placeholder="距離 km" min="0"
-                              className="rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none" />
-                            <input type="number" value={編輯路線爬升 || ''} onChange={e => set編輯路線爬升(Math.max(0, Number(e.target.value)))}
+                              className="rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none focus-visible:ring-2 focus-visible:ring-strava/40" />
+                            <input name="edit-route-elevation" type="number" value={編輯路線爬升 || ''} onChange={e => set編輯路線爬升(Math.max(0, Number(e.target.value)))}
                               placeholder="爬升 m" min="0"
-                              className="rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none" />
+                              className="rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none focus-visible:ring-2 focus-visible:ring-strava/40" />
                           </div>
                           <div className="grid grid-cols-2 gap-2">
-                            <input value={編輯路線配速} onChange={e => set編輯路線配速(e.target.value)}
+                            <input name="edit-route-pace" autoComplete="off" value={編輯路線配速} onChange={e => set編輯路線配速(e.target.value)}
                               placeholder="配速/難度"
-                              className="rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none" />
-                            <input type="number" value={編輯路線人數 || ''} onChange={e => set編輯路線人數(Math.max(0, Number(e.target.value)))}
+                              className="rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none focus-visible:ring-2 focus-visible:ring-strava/40" />
+                            <input name="edit-route-max-participants" type="number" value={編輯路線人數 || ''} onChange={e => set編輯路線人數(Math.max(0, Number(e.target.value)))}
                               placeholder="人數上限" min="0"
-                              className="rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none" />
+                              className="rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none focus-visible:ring-2 focus-visible:ring-strava/40" />
                           </div>
                           <div className="flex gap-2">
                             <button onClick={() => {
@@ -606,16 +606,16 @@ export default function CreateEventPage() {
             </div>
           )}
 
-          <Input label="路線名稱 *" value={routeName} onChange={e => 處理路線名稱(e.target.value)}
+          <Input name="route-name" autoComplete="off" label="路線名稱 *" value={routeName} onChange={e => 處理路線名稱(e.target.value)}
             placeholder="例：埔里虎頭山、鳥嘴潭繞繞…" maxLength={50} />
           <div className="mt-3">
             <label className="text-sm font-medium text-gray-700 block mb-1">路線描述</label>
-            <textarea value={routeDetail} onChange={e => setRouteDetail(e.target.value)}
+            <textarea name="route-description" value={routeDetail} onChange={e => setRouteDetail(e.target.value)}
               placeholder="例：樹王 7-11 → 中投公路 → 草屯 → 鳥嘴潭 BCD×4 圈…" rows={6}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20 placeholder:text-gray-400" />
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20 focus-visible:ring-2 focus-visible:ring-strava/40 placeholder:text-gray-400" />
           </div>
           <div className="mt-3">
-            <Input label="路線連結（Strava / Garmin / 其他）" value={routeUrl} onChange={e => setRouteUrl(e.target.value)}
+            <Input name="route-url" autoComplete="url" label="路線連結（Strava / Garmin / 其他）" value={routeUrl} onChange={e => setRouteUrl(e.target.value)}
               placeholder="貼上路線分享連結…" />
             {routeUrl && (
               <a href={routeUrl} target="_blank" rel="noopener noreferrer"
@@ -626,12 +626,12 @@ export default function CreateEventPage() {
           </div>
           <hr className="my-3 border-gray-200" />
           <div className="grid grid-cols-2 gap-3">
-            <Input label="距離 (km)" type="number" min="0" value={distance || ''} onChange={e => setDistance(Math.max(0, Number(e.target.value)))} placeholder="例：55…" />
-            <Input label="爬升 (m)" type="number" min="0" value={elevation || ''} onChange={e => setElevation(Math.max(0, Number(e.target.value)))} placeholder="例：400…" />
+            <Input name="distance" label="距離 (km)" type="number" min="0" value={distance || ''} onChange={e => setDistance(Math.max(0, Number(e.target.value)))} placeholder="例：55…" />
+            <Input name="elevation" label="爬升 (m)" type="number" min="0" value={elevation || ''} onChange={e => setElevation(Math.max(0, Number(e.target.value)))} placeholder="例：400…" />
           </div>
           <div className="grid grid-cols-2 gap-3 mt-3">
-            <Input label="配速 / 難度" value={pace} onChange={e => setPace(e.target.value)} placeholder="例：Z2 穩定…" />
-            <Input label="人數上限" type="number" min="0" value={maxParticipants || ''} onChange={e => setMaxParticipants(Math.max(0, Number(e.target.value)))} placeholder="不限制" />
+            <Input name="pace" autoComplete="off" label="配速 / 難度" value={pace} onChange={e => setPace(e.target.value)} placeholder="例：Z2 穩定…" />
+            <Input name="max-participants" label="人數上限" type="number" min="0" value={maxParticipants || ''} onChange={e => setMaxParticipants(Math.max(0, Number(e.target.value)))} placeholder="不限制" />
           </div>
         </div>
 
@@ -657,12 +657,12 @@ export default function CreateEventPage() {
                     <div key={t.id}>
                       {編輯中備註 === t.id ? (
                         <div className="rounded-lg border border-strava/30 bg-white p-2.5 space-y-2">
-                          <input value={編輯備註名} onChange={e => set編輯備註名(e.target.value)}
+                          <input name="edit-notes-name" autoComplete="off" value={編輯備註名} onChange={e => set編輯備註名(e.target.value)}
                             placeholder="範本名稱…" maxLength={30}
-                            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none" />
-                          <textarea value={編輯備註內容} onChange={e => set編輯備註內容(e.target.value)}
+                            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none focus-visible:ring-2 focus-visible:ring-strava/40" />
+                          <textarea name="edit-notes-content" value={編輯備註內容} onChange={e => set編輯備註內容(e.target.value)}
                             placeholder="注意事項內容…" rows={4}
-                            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none" />
+                            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none focus-visible:ring-2 focus-visible:ring-strava/40" />
                           <div className="flex gap-2">
                             <button onClick={() => {
                               更新備註範本({ ...t, name: 編輯備註名, notes: 編輯備註內容 })
@@ -728,12 +728,13 @@ export default function CreateEventPage() {
           )}
 
           <textarea
+            name="notes"
             value={notes}
             onChange={e => { setNotes(e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }}
             onFocus={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }}
             placeholder="Enter 斷行，支援 Markdown 格式（**粗體**、*斜體*、- 列表）&#10;請勿輸入網址連結…"
             rows={5}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white resize-none overflow-hidden focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20 placeholder:text-gray-400"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white resize-none overflow-hidden focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20 focus-visible:ring-2 focus-visible:ring-strava/40 placeholder:text-gray-400"
           />
           <p className="text-xs text-gray-400 mt-1">支援 Markdown（**粗體**、- 列表），不可輸入網址</p>
         </div>

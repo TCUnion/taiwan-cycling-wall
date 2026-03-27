@@ -16,8 +16,8 @@ export default function AdCard({ 廣告 }: Props) {
       className="
         relative w-full text-left rounded-sm shadow-md
         bg-white/90 border border-gray-200
-        hover:shadow-lg hover:scale-105 hover:z-10
-        transition-all duration-200 cursor-pointer
+        hover:shadow-lg motion-safe:hover:scale-105 hover:z-10
+        transition-[transform,box-shadow] duration-200 cursor-pointer
         p-3 block
       "
     >

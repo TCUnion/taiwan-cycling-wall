@@ -332,15 +332,15 @@ function 個人資料區塊() {
         <h3 className="font-bold text-gray-800">基本資訊</h3>
         {編輯中 ? (
           <div className="flex gap-2">
-            <button onClick={() => set編輯中(false)} className="flex items-center gap-1 text-sm text-gray-400 cursor-pointer hover:text-gray-600 transition-colors">
+            <button onClick={() => set編輯中(false)} className="flex items-center gap-1 text-sm text-gray-400 cursor-pointer hover:text-gray-600 transition-colors rounded focus-visible:ring-2 focus-visible:ring-gray-300 focus-visible:outline-none">
               <X size={14} /> 取消
             </button>
-            <button onClick={儲存編輯} className="flex items-center gap-1 text-sm text-strava cursor-pointer hover:text-orange-600 transition-colors">
+            <button onClick={儲存編輯} className="flex items-center gap-1 text-sm text-strava cursor-pointer hover:text-orange-600 transition-colors rounded focus-visible:ring-2 focus-visible:ring-strava/40 focus-visible:outline-none">
               <Check size={14} /> 儲存
             </button>
           </div>
         ) : (
-          <button onClick={開始編輯} className="flex items-center gap-1 text-sm text-strava cursor-pointer hover:text-orange-600 transition-colors">
+          <button onClick={開始編輯} className="flex items-center gap-1 text-sm text-strava cursor-pointer hover:text-orange-600 transition-colors rounded focus-visible:ring-2 focus-visible:ring-strava/40 focus-visible:outline-none">
             <Pencil size={14} /> 編輯
           </button>
         )}
@@ -360,7 +360,7 @@ function 個人資料區塊() {
                   <RotateCcw size={14} /> 重設為預設
                 </button>
               )}
-              <input ref={檔案輸入Ref} type="file" accept="image/*" onChange={處理圖片選擇} className="hidden" />
+              <input ref={檔案輸入Ref} type="file" accept="image/*" name="avatar-file" onChange={處理圖片選擇} className="hidden" />
             </>
           )}
           <Avatar emoji={預覽頭像 ?? 使用者.avatar} size="md" />
@@ -369,7 +369,7 @@ function 個人資料區塊() {
 
       {/* 頭像裁切編輯器 */}
       {原始圖片 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => set原始圖片(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" role="dialog" aria-modal="true" aria-label="調整頭像" onClick={() => set原始圖片(null)} onKeyDown={e => { if (e.key === 'Escape') set原始圖片(null) }}>
           <div className="bg-white rounded-2xl p-5 mx-4 w-full max-w-xs space-y-4" onClick={e => e.stopPropagation()}>
             <h4 className="text-center font-bold text-gray-800">調整頭像</h4>
 
@@ -398,7 +398,7 @@ function 個人資料區塊() {
             {/* 縮放滑桿 */}
             <div className="flex items-center gap-3 px-2">
               <ZoomOut size={16} className="text-gray-400 shrink-0" />
-              <input type="range" min="1" max="3" step="0.05" value={裁切縮放}
+              <input type="range" min="1" max="3" step="0.05" name="avatar-zoom" aria-label="頭像縮放" value={裁切縮放}
                 onChange={e => set裁切縮放(Number(e.target.value))}
                 className="flex-1 accent-strava cursor-pointer" />
               <ZoomIn size={16} className="text-gray-400 shrink-0" />
@@ -436,7 +436,7 @@ function 個人資料區塊() {
                   <X size={14} /> 移除
                 </button>
               )}
-              <input ref={圖章檔案輸入Ref} type="file" accept="image/*" onChange={處理圖章選擇} className="hidden" />
+              <input ref={圖章檔案輸入Ref} type="file" accept="image/*" name="stamp-file" onChange={處理圖章選擇} className="hidden" />
             </>
           )}
           {(() => {
@@ -454,7 +454,7 @@ function 個人資料區塊() {
 
       {/* 圖章裁切編輯器 */}
       {圖章原始圖片 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => set圖章原始圖片(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" role="dialog" aria-modal="true" aria-label="調整圖章" onClick={() => set圖章原始圖片(null)} onKeyDown={e => { if (e.key === 'Escape') set圖章原始圖片(null) }}>
           <div className="bg-white rounded-2xl p-5 mx-4 w-full max-w-xs space-y-4" onClick={e => e.stopPropagation()}>
             <h4 className="text-center font-bold text-gray-800">調整圖章</h4>
             <div className="flex justify-center">
@@ -479,7 +479,7 @@ function 個人資料區塊() {
             </div>
             <div className="flex items-center gap-3 px-2">
               <ZoomOut size={16} className="text-gray-400 shrink-0" />
-              <input type="range" min="1" max="3" step="0.05" value={圖章裁切縮放}
+              <input type="range" min="1" max="3" step="0.05" name="stamp-zoom" aria-label="圖章縮放" value={圖章裁切縮放}
                 onChange={e => set圖章裁切縮放(Number(e.target.value))}
                 className="flex-1 accent-strava cursor-pointer" />
               <ZoomIn size={16} className="text-gray-400 shrink-0" />
@@ -503,7 +503,8 @@ function 個人資料區塊() {
         <span className="text-sm text-gray-500">姓名</span>
         {編輯中 ? (
           <input value={編輯姓名} onChange={e => set編輯姓名(e.target.value)} maxLength={20}
-            className="text-sm font-medium text-right border-b border-strava outline-none bg-transparent w-32 py-0.5" />
+            name="display-name" autoComplete="name"
+            className="text-sm font-medium text-right border-b border-strava outline-none bg-transparent w-32 py-0.5 focus-visible:ring-2 focus-visible:ring-strava/40" />
         ) : (
           <span className="text-sm font-medium">{使用者.name}</span>
         )}
@@ -512,7 +513,7 @@ function 個人資料區塊() {
         <span className="text-sm text-gray-500">所在縣市</span>
         {編輯中 ? (
           <select name="county" value={編輯縣市} onChange={e => set編輯縣市(e.target.value)}
-            className="text-sm font-medium text-right border-b border-strava outline-none bg-transparent">
+            className="text-sm font-medium text-right border-b border-strava outline-none bg-transparent focus-visible:ring-2 focus-visible:ring-strava/40">
             <option value="">請選擇</option>
             {縣市列表.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>

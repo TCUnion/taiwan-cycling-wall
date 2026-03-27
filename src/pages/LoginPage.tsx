@@ -39,7 +39,7 @@ export default function LoginPage() {
     set錯誤訊息('')
     try {
       const 使用者資訊 = await FB登入()
-      FB登入Store(使用者資訊.fbId, 使用者資訊.name, 使用者資訊.pictureUrl, 使用者資訊.countyId)
+      FB登入Store(使用者資訊.fbId, 使用者資訊.name, 使用者資訊.pictureUrl, 使用者資訊.countyId, 使用者資訊.email)
       const 粉絲頁 = await 取得粉絲頁列表()
       if (粉絲頁.length > 0) {
         設定粉絲頁列表(粉絲頁.map(p => ({ pageId: p.pageId, name: p.name, pictureUrl: p.pictureUrl })))
@@ -129,7 +129,7 @@ export default function LoginPage() {
 
         <p className="mt-6 text-xs text-gray-400">
           登入即表示你同意我們的服務條款與
-          <a href="/privacy" className="underline cursor-pointer">隱私政策</a>
+          <a href="/privacy" className="underline cursor-pointer focus-visible:ring-2 focus-visible:ring-strava/40 focus-visible:outline-none rounded">隱私政策</a>
         </p>
       </div>
     </main>

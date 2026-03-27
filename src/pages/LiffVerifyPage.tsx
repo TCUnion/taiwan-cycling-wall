@@ -96,20 +96,24 @@ export default function LiffVerifyPage() {
             <p className="text-sm text-gray-600 text-center">
               請輸入約騎公布欄個人中心顯示的 6 位數認證碼
             </p>
+            <label htmlFor="otp-input" className="sr-only">6 位數認證碼</label>
             <input
+              id="otp-input"
               type="text"
               inputMode="numeric"
+              name="verification-code"
+              autoComplete="one-time-code"
               maxLength={6}
               value={認證碼}
               onChange={e => set認證碼(e.target.value.replace(/\D/g, ''))}
               placeholder="000000"
-              className="w-full text-center text-3xl font-mono tracking-[0.5em] py-3 border-2 border-gray-200 rounded-xl outline-none focus:border-emerald-500 transition-colors"
+              className="w-full text-center text-3xl font-mono tracking-[0.5em] py-3 border-2 border-gray-200 rounded-xl outline-none focus-visible:border-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-200 transition-colors"
               autoFocus
             />
             <button
               onClick={送出驗證}
               disabled={認證碼.length !== 6}
-              className="w-full py-3 rounded-xl bg-emerald-600 text-white font-medium cursor-pointer hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-3 rounded-xl bg-emerald-600 text-white font-medium cursor-pointer hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:outline-none"
             >
               送出驗證
             </button>
@@ -134,7 +138,7 @@ export default function LiffVerifyPage() {
             </p>
             <button
               onClick={關閉LIFF}
-              className="mt-2 px-6 py-2 rounded-xl bg-emerald-600 text-white font-medium cursor-pointer hover:bg-emerald-700 transition-colors"
+              className="mt-2 px-6 py-2 rounded-xl bg-emerald-600 text-white font-medium cursor-pointer hover:bg-emerald-700 transition-colors focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:outline-none"
             >
               關閉視窗
             </button>
@@ -150,7 +154,7 @@ export default function LiffVerifyPage() {
             {嘗試次數 < 前端最大嘗試次數 && (
               <button
                 onClick={() => { set狀態('輸入認證碼'); set認證碼(''); set錯誤訊息('') }}
-                className="mt-2 px-6 py-2 rounded-xl border border-gray-200 text-gray-600 font-medium cursor-pointer hover:bg-gray-50 transition-colors"
+                className="mt-2 px-6 py-2 rounded-xl border border-gray-200 text-gray-600 font-medium cursor-pointer hover:bg-gray-50 transition-colors focus-visible:ring-2 focus-visible:ring-gray-300 focus-visible:outline-none"
               >
                 重新輸入
               </button>

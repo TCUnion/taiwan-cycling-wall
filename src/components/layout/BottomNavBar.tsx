@@ -24,7 +24,7 @@ export default function BottomNavBar() {
               key={path}
               onClick={() => navigate(需登入 && !已登入 ? '/login' : path)}
               aria-label={label}
-              className={`flex flex-col items-center gap-0.5 px-5 py-2 min-h-[44px] min-w-[44px] cursor-pointer transition-colors ${
+              className={`flex flex-col items-center gap-0.5 px-5 py-2 min-h-[44px] min-w-[44px] cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-strava/40 focus-visible:outline-none rounded-lg ${
                 啟用 ? 'text-strava' : 'text-gray-400 hover:text-gray-600'
               }`}
             >

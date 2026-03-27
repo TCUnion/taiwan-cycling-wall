@@ -76,7 +76,7 @@ export default function OAuthCallbackPage() {
           <p className="text-red-600 mb-4">{錯誤訊息}</p>
           <button
             onClick={() => navigate('/login', { replace: true })}
-            className="text-strava underline cursor-pointer"
+            className="text-strava underline cursor-pointer focus-visible:ring-2 focus-visible:ring-strava/40 focus-visible:outline-none rounded"
           >
             返回登入頁
           </button>

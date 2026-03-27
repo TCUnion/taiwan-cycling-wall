@@ -27,7 +27,7 @@ export default function HistoryPage() {
       {/* 標題列 */}
       <div className="sticky top-0 z-30 bg-cork/95 backdrop-blur-sm pb-2">
         <div className="flex items-center gap-3 px-4 pt-4 pb-2">
-          <button onClick={() => navigate('/wall')} aria-label="返回" className="cursor-pointer">
+          <button onClick={() => navigate('/wall')} aria-label="返回" className="cursor-pointer rounded-full focus-visible:ring-2 focus-visible:ring-strava/40 focus-visible:outline-none">
             <ArrowLeft size={20} />
           </button>
           <h1 className="text-xl font-bold text-gray-800">歷史活動</h1>
@@ -104,7 +104,7 @@ export default function HistoryPage() {
                   <div className="flex flex-col items-end gap-2">
                     <Badge variant="region" region={活動.region}>{活動.region}</Badge>
                     {活動.coverImage && (
-                      <img src={活動.coverImage} alt="" className="w-10 h-10 rounded object-cover" />
+                      <img src={活動.coverImage} alt="" className="w-10 h-10 rounded object-cover" loading="lazy" />
                     )}
                   </div>
                 </div>

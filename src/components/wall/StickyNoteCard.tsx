@@ -47,8 +47,8 @@ export default function StickyNoteCard({ 活動 }: Props) {
       className={`
         ${背景色[活動.stickyColor]} ${旋轉class}
         relative w-full text-left rounded-sm shadow-md
-        hover:shadow-lg hover:scale-105 hover:z-10
-        transition-all duration-200 cursor-pointer
+        hover:shadow-lg motion-safe:hover:scale-105 hover:z-10
+        transition-[transform,box-shadow] duration-200 cursor-pointer
         p-4 pt-6
       `}
     >
@@ -65,7 +65,7 @@ export default function StickyNoteCard({ 活動 }: Props) {
         if (圖章) {
           return (
             <span className="absolute top-4 bottom-[20%] right-3 aspect-square rounded-xl bg-white/80 border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center">
-              <img src={圖章} alt="活動圖章" className="w-full h-full object-cover" />
+              <img src={圖章} alt="活動圖章" className="w-full h-full object-cover" loading="lazy" />
             </span>
           )
         }
@@ -74,7 +74,7 @@ export default function StickyNoteCard({ 活動 }: Props) {
         return 頭像 ? (
           <span className="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/80 border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center text-lg">
             {是網址 ? (
-              <img src={頭像} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              <img src={頭像} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
             ) : 頭像}
           </span>
         ) : null
@@ -87,7 +87,7 @@ export default function StickyNoteCard({ 活動 }: Props) {
       {是粉絲頁活動 && 粉絲頁資訊 && (
         <div className="flex items-center gap-1 mb-1.5">
           {粉絲頁資訊.pictureUrl ? (
-            <img src={粉絲頁資訊.pictureUrl} alt="" className="w-4 h-4 rounded-full object-cover" referrerPolicy="no-referrer" />
+            <img src={粉絲頁資訊.pictureUrl} alt="" className="w-4 h-4 rounded-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
           ) : null}
           <span className="text-[10px] text-gray-500 truncate">{粉絲頁資訊.name}</span>
           {(() => {

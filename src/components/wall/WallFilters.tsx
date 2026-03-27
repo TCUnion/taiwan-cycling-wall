@@ -48,7 +48,7 @@ export default function WallFilters({ 篩選區域, 排序, onChange區域, onCh
             <button
               key={label}
               onClick={() => onChange區域(value)}
-              className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium transition-all ${
+              className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-strava/40 focus-visible:outline-none ${
                 啟用 ? activeColor : `bg-white/70 ${color} hover:bg-white`
               }`}
             >
@@ -60,7 +60,7 @@ export default function WallFilters({ 篩選區域, 排序, onChange區域, onCh
         {/* 排序切換 */}
         <button
           onClick={() => onChange排序(排序 === '最新' ? '最熱門' : '最新')}
-          className="ml-auto shrink-0 flex items-center gap-1 rounded-full bg-white/70 px-3 py-1 text-sm text-gray-600 hover:bg-white transition-colors"
+          className="ml-auto shrink-0 flex items-center gap-1 rounded-full bg-white/70 px-3 py-1 text-sm text-gray-600 hover:bg-white cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-strava/40 focus-visible:outline-none"
         >
           <ArrowUpDown size={14} />
           {排序}
