@@ -78,8 +78,8 @@ export default function LiffVerifyPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-50 mb-3">
             <ShieldCheck size={32} className="text-emerald-600" />
           </div>
-          <h1 className="text-xl font-bold text-gray-800">TCU 車手認證</h1>
-          <p className="text-sm text-gray-500 mt-1">Taiwan Cyclist United</p>
+          <h1 className="text-xl font-bold text-gray-800">LINE 車手認證</h1>
+          <p className="text-sm text-gray-500 mt-1">透過 LINE 完成車手身份認證</p>
         </div>
 
         {/* 載入中 */}
@@ -134,7 +134,7 @@ export default function LiffVerifyPage() {
             <CheckCircle2 size={48} className="text-emerald-600" />
             <p className="text-lg font-bold text-emerald-700">認證成功！</p>
             <p className="text-sm text-gray-500 text-center">
-              你已成為 TCU 認證車手，返回約騎公布欄即可看到認證徽章
+              你已成為 LINE 認證車手，返回約騎公布欄即可看到認證徽章
             </p>
             <button
               onClick={關閉LIFF}

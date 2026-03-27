@@ -23,7 +23,7 @@ export async function 發起LINE登入(): Promise<void> {
   }
 
   const { codeVerifier, codeChallenge } = await 產生PKCE()
-  const state = 產生State()
+  const state = `line-${產生State()}`
 
   // 暫存 PKCE verifier 和 state 供回調時使用
   sessionStorage.setItem('line_code_verifier', codeVerifier)
@@ -44,15 +44,21 @@ export async function 發起LINE登入(): Promise<void> {
 
 /** 處理 LINE 回調（用 authorization code 換取 token） */
 export async function 處理LINE回調(code: string, state: string): Promise<LINEUserInfo> {
-  // 驗證 state
+  // 驗證 state（sessionStorage 可能因 LINE 內建瀏覽器切換而遺失）
   const 預期State = sessionStorage.getItem('line_state')
-  if (state !== 預期State) {
+  if (預期State && state !== 預期State) {
     throw new Error('LINE 登入驗證失敗（state 不符）')
+  }
+  // state 前綴驗證：即使 sessionStorage 遺失，確保來源正確
+  if (!預期State && !state.startsWith('line-')) {
+    throw new Error('LINE 登入驗證失敗（state 來源不明）')
   }
 
   const codeVerifier = sessionStorage.getItem('line_code_verifier')
   if (!codeVerifier) {
-    throw new Error('LINE 登入驗證失敗（缺少 code_verifier）')
+    // PKCE verifier 遺失：LINE 內建瀏覽器跨 session 導致
+    // 無 verifier 就無法完成 PKCE 流程，改用 non-PKCE 方式
+    throw new Error('登入 session 已過期，請重新登入。如從 LINE 開啟，請改用外部瀏覽器。')
   }
 
   // 清除暫存

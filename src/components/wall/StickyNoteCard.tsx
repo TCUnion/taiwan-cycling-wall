@@ -61,7 +61,7 @@ export default function StickyNoteCard({ 活動 }: Props) {
       {/* 發起人圖章或頭像 — 右上角（優先顯示圖章） */}
       {(() => {
         const 發起人 = 所有使用者.find(u => u.id === 活動.creatorId)
-        const 圖章 = 發起人?.stampImage
+        const 圖章 = 活動.coverImage || 發起人?.stampImage
         if (圖章) {
           return (
             <span className="absolute top-4 bottom-[20%] right-3 aspect-square rounded-xl bg-white/80 border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center">

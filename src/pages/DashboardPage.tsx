@@ -126,7 +126,7 @@ export default function DashboardPage() {
         {/* 基本資訊 */}
         <個人資料區塊 />
 
-        {/* TCU 認證 */}
+        {/* LINE 認證 */}
         <VerificationSection />
 
         {/* 追蹤 / 粉絲 */}

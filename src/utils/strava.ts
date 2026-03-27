@@ -26,7 +26,7 @@ export function 發起Strava登入(): void {
     throw new Error('尚未設定 Strava Client ID')
   }
 
-  const state = 產生State()
+  const state = `strava-${產生State()}`
   sessionStorage.setItem('strava_state', state)
 
   const params = new URLSearchParams({
@@ -43,10 +43,13 @@ export function 發起Strava登入(): void {
 
 /** 處理 Strava 回調（透過 n8n 後端換 token） */
 export async function 處理Strava回調(code: string, state: string): Promise<StravaUserInfo> {
-  // 驗證 state
+  // 驗證 state（sessionStorage 可能因瀏覽器切換而遺失）
   const 預期State = sessionStorage.getItem('strava_state')
-  if (state !== 預期State) {
+  if (預期State && state !== 預期State) {
     throw new Error('Strava 登入驗證失敗（state 不符）')
+  }
+  if (!預期State && !state.startsWith('strava-')) {
+    throw new Error('Strava 登入驗證失敗（state 來源不明）')
   }
   sessionStorage.removeItem('strava_state')
 

@@ -18,18 +18,18 @@ export default function AdCard({ 廣告 }: Props) {
         bg-white/90 border border-gray-200
         hover:shadow-lg motion-safe:hover:scale-105 hover:z-10
         transition-[transform,box-shadow] duration-200 cursor-pointer
-        p-3 block
+        p-3 block overflow-hidden
       "
     >
       {/* 廣告標記 */}
-      <span className="absolute top-1 right-1 text-[10px] text-gray-400 bg-white/80 px-1 rounded">
+      <span className="absolute top-1 right-1 text-[10px] text-gray-400 bg-white/80 px-1 rounded z-10">
         AD
       </span>
 
-      {/* 左右佈局：圖片 + 文字 */}
-      <div className="flex gap-3">
-        {/* 左：產品圖片 */}
-        <div className="w-24 self-stretch shrink-0 rounded overflow-hidden bg-gray-50">
+      {/* 上下佈局：圖片在上、文字在下（適合窄格子） */}
+      <div className="flex flex-col gap-2">
+        {/* 產品圖片 */}
+        <div className="w-full aspect-[4/3] rounded overflow-hidden bg-gray-50">
           <img
             src={安全URL(廣告.image_url) ?? ''}
             alt={淨化純文字(廣告.product_name)}
@@ -38,16 +38,13 @@ export default function AdCard({ 廣告 }: Props) {
           />
         </div>
 
-        {/* 右：文字內容 */}
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] text-gray-400">{廣告.brand_name}</p>
-          <h3 className="font-bold text-xs leading-tight mb-1 line-clamp-2">
+        {/* 文字內容 */}
+        <div className="min-w-0">
+          <p className="text-[10px] text-gray-400 truncate">{廣告.brand_name}</p>
+          <h3 className="font-bold text-xs leading-tight mb-0.5 line-clamp-2">
             {廣告.product_name}
           </h3>
-          <p className="text-[10px] text-gray-500 line-clamp-3 mb-1.5">
-            {廣告.placement_text}
-          </p>
-          <span className="inline-flex items-center gap-1 text-xs text-strava font-medium">
+          <span className="inline-flex items-center gap-1 text-[10px] text-strava font-medium">
             查看商品 <ExternalLink size={10} />
           </span>
         </div>

@@ -33,9 +33,9 @@ export default function OAuthCallbackPage() {
       }
 
       try {
-        // 依據 sessionStorage 中的 state key 判斷來源
-        const 是LINE = sessionStorage.getItem('line_state') !== null
-        const 是Strava = sessionStorage.getItem('strava_state') !== null
+        // 判斷來源：優先用 state 前綴（跨 session 可靠），備援用 sessionStorage
+        const 是LINE = state.startsWith('line-') || sessionStorage.getItem('line_state') !== null
+        const 是Strava = state.startsWith('strava-') || sessionStorage.getItem('strava_state') !== null
 
         if (是LINE) {
           const 使用者 = await 處理LINE回調(code, state)

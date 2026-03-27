@@ -1,4 +1,4 @@
-// 個人中心 — TCU 認證區塊
+// 個人中心 — LINE 認證區塊
 
 import { useState, useCallback } from 'react'
 import { ShieldCheck, ExternalLink, Loader2, Copy, Check } from 'lucide-react'
@@ -62,7 +62,7 @@ export default function VerificationSection() {
     <div className="rounded-xl bg-white p-4 shadow-sm">
       <div className="flex items-center gap-2 mb-3">
         <ShieldCheck size={16} className="text-emerald-600" />
-        <h3 className="font-bold text-gray-800">TCU 認證</h3>
+        <h3 className="font-bold text-gray-800">LINE 認證</h3>
       </div>
 
       {/* 已認證 */}
@@ -70,7 +70,7 @@ export default function VerificationSection() {
         <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-50 border border-emerald-200">
           <VerifiedBadge size="md" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-emerald-700">TCU 認證車手</p>
+            <p className="text-sm font-medium text-emerald-700">LINE 認證車手</p>
             <p className="text-xs text-emerald-600/70">
               認證時間：{new Date(使用者.verifiedAt!).toLocaleDateString('zh-TW')}
             </p>
@@ -82,7 +82,7 @@ export default function VerificationSection() {
       {!已認證 && 認證中 && (
         <div className="space-y-3">
           <p className="text-sm text-gray-600">
-            請在 TCU LINE@ 聊天室中開啟認證頁面，輸入以下認證碼：
+            請在 LINE@ 聊天室中開啟認證頁面，輸入以下認證碼：
           </p>
 
           {/* 認證碼 */}
@@ -104,7 +104,7 @@ export default function VerificationSection() {
             有效時間：{剩餘分鐘}:{剩餘秒.toString().padStart(2, '0')}
           </p>
 
-          {/* 前往 TCU LINE@ */}
+          {/* 前往 LINE@ */}
           <a
             href={LIFF_ID ? `https://liff.line.me/${LIFF_ID}` : 'https://page.line.me/criterium'}
             target="_blank"
@@ -112,7 +112,7 @@ export default function VerificationSection() {
             className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-line text-white font-medium cursor-pointer hover:opacity-90 transition-opacity"
           >
             <ExternalLink size={16} />
-            前往 TCU LINE@ 認證
+            前往 LINE@ 認證
           </a>
 
           <p className="text-center text-xs text-gray-400">
@@ -126,7 +126,7 @@ export default function VerificationSection() {
       {!已認證 && !認證中 && (
         <div className="space-y-3">
           <p className="text-sm text-gray-500">
-            透過 TCU LINE@ 完成認證，你的約騎便利貼將顯示認證徽章
+            透過 LINE@ 完成認證，你的約騎便利貼將顯示認證徽章
           </p>
           <button
             onClick={處理申請}
@@ -138,7 +138,7 @@ export default function VerificationSection() {
             ) : (
               <ShieldCheck size={16} />
             )}
-            申請 TCU 認證
+            申請 LINE 認證
           </button>
         </div>
       )}
