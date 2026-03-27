@@ -18,6 +18,7 @@
 - **LINE Login**（OAuth 2.0 + PKCE）
 - **Strava OAuth**（redirect → n8n 後端換 token）
 - **@supabase/supabase-js**（Supabase 客戶端 — 自架實例 `db.criterium.tw`）
+- **@line/liff**（LINE LIFF SDK — TCU 認證用）
 - **date-fns**（日期格式化）
 - **vite-plugin-pwa**（PWA / Service Worker）
 
@@ -47,7 +48,7 @@ npm run lint     # ESLint 檢查
 
 ```
 src/
-├── types/index.ts          # TS 介面（County, CyclingEvent, User, AuthProvider, StravaProfile, PageIdentity, RideTemplate, SpotTemplate, RouteInfoTemplate, NotesTemplate, SavedRoute, MeetingSpot, FollowRelation 等）
+├── types/index.ts          # TS 介面（County, CyclingEvent, User, AuthProvider, StravaProfile, PageIdentity, RideTemplate, SpotTemplate, RouteInfoTemplate, NotesTemplate, SavedRoute, MeetingSpot, FollowRelation, UserVerification 等）
 ├── data/                   # 靜態 / mock 資料
 │   ├── counties.ts         # 22 縣市 + 區域對照 + 查找函式
 │   ├── classicRoutes.ts    # 7 條經典路線模板
@@ -62,7 +63,8 @@ src/
 │   ├── notesTemplateStore.ts   # 注意事項範本 CRUD（Supabase: notes_templates）
 │   └── regionStore.ts      # 區域/縣市選擇
 ├── hooks/                  # 自訂 hooks
-│   └── useAds.ts           # 從 Supabase 抓取廣告（tcuad_internal_placements + tcuad_placements）
+│   ├── useAds.ts           # 從 Supabase 抓取廣告（tcuad_internal_placements + tcuad_placements）
+│   └── useVerificationPolling.ts  # TCU 認證狀態輪詢（每 3 秒，10 分鐘自動停止）
 ├── utils/
 │   ├── formatters.ts       # 格式化（日期、距離、產生 ID）
 │   ├── regionMapping.ts    # 區域色對照
@@ -72,10 +74,13 @@ src/
 │   ├── strava.ts           # Strava OAuth redirect + n8n 後端換 token
 │   ├── pkce.ts             # PKCE 共用工具（SHA-256 + base64url + 隨機字串）
 │   ├── supabase.ts         # Supabase client 初始化
-│   └── ogConstants.ts      # OG 圖片常數
+│   ├── ogConstants.ts      # OG 圖片常數
+│   ├── verificationService.ts  # TCU 認證服務（建立請求 / 驗證碼比對 / 狀態查詢）
+│   └── liff.ts             # LINE LIFF SDK 封裝（初始化 / 取得使用者 / 關閉）
 ├── components/
-│   ├── ui/                 # Button, Input, Card, Badge, Modal, Avatar（支援 URL 圖片）, SocialLoginButton
+│   ├── ui/                 # Button, Input, Card, Badge, Modal, Avatar（支援 URL 圖片）, SocialLoginButton, VerifiedBadge
 │   ├── layout/             # AppShell, BottomNavBar, RegionTabs
+│   ├── dashboard/          # VerificationSection（TCU 認證區塊）
 │   ├── wall/               # CorkBoard, StickyNoteCard, WallFilters, AdCard（廣告卡片）
 │   └── event/              # CountyPicker, RouteTemplatePicker, ParticipantMap, MoakBadge
 └── pages/                  # 頁面（均為 lazy-loaded）
@@ -97,6 +102,7 @@ src/
 | `/history` | HistoryPage（過期活動歷史紀錄） | 是 |
 | `/dashboard` | DashboardPage（單頁滾動式個人中心） | 是 |
 | `/auth/callback` | OAuthCallbackPage（LINE / Strava OAuth 回調） | 否 |
+| `/liff/verify` | LiffVerifyPage（LINE LIFF TCU 認證頁面） | 否 |
 
 ## 登入機制
 
@@ -146,6 +152,20 @@ src/
 - 粉絲頁列表目前透過手動設定（FB Pages API 需 Business 類型 App + 審查）
 - StickyNoteCard / EventDetailPage 支援 `page-` 開頭的 creatorId 顯示粉絲頁身份
 
+### TCU 認證（LINE LIFF）
+
+透過 TCU LINE@ 官方帳號（`https://page.line.me/criterium`）進行身份認證：
+
+- **認證流程**：個人中心「申請 TCU 認證」→ 產生 6 位數認證碼（10 分鐘效期）→ 前往 LINE@ 開啟 LIFF 頁面 → 輸入認證碼 → 驗證成功
+- **LIFF URL**：`https://liff.line.me/{LIFF_ID}`，Endpoint: `https://siokiu.criterium.tw/liff/verify`
+- **Supabase 表**：`user_verifications`（token / status / user_id / line_user_id）
+- **User 擴充欄位**：`verifiedAt?: string`、`lineVerifiedUserId?: string`
+- **VerifiedBadge**：Lucide `ShieldCheck` 圖示（emerald-600），`sm`（14px）/ `md`（16px）
+- **Badge 顯示位置**：StickyNoteCard 發起人旁、EventDetailPage 發起人旁、DashboardPage 認證區塊
+- **輪詢機制**：`useVerificationPolling` hook，每 3 秒查詢，10 分鐘後自動停止
+- **服務**：`verificationService.ts`（建立認證請求 / 驗證認證碼 / 查詢認證狀態）
+- **LIFF 封裝**：`liff.ts`（初始化LIFF / 取得LINE使用者 / 關閉LIFF）
+
 ## 發起約騎表單（CreateEventPage）
 
 表單區塊順序：
@@ -177,10 +197,11 @@ src/
 單頁滾動式，由上到下：
 1. **頂部** — 頭像 + 姓名 + 縣市 + 追蹤/粉絲數 + 登出 + 身份切換（有粉絲頁時顯示）
 2. **基本資訊** — 可編輯（姓名、頭像、縣市）
-3. **社群** — 追蹤中 / 粉絲切換（mock 資料）
-4. **發起紀錄** — 以 `creatorId` 篩選我建立的活動
-5. **個人路線** — 收藏路線列表（mock 資料）
-6. **常用集合點** — 點擊開啟 Google Maps
+3. **TCU 認證** — 未認證/認證中/已認證三種狀態（VerificationSection）
+4. **社群** — 追蹤中 / 粉絲切換（mock 資料）
+5. **發起紀錄** — 以 `creatorId` 篩選我建立的活動
+6. **個人路線** — 收藏路線列表（mock 資料）
+7. **常用集合點** — 點擊開啟 Google Maps
 
 ## 約騎公布欄便利貼（StickyNoteCard）
 
@@ -234,6 +255,8 @@ Supabase 資料表（無 persist，每次 mount 載入）：
 - `spot_templates` — 集合點範本
 - `route_info_templates` — 路線與騎乘資訊範本
 - `notes_templates` — 注意事項範本
+- `user_verifications` — TCU 認證記錄（token / status / user_id / line_user_id）
+- `users` — 使用者表（含 `verified_at` / `line_verified_user_id` 欄位）
 
 首次載入從 mockEvents/mockUsers 取得種子資料。
 
@@ -249,6 +272,7 @@ Supabase 資料表（無 persist，每次 mount 載入）：
 | `VITE_OAUTH_REDIRECT_URI` | LINE / Strava OAuth 回調 URI |
 | `VITE_SUPABASE_URL` | Supabase API URL（自架：`https://db.criterium.tw`） |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon key（前端用，搭配 RLS） |
+| `VITE_LIFF_ID` | LINE LIFF App ID（TCU 認證用） |
 
 `.env` 檔案不入版控（已加入 `.gitignore`）。
 
@@ -258,6 +282,8 @@ Supabase 資料表（無 persist，每次 mount 載入）：
 - Facebook SDK：`connect.facebook.net/zh_TW/sdk.js`（動態載入）
 - Google GIS：`accounts.google.com/gsi/client`（動態載入）
 - LINE Login：`access.line.me`（OAuth redirect）+ `api.line.me`（token 交換）
+- LINE LIFF：`liff.line.me`（TCU 認證嵌入頁面）
+- LINE@：`page.line.me/criterium`（TCU 官方帳號）
 - Strava OAuth：`strava.com/oauth/authorize`（redirect）+ n8n webhook（token 交換）
 - Strava / Garmin Connect：路線連結（自動辨識類型顯示）
 - MOAK：連結活動頁面
