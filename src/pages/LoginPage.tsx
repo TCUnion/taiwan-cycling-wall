@@ -39,7 +39,7 @@ export default function LoginPage() {
     set錯誤訊息('')
     try {
       const 使用者資訊 = await FB登入()
-      FB登入Store(使用者資訊.fbId, 使用者資訊.name, 使用者資訊.pictureUrl, 使用者資訊.countyId, 使用者資訊.email)
+      FB登入Store(使用者資訊.fbId, 使用者資訊.name, 使用者資訊.pictureUrl, 使用者資訊.countyId)
       const 粉絲頁 = await 取得粉絲頁列表()
       if (粉絲頁.length > 0) {
         設定粉絲頁列表(粉絲頁.map(p => ({ pageId: p.pageId, name: p.name, pictureUrl: p.pictureUrl })))
