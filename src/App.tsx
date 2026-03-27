@@ -15,6 +15,7 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 const HistoryPage = lazy(() => import('./pages/HistoryPage'))
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
 const DataDeletionPage = lazy(() => import('./pages/DataDeletionPage'))
+const OAuthCallbackPage = lazy(() => import('./pages/OAuthCallbackPage'))
 
 // 載入中畫面
 function Loading() {
@@ -41,6 +42,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/data-deletion" element={<DataDeletionPage />} />
+        <Route path="/auth/callback" element={<OAuthCallbackPage />} />
 
         {/* 需要登入的頁面 — 含底部導覽列 */}
         <Route element={<RequireAuth><AppShell /></RequireAuth>}>

@@ -1,3 +1,6 @@
+// 登入提供者
+export type AuthProvider = 'facebook' | 'google' | 'line' | 'strava'
+
 // 區域類型
 export type Region = '北部' | '中部' | '南部' | '東部'
 
@@ -49,6 +52,21 @@ export interface User {
   rideHistory: RideRecord[]
   managedPages?: PageIdentity[]  // 管理的粉絲頁列表
   activePageId?: string          // 目前使用的粉絲頁 ID（空 = 個人身份）
+  stampImage?: string            // 活動專用圖章（base64 data URL）
+  socialAvatar?: string          // 社群登入預設頭像 URL（FB/Google/LINE/Strava）
+  authProvider?: AuthProvider    // 登入來源
+  email?: string                 // Google 登入時取得
+  stravaProfile?: StravaProfile  // Strava 登入時取得
+}
+
+// Strava 運動員資料
+export interface StravaProfile {
+  athleteId: number
+  username?: string
+  city?: string
+  country?: string
+  premium: boolean
+  accessToken?: string  // 存於前端供後續 API 呼叫
 }
 
 export interface UserStats {
@@ -91,6 +109,7 @@ export interface RideTemplate {
   maxParticipants: number
   notes: string[]        // 注意事項
   creatorId: string
+  creatorName?: string   // 建立者名稱（方便顯示）
 }
 
 // 個人收藏路線

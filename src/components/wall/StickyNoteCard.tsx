@@ -55,13 +55,30 @@ export default function StickyNoteCard({ 活動 }: Props) {
       {/* 圖釘裝飾 */}
       <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-red-400 border-2 border-red-600 shadow-sm z-10" />
 
-      {/* 封面圖片 — 右上角 */}
-      {活動.coverImage && (
-        <img src={活動.coverImage} alt="" className="absolute top-3 right-3 w-16 h-16 object-cover rounded shadow-sm" />
-      )}
+      {/* 發起人圖章或頭像 — 右上角（優先顯示圖章） */}
+      {(() => {
+        const 發起人 = 所有使用者.find(u => u.id === 活動.creatorId)
+        const 圖章 = 發起人?.stampImage
+        if (圖章) {
+          return (
+            <span className="absolute top-3 right-3 w-10 h-10 rounded-xl bg-white/80 border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center">
+              <img src={圖章} alt="活動圖章" className="w-full h-full object-cover" />
+            </span>
+          )
+        }
+        const 頭像 = 是粉絲頁活動 ? 粉絲頁資訊?.pictureUrl : 發起人?.avatar
+        const 是網址 = 頭像?.startsWith('http')
+        return 頭像 ? (
+          <span className="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/80 border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center text-lg">
+            {是網址 ? (
+              <img src={頭像} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            ) : 頭像}
+          </span>
+        ) : null
+      })()}
 
       {/* 標題 */}
-      <h3 className={`font-bold text-sm leading-tight mb-1 line-clamp-2 ${活動.coverImage ? 'pr-18' : ''}`}>{活動.title}</h3>
+      <h3 className="font-bold text-sm leading-tight mb-1 line-clamp-2 pr-12">{活動.title}</h3>
 
       {/* 粉絲頁發起人 */}
       {是粉絲頁活動 && 粉絲頁資訊 && (

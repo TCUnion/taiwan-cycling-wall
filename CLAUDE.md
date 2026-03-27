@@ -14,6 +14,9 @@
 - **React Router v7**
 - **Lucide React**（圖示 — 禁止使用 emoji 作為 UI icon）
 - **Facebook JavaScript SDK**（登入驗證）
+- **Google Identity Services**（Google 登入，前端 JWT 解碼）
+- **LINE Login**（OAuth 2.0 + PKCE）
+- **Strava OAuth**（redirect → n8n 後端換 token）
 - **@supabase/supabase-js**（Supabase 客戶端 — 自架實例 `db.criterium.tw`）
 - **date-fns**（日期格式化）
 - **vite-plugin-pwa**（PWA / Service Worker）
@@ -44,14 +47,14 @@ npm run lint     # ESLint 檢查
 
 ```
 src/
-├── types/index.ts          # TS 介面（County, CyclingEvent, User, RideTemplate, SavedRoute, MeetingSpot, FollowRelation 等）
+├── types/index.ts          # TS 介面（County, CyclingEvent, User, AuthProvider, StravaProfile, PageIdentity, RideTemplate, SavedRoute, MeetingSpot, FollowRelation 等）
 ├── data/                   # 靜態 / mock 資料
 │   ├── counties.ts         # 22 縣市 + 區域對照 + 查找函式
 │   ├── classicRoutes.ts    # 7 條經典路線模板
 │   ├── mockEvents.ts       # 18 筆模擬活動
 │   └── mockUsers.ts        # 5 位模擬使用者 + 收藏路線 / 集合點 / 追蹤粉絲 mock 資料
 ├── stores/                 # Zustand stores（均使用 persist middleware）
-│   ├── authStore.ts        # 登入狀態（FB 登入 / 一般註冊 / 所有使用者列表）
+│   ├── authStore.ts        # 登入狀態（FB / Google / LINE / Strava 登入 / 一般註冊 / 所有使用者列表 / 粉絲頁身份切換）
 │   ├── eventStore.ts       # 活動 CRUD（新增 / 更新 / 參加 / 退出）+ 篩選排序 + 歷史活動
 │   ├── templateStore.ts    # 約騎範本 CRUD（新增 / 刪除 / 更新）
 │   └── regionStore.ts      # 區域/縣市選擇
@@ -60,11 +63,15 @@ src/
 ├── utils/
 │   ├── formatters.ts       # 格式化（日期、距離、產生 ID）
 │   ├── regionMapping.ts    # 區域色對照
-│   ├── facebook.ts         # Facebook SDK 載入、登入、取得使用者資訊
+│   ├── facebook.ts         # Facebook SDK 載入、登入、取得使用者資訊、取得粉絲頁列表
+│   ├── google.ts           # Google GIS SDK 載入、登入、JWT 解碼
+│   ├── line.ts             # LINE Login PKCE（redirect + token 交換 + id_token 解碼）
+│   ├── strava.ts           # Strava OAuth redirect + n8n 後端換 token
+│   ├── pkce.ts             # PKCE 共用工具（SHA-256 + base64url + 隨機字串）
 │   ├── supabase.ts         # Supabase client 初始化
 │   └── ogConstants.ts      # OG 圖片常數
 ├── components/
-│   ├── ui/                 # Button, Input, Card, Badge, Modal, Avatar（支援 URL 圖片）
+│   ├── ui/                 # Button, Input, Card, Badge, Modal, Avatar（支援 URL 圖片）, SocialLoginButton
 │   ├── layout/             # AppShell, BottomNavBar, RegionTabs
 │   ├── wall/               # CorkBoard, StickyNoteCard, WallFilters, AdCard（廣告卡片）
 │   └── event/              # CountyPicker, RouteTemplatePicker, ParticipantMap, MoakBadge
@@ -76,7 +83,9 @@ src/
 | 路徑 | 頁面 | 需登入 |
 |------|------|--------|
 | `/` | SplashPage（2.5 秒後自動跳轉） | 否 |
-| `/login` | LoginPage（Facebook 登入） | 否 |
+| `/login` | LoginPage（Facebook / Google / LINE / Strava 登入） | 否 |
+| `/privacy` | PrivacyPage（隱私政策） | 否 |
+| `/data-deletion` | DataDeletionPage（資料刪除指示） | 否 |
 | `/wall` | WallPage（約騎公布欄主頁面） | 是 |
 | `/create` | CreateEventPage（發起約騎） | 是 |
 | `/event/:id` | EventDetailPage | 是 |
@@ -84,15 +93,55 @@ src/
 | `/event/:id/share` | SharePage（活動資訊卡片 + 分享連結 / LINE） | 是 |
 | `/history` | HistoryPage（過期活動歷史紀錄） | 是 |
 | `/dashboard` | DashboardPage（單頁滾動式個人中心） | 是 |
+| `/auth/callback` | OAuthCallbackPage（LINE / Strava OAuth 回調） | 否 |
 
 ## 登入機制
 
-- **Facebook Login**（JavaScript SDK，版本 v21.0）
+支援四種社群登入，各自獨立帳號（後續可合併）：
+
+| Provider | User ID 格式 | 登入方式 |
+|----------|-------------|---------|
+| Facebook | `fb-{fbId}` | 前端 JS SDK |
+| Google | `google-{sub}` | 前端 GIS library，JWT 直接解碼 |
+| LINE | `line-{userId}` | OAuth 2.0 + PKCE redirect |
+| Strava | `strava-{athleteId}` | OAuth 2.0 redirect → n8n 後端換 token |
+
+### Facebook Login
+- JavaScript SDK，版本 v21.0
 - 權限：`public_profile`、`user_hometown`、`user_location`
-- App ID 存放於 `.env`（`VITE_FB_APP_ID`），不入版控
-- 首次 FB 登入自動建立使用者（id 格式：`fb-{fbUserId}`）
+- 首次 FB 登入自動建立使用者
 - 從 FB hometown/location 自動比對台灣縣市（含常見地名英中對照）
-- Avatar 元件支援 emoji 字元與圖片 URL（FB 大頭照）
+
+### Google Login
+- Google Identity Services (GIS) One Tap 流程
+- 前端直接取得 JWT（id_token），解碼取 sub/name/picture/email
+- JWT 解碼需用 `decodeURIComponent` + 逐位元組 `%XX` 處理 UTF-8 中文
+
+### LINE Login
+- OAuth 2.0 + PKCE（code_challenge_method: S256）
+- redirect 到 LINE 授權 → 回調頁面用 code 換 token → 解碼 id_token
+- PKCE verifier/state 暫存於 sessionStorage
+
+### Strava Login
+- OAuth 2.0 redirect → 回調頁面帶 code → POST 到 n8n webhook 換 token
+- n8n 後端處理 client_secret + token 交換，回傳 athlete 資訊
+- state 暫存於 sessionStorage
+
+### 共用機制
+- Avatar 元件支援 emoji 字元與圖片 URL（FB / Google / LINE / Strava 大頭照）
+- `SocialLoginButton` 共用按鈕元件（各平台 SVG logo + 品牌色）
+- `OAuthCallbackPage` 依 sessionStorage 中的 state key 判斷回調來源（LINE / Strava）
+- 未設定 Client ID 的平台按鈕自動 disabled
+
+### 粉絲頁身份切換
+
+- 使用者可在個人中心切換為管理的 Facebook 粉絲頁身份發起活動
+- `PageIdentity` 介面：`{ pageId, name, pictureUrl }`
+- `User` 擴充欄位：`managedPages?: PageIdentity[]`、`activePageId?: string`
+- authStore 新增：`目前身份`（personal/page）、`使用中的粉絲頁`、`切換到粉絲頁()`、`切換回個人()`、`取得目前發文身份()`
+- `creatorId` 格式：個人 `fb-{fbId}`、粉絲頁 `page-{pageId}`
+- 粉絲頁列表目前透過手動設定（FB Pages API 需 Business 類型 App + 審查）
+- StickyNoteCard / EventDetailPage 支援 `page-` 開頭的 creatorId 顯示粉絲頁身份
 
 ## 發起約騎表單（CreateEventPage）
 
@@ -120,7 +169,7 @@ src/
 ## 個人中心（DashboardPage）
 
 單頁滾動式，由上到下：
-1. **頂部** — 頭像 + 姓名 + 縣市 + 追蹤/粉絲數 + 登出
+1. **頂部** — 頭像 + 姓名 + 縣市 + 追蹤/粉絲數 + 登出 + 身份切換（有粉絲頁時顯示）
 2. **基本資訊** — 可編輯（姓名、頭像、縣市）
 3. **社群** — 追蹤中 / 粉絲切換（mock 資料）
 4. **發起紀錄** — 以 `creatorId` 篩選我建立的活動
@@ -146,8 +195,10 @@ src/
 
 ## 設計系統色彩（定義在 src/index.css @theme）
 
-- `strava` (#FC4C02) — 主要強調色
-- `line` (#00B900) — LINE 分享按鈕
+- `strava` (#FC4C02) — 主要強調色 / Strava 登入按鈕
+- `line` (#00B900) — LINE 分享 / 登入按鈕
+- `google` (#4285F4) — Google 登入按鈕
+- `facebook` (#1877F2) — Facebook 登入按鈕
 - `region-north/central/south/east` — 四區域色（藍/橘/紅/綠）
 - `cork` (#D4A574) — 佈告欄背景
 - `sticky-yellow/pink/blue/green` — 便利貼色
@@ -179,6 +230,11 @@ src/
 | 變數 | 說明 |
 |------|------|
 | `VITE_FB_APP_ID` | Facebook App ID（開發/正式共用） |
+| `VITE_GOOGLE_CLIENT_ID` | Google OAuth Client ID |
+| `VITE_LINE_CHANNEL_ID` | LINE Login Channel ID |
+| `VITE_STRAVA_CLIENT_ID` | Strava App Client ID |
+| `VITE_STRAVA_CALLBACK_URL` | Strava token 交換用的 n8n webhook URL |
+| `VITE_OAUTH_REDIRECT_URI` | LINE / Strava OAuth 回調 URI |
 | `VITE_SUPABASE_URL` | Supabase API URL（自架：`https://db.criterium.tw`） |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon key（前端用，搭配 RLS） |
 
@@ -188,6 +244,9 @@ src/
 
 - Google Maps：透過 URL scheme 開啟（`google.com/maps/search/?api=1&query=...`）
 - Facebook SDK：`connect.facebook.net/zh_TW/sdk.js`（動態載入）
+- Google GIS：`accounts.google.com/gsi/client`（動態載入）
+- LINE Login：`access.line.me`（OAuth redirect）+ `api.line.me`（token 交換）
+- Strava OAuth：`strava.com/oauth/authorize`（redirect）+ n8n webhook（token 交換）
 - Strava / Garmin Connect：路線連結（自動辨識類型顯示）
 - MOAK：連結活動頁面
 - LINE：使用 `social-plugins.line.me/lineit/share` 分享

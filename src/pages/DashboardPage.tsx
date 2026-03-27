@@ -1,11 +1,11 @@
 // 個人中心頁面 — 單頁滾動式
 
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Users, History, Route, MapPin, Mountain, ChevronRight, Pencil, Check, X, ArrowLeftRight } from 'lucide-react'
+import { LogOut, Users, History, ChevronRight, Pencil, Check, X, ArrowLeftRight, Camera, ZoomIn, ZoomOut, RotateCcw, Plus } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { useEventStore } from '../stores/eventStore'
-import { 模擬收藏路線, 模擬集合點, 模擬追蹤, 模擬粉絲 } from '../data/mockUsers'
+import { 模擬追蹤, 模擬粉絲 } from '../data/mockUsers'
 import { 查找縣市, 縣市列表 } from '../data/counties'
 import Avatar from '../components/ui/Avatar'
 import { format } from 'date-fns'
@@ -27,8 +27,6 @@ export default function DashboardPage() {
   // 包含個人與粉絲頁發起的活動
   const 我的粉絲頁Ids = (使用者.managedPages ?? []).map(p => `page-${p.pageId}`)
   const 我的活動 = 活動列表.filter(e => e.creatorId === 使用者.id || 我的粉絲頁Ids.includes(e.creatorId))
-  const 收藏路線 = 模擬收藏路線[使用者.id] ?? []
-  const 集合點 = 模擬集合點[使用者.id] ?? []
   const 追蹤中 = 模擬追蹤[使用者.id] ?? []
   const 粉絲 = 模擬粉絲[使用者.id] ?? []
 
@@ -159,55 +157,13 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* 個人路線 */}
-        <區塊標題 icon={Route} title="個人路線" count={收藏路線.length} />
-        {收藏路線.length === 0 ? (
-          <空白提示>尚無收藏路線</空白提示>
-        ) : (
-          <div className="space-y-2">
-            {收藏路線.map(r => (
-              <div key={r.id} className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm">
-                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-orange-50 text-strava">
-                  <Route size={20} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{r.name}</p>
-                  <p className="text-xs text-gray-500">{查找縣市(r.countyId)?.name} · {r.distance}km</p>
-                </div>
-                <div className="flex items-center gap-1 text-xs text-gray-500 shrink-0">
-                  <Mountain size={12} /> {r.elevation}m
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* 集合點 */}
-        <區塊標題 icon={MapPin} title="常用集合點" count={集合點.length} />
-        {集合點.length === 0 ? (
-          <空白提示>尚無常用集合點</空白提示>
-        ) : (
-          <div className="space-y-2">
-            {集合點.map(s => (
-              <a
-                key={s.id}
-                href={`https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-green-50 text-green-600">
-                  <MapPin size={20} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{s.name}</p>
-                  <p className="text-xs text-gray-500 truncate">{查找縣市(s.countyId)?.name} · {s.address}</p>
-                </div>
-                <ChevronRight size={16} className="text-gray-300 shrink-0" />
-              </a>
-            ))}
-          </div>
-        )}
+        {/* 發起約騎 */}
+        <button
+          onClick={() => navigate('/create')}
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-strava text-white py-3 shadow-sm font-medium cursor-pointer hover:bg-orange-600 transition-colors"
+        >
+          <Plus size={18} /> 發起約騎
+        </button>
       </div>
     </div>
   )
@@ -235,12 +191,138 @@ function 個人資料區塊() {
   const [編輯中, set編輯中] = useState(false)
   const [編輯姓名, set編輯姓名] = useState('')
   const [編輯縣市, set編輯縣市] = useState('')
+  const [預覽頭像, set預覽頭像] = useState<string | null>(null)
+  const [原始圖片, set原始圖片] = useState<string | null>(null)
+  const [裁切縮放, set裁切縮放] = useState(1)
+  const [裁切位移, set裁切位移] = useState({ x: 0, y: 0 })
+  const [拖曳中, set拖曳中] = useState(false)
+  const 拖曳起點 = useRef({ x: 0, y: 0, ox: 0, oy: 0 })
+  const 檔案輸入Ref = useRef<HTMLInputElement>(null)
+
+  // 圖章相關 state
+  const [預覽圖章, set預覽圖章] = useState<string | null>(null)
+  const [圖章原始圖片, set圖章原始圖片] = useState<string | null>(null)
+  const [圖章裁切縮放, set圖章裁切縮放] = useState(1)
+  const [圖章裁切位移, set圖章裁切位移] = useState({ x: 0, y: 0 })
+  const [圖章拖曳中, set圖章拖曳中] = useState(false)
+  const 圖章拖曳起點 = useRef({ x: 0, y: 0, ox: 0, oy: 0 })
+  const 圖章檔案輸入Ref = useRef<HTMLInputElement>(null)
 
   if (!使用者) return null
   const 縣市名稱 = 查找縣市(使用者.countyId)?.name ?? (使用者.countyId || '尚未設定')
 
-  const 開始編輯 = () => { set編輯姓名(使用者.name); set編輯縣市(使用者.countyId); set編輯中(true) }
-  const 儲存編輯 = () => { if (!編輯姓名.trim()) return; 更新使用者({ name: 編輯姓名.trim(), countyId: 編輯縣市 }); set編輯中(false) }
+  const 開始編輯 = () => { set編輯姓名(使用者.name); set編輯縣市(使用者.countyId); set預覽頭像(null); set原始圖片(null); set預覽圖章(null); set圖章原始圖片(null); set編輯中(true) }
+  const 儲存編輯 = () => {
+    if (!編輯姓名.trim()) return
+    const 更新資料: Record<string, string | undefined> = { name: 編輯姓名.trim(), countyId: 編輯縣市 }
+    if (預覽頭像) 更新資料.avatar = 預覽頭像
+    if (預覽圖章 !== null) 更新資料.stampImage = 預覽圖章 || undefined
+    更新使用者(更新資料)
+    set編輯中(false)
+  }
+
+  // 選檔後開啟裁切編輯器
+  const 處理圖片選擇 = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      set原始圖片(reader.result as string)
+      set裁切縮放(1)
+      set裁切位移({ x: 0, y: 0 })
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }, [])
+
+  // 裁切確認 → 產出 200×200 PNG base64
+  const 確認裁切 = useCallback(() => {
+    if (!原始圖片) return
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = 200
+      canvas.height = 200
+      const ctx = canvas.getContext('2d')!
+      // 預覽區域 200px，圖片短邊 fit 200px，再套用縮放與位移
+      const 短邊 = Math.min(img.width, img.height)
+      const 基礎比例 = 短邊 / 200
+      const 實際比例 = 基礎比例 / 裁切縮放
+      const cx = img.width / 2 - 裁切位移.x * 基礎比例
+      const cy = img.height / 2 - 裁切位移.y * 基礎比例
+      const 半徑 = 100 * 實際比例
+      ctx.drawImage(img, cx - 半徑, cy - 半徑, 半徑 * 2, 半徑 * 2, 0, 0, 200, 200)
+      set預覽頭像(canvas.toDataURL('image/png'))
+      set原始圖片(null)
+    }
+    img.src = 原始圖片
+  }, [原始圖片, 裁切縮放, 裁切位移])
+
+  // 拖曳事件（支援滑鼠與觸控）
+  const 開始拖曳 = useCallback((clientX: number, clientY: number) => {
+    set拖曳中(true)
+    拖曳起點.current = { x: clientX, y: clientY, ox: 裁切位移.x, oy: 裁切位移.y }
+  }, [裁切位移])
+
+  const 移動中 = useCallback((clientX: number, clientY: number) => {
+    if (!拖曳中) return
+    const dx = clientX - 拖曳起點.current.x
+    const dy = clientY - 拖曳起點.current.y
+    set裁切位移({ x: 拖曳起點.current.ox + dx, y: 拖曳起點.current.oy + dy })
+  }, [拖曳中])
+
+  const 結束拖曳 = useCallback(() => set拖曳中(false), [])
+
+  // 圖章選檔
+  const 處理圖章選擇 = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      set圖章原始圖片(reader.result as string)
+      set圖章裁切縮放(1)
+      set圖章裁切位移({ x: 0, y: 0 })
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }, [])
+
+  // 圖章裁切確認 → 200×200 PNG
+  const 確認圖章裁切 = useCallback(() => {
+    if (!圖章原始圖片) return
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = 200
+      canvas.height = 200
+      const ctx = canvas.getContext('2d')!
+      const 短邊 = Math.min(img.width, img.height)
+      const 基礎比例 = 短邊 / 200
+      const 實際比例 = 基礎比例 / 圖章裁切縮放
+      const cx = img.width / 2 - 圖章裁切位移.x * 基礎比例
+      const cy = img.height / 2 - 圖章裁切位移.y * 基礎比例
+      const 半徑 = 100 * 實際比例
+      ctx.drawImage(img, cx - 半徑, cy - 半徑, 半徑 * 2, 半徑 * 2, 0, 0, 200, 200)
+      set預覽圖章(canvas.toDataURL('image/png'))
+      set圖章原始圖片(null)
+    }
+    img.src = 圖章原始圖片
+  }, [圖章原始圖片, 圖章裁切縮放, 圖章裁切位移])
+
+  // 圖章拖曳
+  const 開始圖章拖曳 = useCallback((clientX: number, clientY: number) => {
+    set圖章拖曳中(true)
+    圖章拖曳起點.current = { x: clientX, y: clientY, ox: 圖章裁切位移.x, oy: 圖章裁切位移.y }
+  }, [圖章裁切位移])
+
+  const 圖章移動中 = useCallback((clientX: number, clientY: number) => {
+    if (!圖章拖曳中) return
+    const dx = clientX - 圖章拖曳起點.current.x
+    const dy = clientY - 圖章拖曳起點.current.y
+    set圖章裁切位移({ x: 圖章拖曳起點.current.ox + dx, y: 圖章拖曳起點.current.oy + dy })
+  }, [圖章拖曳中])
+
+  const 結束圖章拖曳 = useCallback(() => set圖章拖曳中(false), [])
 
   return (
     <div className="rounded-xl bg-white p-4 shadow-sm space-y-4">
@@ -263,8 +345,158 @@ function 個人資料區塊() {
       </div>
       <div className="flex items-center justify-between py-2 border-b border-gray-100">
         <span className="text-sm text-gray-500">頭像</span>
-        <Avatar emoji={使用者.avatar} size="md" />
+        <div className="flex items-center gap-2">
+          {編輯中 && (
+            <>
+              <button onClick={() => 檔案輸入Ref.current?.click()} aria-label="更換頭像"
+                className="flex items-center gap-1 text-xs text-strava cursor-pointer hover:text-orange-600 transition-colors">
+                <Camera size={14} /> 更換
+              </button>
+              {使用者.socialAvatar && (預覽頭像 ?? 使用者.avatar) !== 使用者.socialAvatar && (
+                <button onClick={() => set預覽頭像(使用者.socialAvatar!)} aria-label="重設為預設頭像"
+                  className="flex items-center gap-1 text-xs text-blue-500 cursor-pointer hover:text-blue-600 transition-colors">
+                  <RotateCcw size={14} /> 重設為預設
+                </button>
+              )}
+              <input ref={檔案輸入Ref} type="file" accept="image/*" onChange={處理圖片選擇} className="hidden" />
+            </>
+          )}
+          <Avatar emoji={預覽頭像 ?? 使用者.avatar} size="md" />
+        </div>
       </div>
+
+      {/* 頭像裁切編輯器 */}
+      {原始圖片 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => set原始圖片(null)}>
+          <div className="bg-white rounded-2xl p-5 mx-4 w-full max-w-xs space-y-4" onClick={e => e.stopPropagation()}>
+            <h4 className="text-center font-bold text-gray-800">調整頭像</h4>
+
+            {/* 圓形預覽區 */}
+            <div className="flex justify-center">
+              <div className="relative w-[200px] h-[200px] rounded-3xl overflow-hidden border-2 border-gray-200 bg-gray-100 select-none touch-none"
+                onMouseDown={e => 開始拖曳(e.clientX, e.clientY)}
+                onMouseMove={e => 移動中(e.clientX, e.clientY)}
+                onMouseUp={結束拖曳} onMouseLeave={結束拖曳}
+                onTouchStart={e => { const t = e.touches[0]; 開始拖曳(t.clientX, t.clientY) }}
+                onTouchMove={e => { const t = e.touches[0]; 移動中(t.clientX, t.clientY) }}
+                onTouchEnd={結束拖曳}>
+                <img src={原始圖片} alt="裁切預覽" draggable={false}
+                  className="absolute pointer-events-none"
+                  style={{
+                    minWidth: '100%', minHeight: '100%',
+                    width: `${裁切縮放 * 100}%`, height: `${裁切縮放 * 100}%`,
+                    left: `${50 + (裁切位移.x / 200) * 100}%`,
+                    top: `${50 + (裁切位移.y / 200) * 100}%`,
+                    transform: 'translate(-50%, -50%)',
+                    objectFit: 'cover',
+                  }} />
+              </div>
+            </div>
+
+            {/* 縮放滑桿 */}
+            <div className="flex items-center gap-3 px-2">
+              <ZoomOut size={16} className="text-gray-400 shrink-0" />
+              <input type="range" min="1" max="3" step="0.05" value={裁切縮放}
+                onChange={e => set裁切縮放(Number(e.target.value))}
+                className="flex-1 accent-strava cursor-pointer" />
+              <ZoomIn size={16} className="text-gray-400 shrink-0" />
+            </div>
+            <p className="text-center text-xs text-gray-400">拖曳圖片調整位置</p>
+
+            {/* 操作按鈕 */}
+            <div className="flex gap-3">
+              <button onClick={() => set原始圖片(null)}
+                className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-500 cursor-pointer hover:bg-gray-50 transition-colors">
+                取消
+              </button>
+              <button onClick={確認裁切}
+                className="flex-1 py-2 rounded-lg bg-strava text-white text-sm font-medium cursor-pointer hover:bg-orange-600 transition-colors">
+                確認
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 活動圖章 */}
+      <div className="flex items-center justify-between py-2 border-b border-gray-100">
+        <span className="text-sm text-gray-500">活動圖章</span>
+        <div className="flex items-center gap-2">
+          {編輯中 && (
+            <>
+              <button onClick={() => 圖章檔案輸入Ref.current?.click()} aria-label="更換圖章"
+                className="flex items-center gap-1 text-xs text-strava cursor-pointer hover:text-orange-600 transition-colors">
+                <Camera size={14} /> {使用者.stampImage || 預覽圖章 ? '更換' : '上傳'}
+              </button>
+              {(使用者.stampImage || 預覽圖章) && (
+                <button onClick={() => set預覽圖章('')} aria-label="移除圖章"
+                  className="flex items-center gap-1 text-xs text-red-400 cursor-pointer hover:text-red-600 transition-colors">
+                  <X size={14} /> 移除
+                </button>
+              )}
+              <input ref={圖章檔案輸入Ref} type="file" accept="image/*" onChange={處理圖章選擇} className="hidden" />
+            </>
+          )}
+          {(() => {
+            const 顯示圖章 = 預覽圖章 !== null ? 預覽圖章 : 使用者.stampImage
+            return 顯示圖章 ? (
+              <span className="w-10 h-10 rounded-xl bg-white border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center">
+                <img src={顯示圖章} alt="活動圖章" className="w-full h-full object-cover" />
+              </span>
+            ) : (
+              <span className="text-sm text-gray-400">尚未設定</span>
+            )
+          })()}
+        </div>
+      </div>
+
+      {/* 圖章裁切編輯器 */}
+      {圖章原始圖片 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => set圖章原始圖片(null)}>
+          <div className="bg-white rounded-2xl p-5 mx-4 w-full max-w-xs space-y-4" onClick={e => e.stopPropagation()}>
+            <h4 className="text-center font-bold text-gray-800">調整圖章</h4>
+            <div className="flex justify-center">
+              <div className="relative w-[200px] h-[200px] rounded-3xl overflow-hidden border-2 border-gray-200 bg-gray-100 select-none touch-none"
+                onMouseDown={e => 開始圖章拖曳(e.clientX, e.clientY)}
+                onMouseMove={e => 圖章移動中(e.clientX, e.clientY)}
+                onMouseUp={結束圖章拖曳} onMouseLeave={結束圖章拖曳}
+                onTouchStart={e => { const t = e.touches[0]; 開始圖章拖曳(t.clientX, t.clientY) }}
+                onTouchMove={e => { const t = e.touches[0]; 圖章移動中(t.clientX, t.clientY) }}
+                onTouchEnd={結束圖章拖曳}>
+                <img src={圖章原始圖片} alt="裁切預覽" draggable={false}
+                  className="absolute pointer-events-none"
+                  style={{
+                    minWidth: '100%', minHeight: '100%',
+                    width: `${圖章裁切縮放 * 100}%`, height: `${圖章裁切縮放 * 100}%`,
+                    left: `${50 + (圖章裁切位移.x / 200) * 100}%`,
+                    top: `${50 + (圖章裁切位移.y / 200) * 100}%`,
+                    transform: 'translate(-50%, -50%)',
+                    objectFit: 'cover',
+                  }} />
+              </div>
+            </div>
+            <div className="flex items-center gap-3 px-2">
+              <ZoomOut size={16} className="text-gray-400 shrink-0" />
+              <input type="range" min="1" max="3" step="0.05" value={圖章裁切縮放}
+                onChange={e => set圖章裁切縮放(Number(e.target.value))}
+                className="flex-1 accent-strava cursor-pointer" />
+              <ZoomIn size={16} className="text-gray-400 shrink-0" />
+            </div>
+            <p className="text-center text-xs text-gray-400">拖曳圖片調整位置</p>
+            <div className="flex gap-3">
+              <button onClick={() => set圖章原始圖片(null)}
+                className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-500 cursor-pointer hover:bg-gray-50 transition-colors">
+                取消
+              </button>
+              <button onClick={確認圖章裁切}
+                className="flex-1 py-2 rounded-lg bg-strava text-white text-sm font-medium cursor-pointer hover:bg-orange-600 transition-colors">
+                確認
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between py-2 border-b border-gray-100">
         <span className="text-sm text-gray-500">姓名</span>
         {編輯中 ? (
@@ -274,7 +506,7 @@ function 個人資料區塊() {
           <span className="text-sm font-medium">{使用者.name}</span>
         )}
       </div>
-      <div className="flex items-center justify-between py-2">
+      <div className="flex items-center justify-between py-2 border-b border-gray-100">
         <span className="text-sm text-gray-500">所在縣市</span>
         {編輯中 ? (
           <select name="county" value={編輯縣市} onChange={e => set編輯縣市(e.target.value)}
@@ -286,6 +518,20 @@ function 個人資料區塊() {
           <span className="text-sm font-medium">{縣市名稱}</span>
         )}
       </div>
+      {使用者.authProvider && (
+        <div className="flex items-center justify-between py-2">
+          <span className="text-sm text-gray-500">登入方式</span>
+          <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${
+            ({ facebook: 'text-facebook', google: 'text-google', line: 'text-line', strava: 'text-strava' } as Record<string, string>)[使用者.authProvider] ?? 'text-gray-700'
+          }`}>
+            {使用者.authProvider === 'facebook' && <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>}
+            {使用者.authProvider === 'google' && <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>}
+            {使用者.authProvider === 'line' && <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.271.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>}
+            {使用者.authProvider === 'strava' && <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>}
+            {{ facebook: 'Facebook', google: 'Google', line: 'LINE', strava: 'Strava' }[使用者.authProvider]}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

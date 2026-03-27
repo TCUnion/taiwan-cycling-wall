@@ -1,6 +1,6 @@
 // 發起約騎頁面 — 支援範本快速填入與儲存
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ExternalLink, Bike, MapPin, X, Link, BookmarkPlus, Bookmark, Trash2, ImagePlus, Save } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
@@ -39,7 +39,10 @@ export default function CreateEventPage() {
   const 取得目前發文身份 = useAuthStore(s => s.取得目前發文身份)
   const 目前身份 = 取得目前發文身份()
   const { 活動列表, 新增活動, 更新活動 } = useEventStore()
-  const { 範本列表, 新增範本, 刪除範本 } = useTemplateStore()
+  const { 範本列表, 載入中, 載入範本, 新增範本, 刪除範本 } = useTemplateStore()
+
+  // 載入共用範本
+  useEffect(() => { 載入範本() }, [載入範本])
 
   if (!使用者) return null
 
@@ -57,9 +60,6 @@ export default function CreateEventPage() {
     const match = desc.match(/🛣️ 路線：\n([\s\S]*?)(?=\n\n⚠️|$)/)
     return match ? match[1].trim() : ''
   }
-
-  // 我的範本
-  const 我的範本 = 範本列表.filter(t => t.creatorId === 使用者.id)
 
   // 表單狀態（編輯模式用既有值）
   const [date, setDate] = useState(編輯中活動?.date ?? '')
@@ -81,8 +81,10 @@ export default function CreateEventPage() {
 
   // 範本 UI
   const [顯示範本, set顯示範本] = useState(false)
+  const [範本縣市, set範本縣市] = useState('')
   const [儲存範本名, set儲存範本名] = useState('')
   const [顯示儲存, set顯示儲存] = useState(false)
+  const 篩選後範本 = 範本列表.filter(t => !範本縣市 || t.countyId === 範本縣市)
 
   const 今天 = new Date().toISOString().split('T')[0]
   const 可提交 = routeName.trim() && date
@@ -123,6 +125,7 @@ export default function CreateEventPage() {
       maxParticipants,
       notes: notes.split('\n').filter(s => s.trim()),
       creatorId: 使用者.id,
+      creatorName: 使用者.name,
     })
     set儲存範本名('')
     set顯示儲存(false)
@@ -232,7 +235,7 @@ export default function CreateEventPage() {
         <div className="ml-auto flex gap-1">
           {/* 套用範本 */}
           <button onClick={() => set顯示範本(!顯示範本)} aria-label="範本"
-            className="p-2 rounded-full cursor-pointer hover:bg-black/5 transition-colors text-gray-600">
+            className={`p-2 rounded-full cursor-pointer hover:bg-black/5 transition-colors ${顯示範本 ? 'text-strava' : 'text-gray-600'}`}>
             <Bookmark size={20} />
           </button>
           {/* 儲存為範本 */}
@@ -245,15 +248,25 @@ export default function CreateEventPage() {
 
       <div className="px-4 pb-8 space-y-4">
 
-        {/* 範本選擇器 */}
+        {/* 範本選擇器（共用範本） */}
         {顯示範本 && (
           <div className="rounded-xl bg-white p-4 shadow-sm space-y-3 border-2 border-strava/20">
             <h3 className="text-sm font-bold text-gray-700">從範本建立</h3>
-            {我的範本.length === 0 ? (
+            <div className="flex items-center gap-2">
+              <MapPin size={14} className="text-gray-400 shrink-0" />
+              <select name="tpl-county" value={範本縣市} onChange={e => set範本縣市(e.target.value)}
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20">
+                <option value="">全部縣市</option>
+                {縣市列表.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            {載入中 ? (
+              <p className="text-sm text-gray-500 py-2 text-center">載入中…</p>
+            ) : 篩選後範本.length === 0 ? (
               <p className="text-sm text-gray-500 py-2">尚無範本，填寫表單後可點右上角儲存</p>
             ) : (
-              <div className="space-y-2">
-                {我的範本.map(t => (
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {篩選後範本.map(t => (
                   <div key={t.id} className="flex items-center gap-2">
                     <button
                       onClick={() => 套用範本(t)}
@@ -263,11 +276,16 @@ export default function CreateEventPage() {
                       <p className="text-xs text-gray-500 mt-0.5">
                         {t.routeName} · {查找縣市(t.countyId)?.name ?? ''} · {t.time}
                       </p>
+                      {t.creatorName && (
+                        <p className="text-xs text-gray-400 mt-0.5">by {t.creatorName}</p>
+                      )}
                     </button>
-                    <button onClick={() => 刪除範本(t.id)} aria-label="刪除範本"
-                      className="p-2 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 cursor-pointer transition-colors">
-                      <Trash2 size={16} />
-                    </button>
+                    {t.creatorId === 使用者.id && (
+                      <button onClick={() => 刪除範本(t.id)} aria-label="刪除範本"
+                        className="p-2 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 cursor-pointer transition-colors">
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -332,29 +350,7 @@ export default function CreateEventPage() {
           )}
         </區塊>
 
-        {/* ③ 路線 */}
-        <區塊 title="路線">
-          <Input label="路線名稱 *" value={routeName} onChange={e => 處理路線名稱(e.target.value)}
-            placeholder="例：埔里虎頭山、鳥嘴潭繞繞…" maxLength={50} />
-          <div className="mt-3">
-            <label className="text-sm font-medium text-gray-700 block mb-1">路線描述</label>
-            <textarea value={routeDetail} onChange={e => setRouteDetail(e.target.value)}
-              placeholder="例：樹王 7-11 → 中投公路 → 草屯 → 鳥嘴潭 BCD×4 圈…" rows={3}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20 placeholder:text-gray-400" />
-          </div>
-          <div className="mt-3">
-            <Input label="路線連結（Strava / Garmin / 其他）" value={routeUrl} onChange={e => setRouteUrl(e.target.value)}
-              placeholder="貼上路線分享連結…" />
-            {routeUrl && (
-              <a href={routeUrl} target="_blank" rel="noopener noreferrer"
-                className="mt-1 inline-flex items-center gap-1 text-xs text-strava cursor-pointer hover:underline">
-                <Link size={12} /> 開啟路線
-              </a>
-            )}
-          </div>
-        </區塊>
-
-        {/* ④ 集合地點 */}
+        {/* ③ 集合地點 */}
         <區塊 title="集合地點">
           <Input label="地點名稱" value={spotName} onChange={e => 處理集合點(e.target.value, spotUrl)}
             placeholder="例：7-11 樹王門市、VELOSTUDIO…" />
@@ -375,6 +371,28 @@ export default function CreateEventPage() {
               <option value="">自動帶入或手動選擇</option>
               {縣市列表.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
+          </div>
+        </區塊>
+
+        {/* ④ 路線 */}
+        <區塊 title="路線">
+          <Input label="路線名稱 *" value={routeName} onChange={e => 處理路線名稱(e.target.value)}
+            placeholder="例：埔里虎頭山、鳥嘴潭繞繞…" maxLength={50} />
+          <div className="mt-3">
+            <label className="text-sm font-medium text-gray-700 block mb-1">路線描述</label>
+            <textarea value={routeDetail} onChange={e => setRouteDetail(e.target.value)}
+              placeholder="例：樹王 7-11 → 中投公路 → 草屯 → 鳥嘴潭 BCD×4 圈…" rows={3}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20 placeholder:text-gray-400" />
+          </div>
+          <div className="mt-3">
+            <Input label="路線連結（Strava / Garmin / 其他）" value={routeUrl} onChange={e => setRouteUrl(e.target.value)}
+              placeholder="貼上路線分享連結…" />
+            {routeUrl && (
+              <a href={routeUrl} target="_blank" rel="noopener noreferrer"
+                className="mt-1 inline-flex items-center gap-1 text-xs text-strava cursor-pointer hover:underline">
+                <Link size={12} /> 開啟路線
+              </a>
+            )}
           </div>
         </區塊>
 

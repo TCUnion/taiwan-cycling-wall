@@ -12,7 +12,7 @@ const 尺寸: Record<string, string> = {
 }
 
 // 判斷是否為網址（FB 頭像等）
-const 是網址 = (s: string) => s.startsWith('http://') || s.startsWith('https://')
+const 是網址 = (s: string) => s?.startsWith('http://') || s?.startsWith('https://') || s?.startsWith('data:')
 
 // 頭像元件 — 支援 emoji 與圖片網址
 export default function Avatar({ emoji, size = 'md', className = '' }: AvatarProps) {
@@ -22,13 +22,13 @@ export default function Avatar({ emoji, size = 'md', className = '' }: AvatarPro
         src={emoji}
         alt="頭像"
         referrerPolicy="no-referrer"
-        className={`rounded-full object-cover bg-gray-100 ${尺寸[size]} ${className}`}
+        className={`rounded-xl object-cover bg-gray-100 ${尺寸[size]} ${className}`}
       />
     )
   }
 
   return (
-    <div className={`flex items-center justify-center rounded-full bg-gray-100 ${尺寸[size]} ${className}`}>
+    <div className={`flex items-center justify-center rounded-xl bg-gray-100 ${尺寸[size]} ${className}`}>
       {emoji}
     </div>
   )
