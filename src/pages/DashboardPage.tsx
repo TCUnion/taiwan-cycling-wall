@@ -41,9 +41,6 @@ export default function DashboardPage() {
             <p className="text-sm text-gray-500">
               {查找縣市(使用者.countyId)?.name ?? 使用者.countyId}
             </p>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {追蹤中.length} 追蹤中 · {粉絲.length} 粉絲
-            </p>
           </div>
           <button
             onClick={處理登出}
