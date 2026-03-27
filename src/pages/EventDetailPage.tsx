@@ -13,6 +13,7 @@ import Badge from '../components/ui/Badge'
 import Avatar from '../components/ui/Avatar'
 import MoakBadge from '../components/event/MoakBadge'
 import VerifiedBadge from '../components/ui/VerifiedBadge'
+import { 安全渲染Markdown } from '../utils/sanitize'
 
 export default function EventDetailPage() {
   const { id } = useParams()
@@ -139,24 +140,10 @@ export default function EventDetailPage() {
           </a>
         )}
 
-        {/* 活動說明（路線描述 + 注意事項，支援簡易 Markdown） */}
+        {/* 活動說明（路線描述 + 注意事項，支援簡易 Markdown，DOMPurify 淨化） */}
         {活動.description && (
           <div className="rounded-xl bg-white p-4 shadow-sm text-sm text-gray-700 leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-1 [&_li]:my-0.5"
-               dangerouslySetInnerHTML={{ __html: (() => {
-                 // 先跳脫 HTML
-                 let html = 活動.description
-                   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-                 // 粗體
-                 html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                 // 列表：連續以 - 開頭的行轉為 <ul><li>
-                 html = html.replace(/(^|\n)(- .+(?:\n- .+)*)/g, (_match, prefix, block) => {
-                   const items = block.split('\n').map((line: string) => `<li>${line.slice(2)}</li>`).join('')
-                   return `${prefix}<ul>${items}</ul>`
-                 })
-                 // 剩餘換行轉 <br>
-                 html = html.replace(/\n/g, '<br>')
-                 return html
-               })() }} />
+               dangerouslySetInnerHTML={{ __html: 安全渲染Markdown(活動.description) }} />
         )}
 
         {/* MOAK 認證 */}

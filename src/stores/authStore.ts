@@ -324,6 +324,24 @@ export const useAuthStore = create<AuthState>()(
         }
       },
     }),
-    { name: '約騎-auth' }
+    {
+      name: '約騎-auth',
+      // 持久化前移除敏感的 accessToken，避免暴露於 localStorage
+      partialize: (state) => ({
+        ...state,
+        使用者: state.使用者 ? {
+          ...state.使用者,
+          stravaProfile: state.使用者.stravaProfile
+            ? { ...state.使用者.stravaProfile, accessToken: undefined }
+            : undefined,
+        } : null,
+        所有使用者: state.所有使用者.map(u => ({
+          ...u,
+          stravaProfile: u.stravaProfile
+            ? { ...u.stravaProfile, accessToken: undefined }
+            : undefined,
+        })),
+      }),
+    }
   )
 )
