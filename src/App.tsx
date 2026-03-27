@@ -16,6 +16,7 @@ const HistoryPage = lazy(() => import('./pages/HistoryPage'))
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
 const DataDeletionPage = lazy(() => import('./pages/DataDeletionPage'))
 const OAuthCallbackPage = lazy(() => import('./pages/OAuthCallbackPage'))
+const LiffVerifyPage = lazy(() => import('./pages/LiffVerifyPage'))
 
 // 載入中畫面
 function Loading() {
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/data-deletion" element={<DataDeletionPage />} />
         <Route path="/auth/callback" element={<OAuthCallbackPage />} />
+        <Route path="/liff/verify" element={<LiffVerifyPage />} />
 
         {/* 公開瀏覽頁面 — 含底部導覽列，不需登入 */}
         <Route element={<AppShell />}>

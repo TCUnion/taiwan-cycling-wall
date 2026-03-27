@@ -15,6 +15,8 @@ function toDbRow(user: User) {
     stamp_image: user.stampImage ?? null,
     social_avatar: user.socialAvatar ?? null,
     stats: user.stats,
+    verified_at: user.verifiedAt ?? null,
+    line_verified_user_id: user.lineVerifiedUserId ?? null,
     updated_at: new Date().toISOString(),
   }
 }
@@ -33,6 +35,8 @@ function fromDbRow(row: Record<string, unknown>): Partial<User> {
     stampImage: row.stamp_image as string | undefined,
     socialAvatar: row.social_avatar as string | undefined,
     stats: row.stats as User['stats'],
+    verifiedAt: row.verified_at as string | undefined,
+    lineVerifiedUserId: row.line_verified_user_id as string | undefined,
   }
 }
 
@@ -75,6 +79,8 @@ export async function 更新使用者欄位(
   if (fields.stampImage !== undefined) dbFields.stamp_image = fields.stampImage
   if (fields.socialAvatar !== undefined) dbFields.social_avatar = fields.socialAvatar
   if (fields.stats !== undefined) dbFields.stats = fields.stats
+  if (fields.verifiedAt !== undefined) dbFields.verified_at = fields.verifiedAt
+  if (fields.lineVerifiedUserId !== undefined) dbFields.line_verified_user_id = fields.lineVerifiedUserId
 
   const { error } = await supabase
     .from('users')

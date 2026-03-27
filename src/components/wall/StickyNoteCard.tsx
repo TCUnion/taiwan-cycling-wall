@@ -6,6 +6,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { 格式化日期, 格式化距離 } from '../../utils/formatters'
 import { 取得旋轉角度 } from '../../stores/eventStore'
 import Badge from '../ui/Badge'
+import VerifiedBadge from '../ui/VerifiedBadge'
 import { useEventStore } from '../../stores/eventStore'
 
 // 便利貼背景色對照
@@ -89,8 +90,23 @@ export default function StickyNoteCard({ 活動 }: Props) {
             <img src={粉絲頁資訊.pictureUrl} alt="" className="w-4 h-4 rounded-full object-cover" referrerPolicy="no-referrer" />
           ) : null}
           <span className="text-[10px] text-gray-500 truncate">{粉絲頁資訊.name}</span>
+          {(() => {
+            const 管理者 = 所有使用者.find(u => u.managedPages?.some(p => p.pageId === 粉絲頁Id))
+            return 管理者?.verifiedAt ? <VerifiedBadge size="sm" /> : null
+          })()}
         </div>
       )}
+
+      {/* 個人發起人認證 Badge */}
+      {!是粉絲頁活動 && (() => {
+        const 發起人 = 所有使用者.find(u => u.id === 活動.creatorId)
+        return 發起人?.verifiedAt ? (
+          <div className="flex items-center gap-1 mb-1">
+            <span className="text-[10px] text-gray-500 truncate">{發起人.name}</span>
+            <VerifiedBadge size="sm" />
+          </div>
+        ) : null
+      })()}
 
       {/* 資訊列 */}
       <div className="space-y-1.5 text-xs text-gray-600">

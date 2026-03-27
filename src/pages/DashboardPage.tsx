@@ -8,6 +8,7 @@ import { useEventStore } from '../stores/eventStore'
 import { 模擬追蹤, 模擬粉絲 } from '../data/mockUsers'
 import { 查找縣市, 縣市列表 } from '../data/counties'
 import Avatar from '../components/ui/Avatar'
+import VerificationSection from '../components/dashboard/VerificationSection'
 import { format } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
 
@@ -123,6 +124,9 @@ export default function DashboardPage() {
       <div className="px-4 pt-4 space-y-5">
         {/* 基本資訊 */}
         <個人資料區塊 />
+
+        {/* TCU 認證 */}
+        <VerificationSection />
 
         {/* 追蹤 / 粉絲 */}
         <粉絲區塊 追蹤中={追蹤中} 粉絲={粉絲} />

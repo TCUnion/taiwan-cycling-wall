@@ -56,6 +56,20 @@ export interface User {
   authProvider?: AuthProvider    // 登入來源
   email?: string                 // Google 登入時取得
   stravaProfile?: StravaProfile  // Strava 登入時取得
+  verifiedAt?: string            // TCU 認證時間（ISO 字串）
+  lineVerifiedUserId?: string    // 認證時使用的 LINE User ID
+}
+
+// TCU 認證記錄
+export interface UserVerification {
+  id: string
+  userId: string
+  lineUserId?: string
+  token: string
+  status: 'pending' | 'verified' | 'expired'
+  createdAt: string
+  verifiedAt?: string
+  expiresAt: string
 }
 
 // Strava 運動員資料

@@ -12,6 +12,7 @@ import Button from '../components/ui/Button'
 import Badge from '../components/ui/Badge'
 import Avatar from '../components/ui/Avatar'
 import MoakBadge from '../components/event/MoakBadge'
+import VerifiedBadge from '../components/ui/VerifiedBadge'
 
 export default function EventDetailPage() {
   const { id } = useParams()
@@ -83,6 +84,15 @@ export default function EventDetailPage() {
             <div className="flex items-center gap-2 mt-2">
               <Avatar emoji={發起人.avatar} size="sm" />
               <span className="text-sm text-gray-600">{發起人.name} 發起</span>
+              {(() => {
+                // 粉絲頁活動：找管理者的 verifiedAt；個人活動：直接看發起人
+                if (是粉絲頁活動) {
+                  const 管理者 = 所有使用者.find(u => u.managedPages?.some(p => p.pageId === 粉絲頁Id))
+                  return 管理者?.verifiedAt ? <VerifiedBadge size="md" /> : null
+                }
+                const 使用者發起人 = 所有使用者.find(u => u.id === 活動.creatorId)
+                return 使用者發起人?.verifiedAt ? <VerifiedBadge size="md" /> : null
+              })()}
             </div>
           )}
         </div>
