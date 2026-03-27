@@ -9,6 +9,7 @@ import { 模擬追蹤, 模擬粉絲 } from '../data/mockUsers'
 import { 查找縣市, 縣市列表 } from '../data/counties'
 import Avatar from '../components/ui/Avatar'
 import VerificationSection from '../components/dashboard/VerificationSection'
+import { 淨化純文字 } from '../utils/sanitize'
 import { format } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
 
@@ -215,7 +216,7 @@ function 個人資料區塊() {
   const 開始編輯 = () => { set編輯姓名(使用者.name); set編輯縣市(使用者.countyId); set預覽頭像(null); set原始圖片(null); set預覽圖章(null); set圖章原始圖片(null); set編輯中(true) }
   const 儲存編輯 = () => {
     if (!編輯姓名.trim()) return
-    const 更新資料: Record<string, string | undefined> = { name: 編輯姓名.trim(), countyId: 編輯縣市 }
+    const 更新資料: Record<string, string | undefined> = { name: 淨化純文字(編輯姓名.trim()), countyId: 編輯縣市 }
     if (預覽頭像) 更新資料.avatar = 預覽頭像
     if (預覽圖章 !== null) 更新資料.stampImage = 預覽圖章 || undefined
     更新使用者(更新資料)

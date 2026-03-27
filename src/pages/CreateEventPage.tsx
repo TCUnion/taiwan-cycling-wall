@@ -12,6 +12,7 @@ import { useNotesTemplateStore } from '../stores/notesTemplateStore'
 import { 查找縣市, 縣市列表 } from '../data/counties'
 import { 產生ID } from '../utils/formatters'
 import type { CyclingEvent, RideTemplate } from '../types'
+import { 淨化純文字, 淨化輸入文字, 安全URL } from '../utils/sanitize'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Avatar from '../components/ui/Avatar'
@@ -166,32 +167,40 @@ export default function CreateEventPage() {
     if (!countyId) { const r = 從文字推斷縣市(name) || 從文字推斷縣市(url); if (r) setCountyId(r) }
   }
 
-  // 過濾 http 連結（安全性）
-  const 過濾連結 = (text: string) => text.replace(/https?:\/\/\S+/g, '[連結已移除]')
+  // 過濾連結（使用共用淨化工具）
+  const 過濾連結 = (text: string) => 淨化輸入文字(text)
 
   const 提交 = async () => {
     if (!使用者 || !可提交) return
     const 有效縣市 = countyId || 使用者.countyId || 'taipei'
     const 縣市 = 查找縣市(有效縣市)
+
+    // 淨化所有使用者輸入欄位
+    const 安全標題 = 淨化純文字(routeName.trim())
+    const 安全集合點 = 淨化純文字(spotName.trim())
+    const 安全配速 = 淨化純文字(pace) || '自由配速'
+    const 安全集合點URL = 安全URL(spotUrl.trim())
+    const 安全路線URL = 安全URL(routeUrl.trim())
+
     const 各段: string[] = []
-    if (routeDetail.trim()) 各段.push(`🛣️ 路線：\n${routeDetail.trim()}`)
+    if (routeDetail.trim()) 各段.push(`🛣️ 路線：\n${淨化純文字(routeDetail.trim())}`)
     const 安全備註 = 過濾連結(notes.trim())
     if (安全備註) 各段.push(`⚠️ 注意事項：\n${安全備註}`)
 
     if (是編輯模式 && editId) {
       // 編輯模式：更新既有活動
       await 更新活動(editId, {
-        title: routeName.trim(),
+        title: 安全標題,
         description: 各段.join('\n\n'),
         countyId: 有效縣市,
         region: 縣市?.region || '北部',
         date, time,
-        meetingPoint: spotName.trim(),
-        meetingPointUrl: spotUrl.trim() || undefined,
+        meetingPoint: 安全集合點,
+        meetingPointUrl: 安全集合點URL,
         distance, elevation,
-        pace: pace || '自由配速',
+        pace: 安全配速,
         maxParticipants,
-        stravaRouteUrl: routeUrl.trim() || undefined,
+        stravaRouteUrl: 安全路線URL,
         coverImage: coverImage || undefined,
       })
       navigate(`/event/${editId}`, { replace: true })
@@ -202,17 +211,17 @@ export default function CreateEventPage() {
     const id = 產生ID()
     const 新活動: CyclingEvent = {
       id,
-      title: routeName.trim(),
+      title: 安全標題,
       description: 各段.join('\n\n'),
       countyId: 有效縣市,
       region: 縣市?.region || '北部',
       date, time,
-      meetingPoint: spotName.trim(),
-      meetingPointUrl: spotUrl.trim() || undefined,
+      meetingPoint: 安全集合點,
+      meetingPointUrl: 安全集合點URL,
       distance, elevation,
-      pace: pace || '自由配速',
+      pace: 安全配速,
       maxParticipants,
-      stravaRouteUrl: routeUrl.trim() || undefined,
+      stravaRouteUrl: 安全路線URL,
       coverImage: coverImage || undefined,
       stickyColor: 取得便利貼顏色(id),
       tags: [],

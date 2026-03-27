@@ -13,7 +13,7 @@ import Badge from '../components/ui/Badge'
 import Avatar from '../components/ui/Avatar'
 import MoakBadge from '../components/event/MoakBadge'
 import VerifiedBadge from '../components/ui/VerifiedBadge'
-import { 安全渲染Markdown } from '../utils/sanitize'
+import { 安全渲染Markdown, 安全URL } from '../utils/sanitize'
 
 export default function EventDetailPage() {
   const { id } = useParams()
@@ -121,7 +121,7 @@ export default function EventDetailPage() {
               <div>
                 <p className="font-medium text-sm">集合地點</p>
                 <p className="text-gray-700 text-sm mt-0.5">{活動.meetingPoint}</p>
-                <a href={活動.meetingPointUrl || 導航連結} target="_blank" rel="noopener noreferrer"
+                <a href={安全URL(活動.meetingPointUrl) || 導航連結} target="_blank" rel="noopener noreferrer"
                   className="mt-1.5 inline-flex items-center gap-1 text-xs text-strava cursor-pointer hover:underline">
                   <ExternalLink size={12} /> 在 Google Maps 開啟
                 </a>
@@ -131,8 +131,8 @@ export default function EventDetailPage() {
         )}
 
         {/* 路線連結（Strava / Garmin / 其他） */}
-        {活動.stravaRouteUrl && (
-          <a href={活動.stravaRouteUrl} target="_blank" rel="noopener noreferrer"
+        {活動.stravaRouteUrl && 安全URL(活動.stravaRouteUrl) && (
+          <a href={安全URL(活動.stravaRouteUrl)!} target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-2 rounded-xl bg-strava/10 px-4 py-3 text-sm text-strava cursor-pointer hover:bg-strava/20 transition-colors">
             <Link size={18} />
             <span className="font-medium">{路線連結類型(活動.stravaRouteUrl)}：查看路線</span>
@@ -161,7 +161,7 @@ export default function EventDetailPage() {
         {/* 廣告 */}
         {廣告 && (
           <a
-            href={廣告.product_url}
+            href={安全URL(廣告.product_url) ?? '#'}
             target="_blank"
             rel="noopener noreferrer"
             className="block rounded-xl bg-white shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-shadow"

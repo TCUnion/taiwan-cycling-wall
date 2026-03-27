@@ -5,15 +5,20 @@ import { ShieldCheck, Loader2, CheckCircle2, XCircle } from 'lucide-react'
 import { 初始化LIFF, 取得LINE使用者, 關閉LIFF } from '../utils/liff'
 import { 驗證認證碼 } from '../utils/verificationService'
 
-type 頁面狀態 = '載入中' | '輸入認證碼' | '驗證中' | '成功' | '失敗'
+type 頁面狀態 = '載入中' | '輸入認證碼' | '驗證中' | '成功' | '失敗' | '已鎖定'
+
+const 前端最大嘗試次數 = 5
+const 鎖定時間_分鐘 = 5
 
 export default function LiffVerifyPage() {
   const [狀態, set狀態] = useState<頁面狀態>('載入中')
   const [認證碼, set認證碼] = useState('')
   const [錯誤訊息, set錯誤訊息] = useState('')
   const [lineUserId, setLineUserId] = useState('')
+  const [嘗試次數, set嘗試次數] = useState(0)
+  const [鎖定到, set鎖定到] = useState<number | null>(null)
 
-  // 初始化 LIFF + 取得使用者
+  // 初始化 LIFF + 取得使用者 + 從 URL 讀取認證碼
   useEffect(() => {
     async function init() {
       const ok = await 初始化LIFF()
@@ -28,21 +33,48 @@ export default function LiffVerifyPage() {
         return
       }
       setLineUserId(使用者.userId)
+
+      // 從 URL query string 讀取自帶的認證碼
+      const params = new URLSearchParams(window.location.search)
+      const urlCode = params.get('code')
+      if (urlCode && /^\d{6}$/.test(urlCode)) {
+        set認證碼(urlCode)
+      }
+
       set狀態('輸入認證碼')
     }
     init()
   }, [])
 
-  const 送出驗證 = async () => {
-    if (認證碼.length !== 6) return
-    set狀態('驗證中')
+  // 檢查是否在鎖定期間
+  const 是否鎖定中 = 鎖定到 !== null && Date.now() < 鎖定到
 
+  const 送出驗證 = async () => {
+    if (認證碼.length !== 6 || 是否鎖定中) return
+
+    // 前端嘗試次數檢查
+    if (嘗試次數 >= 前端最大嘗試次數) {
+      set鎖定到(Date.now() + 鎖定時間_分鐘 * 60 * 1000)
+      set狀態('已鎖定')
+      set錯誤訊息(`嘗試次數過多，請等待 ${鎖定時間_分鐘} 分鐘後再試`)
+      return
+    }
+
+    set狀態('驗證中')
     const 結果 = await 驗證認證碼(認證碼.trim(), lineUserId)
     if (結果.success) {
       set狀態('成功')
     } else {
+      const 新次數 = 嘗試次數 + 1
+      set嘗試次數(新次數)
       set狀態('失敗')
-      set錯誤訊息(結果.message)
+      const 剩餘 = 前端最大嘗試次數 - 新次數
+      if (剩餘 <= 0) {
+        set鎖定到(Date.now() + 鎖定時間_分鐘 * 60 * 1000)
+        set錯誤訊息(`嘗試次數過多，請等待 ${鎖定時間_分鐘} 分鐘後重新申請認證碼`)
+      } else {
+        set錯誤訊息(`${結果.message}（剩餘 ${剩餘} 次嘗試機會）`)
+      }
     }
   }
 
@@ -123,12 +155,26 @@ export default function LiffVerifyPage() {
             <XCircle size={48} className="text-red-400" />
             <p className="text-lg font-bold text-red-600">認證失敗</p>
             <p className="text-sm text-gray-500 text-center">{錯誤訊息}</p>
-            <button
-              onClick={() => { set狀態('輸入認證碼'); set認證碼(''); set錯誤訊息('') }}
-              className="mt-2 px-6 py-2 rounded-xl border border-gray-200 text-gray-600 font-medium cursor-pointer hover:bg-gray-50 transition-colors"
-            >
-              重新輸入
-            </button>
+            {嘗試次數 < 前端最大嘗試次數 && (
+              <button
+                onClick={() => { set狀態('輸入認證碼'); set認證碼(''); set錯誤訊息('') }}
+                className="mt-2 px-6 py-2 rounded-xl border border-gray-200 text-gray-600 font-medium cursor-pointer hover:bg-gray-50 transition-colors"
+              >
+                重新輸入
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* 已鎖定 */}
+        {狀態 === '已鎖定' && (
+          <div className="flex flex-col items-center gap-3 py-6">
+            <XCircle size={48} className="text-red-400" />
+            <p className="text-lg font-bold text-red-600">已暫時鎖定</p>
+            <p className="text-sm text-gray-500 text-center">{錯誤訊息}</p>
+            <p className="text-xs text-gray-400 text-center">
+              請返回約騎公布欄重新申請認證碼
+            </p>
           </div>
         )}
       </div>

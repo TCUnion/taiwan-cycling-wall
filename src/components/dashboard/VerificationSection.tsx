@@ -7,7 +7,7 @@ import { 建立認證請求 } from '../../utils/verificationService'
 import { useVerificationPolling } from '../../hooks/useVerificationPolling'
 import VerifiedBadge from '../ui/VerifiedBadge'
 
-const LINE_AT_URL = 'https://page.line.me/criterium'
+const LIFF_ID = import.meta.env.VITE_LIFF_ID as string | undefined
 
 export default function VerificationSection() {
   const { 使用者, 更新使用者 } = useAuthStore()
@@ -104,15 +104,15 @@ export default function VerificationSection() {
             有效時間：{剩餘分鐘}:{剩餘秒.toString().padStart(2, '0')}
           </p>
 
-          {/* 前往 LINE@ */}
+          {/* 開啟 LIFF 認證頁面（自帶認證碼） */}
           <a
-            href={LINE_AT_URL}
+            href={LIFF_ID ? `https://liff.line.me/${LIFF_ID}?code=${token}` : '#'}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-line text-white font-medium cursor-pointer hover:opacity-90 transition-opacity"
           >
             <ExternalLink size={16} />
-            前往 TCU LINE@
+            開啟 LINE 認證頁面
           </a>
 
           <p className="text-center text-xs text-gray-400">

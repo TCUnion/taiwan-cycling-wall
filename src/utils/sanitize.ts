@@ -42,3 +42,21 @@ export function 安全渲染Markdown(text: string): string {
 export function 淨化純文字(text: string): string {
   return DOMPurify.sanitize(text, { ALLOWED_TAGS: [] })
 }
+
+/** 淨化使用者輸入的文字欄位：移除 HTML 標籤 + 移除 http(s) 連結 */
+export function 淨化輸入文字(text: string): string {
+  // 移除 HTML 標籤
+  const 無標籤 = DOMPurify.sanitize(text, { ALLOWED_TAGS: [] })
+  // 移除 http(s) 連結
+  return 無標籤.replace(/https?:\/\/\S+/gi, '[連結已移除]')
+}
+
+/** 檢查 URL 是否安全（僅允許 http/https，阻擋 javascript: 等） */
+export function 安全URL(url: string | undefined): string | undefined {
+  if (!url) return undefined
+  const trimmed = url.trim()
+  if (!trimmed) return undefined
+  // 僅允許 http:// 或 https:// 開頭
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
+  return undefined
+}

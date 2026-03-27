@@ -1,14 +1,16 @@
 import { ExternalLink } from 'lucide-react'
 import type { AdPlacement } from '../../types'
+import { 安全URL } from '../../utils/sanitize'
 
 interface Props {
   廣告: AdPlacement
 }
 
 export default function AdCard({ 廣告 }: Props) {
+  const 連結 = 安全URL(廣告.product_url)
   return (
     <a
-      href={廣告.product_url}
+      href={連結 ?? '#'}
       target="_blank"
       rel="noopener noreferrer"
       className="
