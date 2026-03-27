@@ -104,15 +104,15 @@ export default function VerificationSection() {
             有效時間：{剩餘分鐘}:{剩餘秒.toString().padStart(2, '0')}
           </p>
 
-          {/* 開啟 LIFF 認證頁面（自帶認證碼） */}
+          {/* 前往 TCU LINE@ */}
           <a
-            href={LIFF_ID ? `https://liff.line.me/${LIFF_ID}?code=${token}` : '#'}
+            href={LIFF_ID ? `https://liff.line.me/${LIFF_ID}` : 'https://page.line.me/criterium'}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-line text-white font-medium cursor-pointer hover:opacity-90 transition-opacity"
           >
             <ExternalLink size={16} />
-            開啟 LINE 認證頁面
+            前往 TCU LINE@ 認證
           </a>
 
           <p className="text-center text-xs text-gray-400">

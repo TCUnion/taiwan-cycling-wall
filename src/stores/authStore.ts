@@ -53,10 +53,13 @@ async function 嘗試合併遠端資料(本地使用者: User): Promise<User> {
       return {
         ...本地使用者,
         // 遠端有值的欄位優先（跨裝置持久化的部分）
+        // 頭像：本地（社群登入最新值）優先，遠端僅作備用
+        avatar: 本地使用者.avatar || 遠端.avatar || '',
+        socialAvatar: 本地使用者.socialAvatar || 遠端.socialAvatar,
         countyId: 本地使用者.countyId || 遠端.countyId || '',
         stats: 遠端.stats ?? 本地使用者.stats,
         managedPages: 遠端.managedPages ?? 本地使用者.managedPages,
-        stampImage: 遠端.stampImage ?? 本地使用者.stampImage,
+        stampImage: 遠端.stampImage || 本地使用者.stampImage,
         verifiedAt: 遠端.verifiedAt ?? 本地使用者.verifiedAt,
         lineVerifiedUserId: 遠端.lineVerifiedUserId ?? 本地使用者.lineVerifiedUserId,
       }

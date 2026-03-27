@@ -33,14 +33,6 @@ export default function LiffVerifyPage() {
         return
       }
       setLineUserId(使用者.userId)
-
-      // 從 URL query string 讀取自帶的認證碼
-      const params = new URLSearchParams(window.location.search)
-      const urlCode = params.get('code')
-      if (urlCode && /^\d{6}$/.test(urlCode)) {
-        set認證碼(urlCode)
-      }
-
       set狀態('輸入認證碼')
     }
     init()
