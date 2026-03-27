@@ -11,12 +11,12 @@ const 尺寸: Record<string, string> = {
   lg: 'w-14 h-14 text-3xl',
 }
 
-// 判斷是否為網址（FB 頭像等）
-const 是網址 = (s: string) => s?.startsWith('http://') || s?.startsWith('https://') || s?.startsWith('data:')
+// 判斷是否為安全網址（僅允許 http/https，阻擋 javascript: / data: 等）
+const 是安全網址 = (s: string) => /^https?:\/\//i.test(s?.trim?.() ?? '')
 
 // 頭像元件 — 支援 emoji 與圖片網址
 export default function Avatar({ emoji, size = 'md', className = '' }: AvatarProps) {
-  if (是網址(emoji)) {
+  if (是安全網址(emoji)) {
     return (
       <img
         src={emoji}

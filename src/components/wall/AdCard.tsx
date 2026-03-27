@@ -1,6 +1,6 @@
 import { ExternalLink } from 'lucide-react'
 import type { AdPlacement } from '../../types'
-import { 安全URL } from '../../utils/sanitize'
+import { 安全URL, 淨化純文字 } from '../../utils/sanitize'
 
 interface Props {
   廣告: AdPlacement
@@ -31,8 +31,8 @@ export default function AdCard({ 廣告 }: Props) {
         {/* 左：產品圖片 */}
         <div className="w-24 self-stretch shrink-0 rounded overflow-hidden bg-gray-50">
           <img
-            src={廣告.image_url}
-            alt={廣告.product_name}
+            src={安全URL(廣告.image_url) ?? ''}
+            alt={淨化純文字(廣告.product_name)}
             className="w-full h-full object-contain"
             loading="lazy"
           />

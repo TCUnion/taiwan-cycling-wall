@@ -7,6 +7,7 @@ import { Loader2 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { 處理LINE回調 } from '../utils/line'
 import { 處理Strava回調 } from '../utils/strava'
+import { 淨化純文字 } from '../utils/sanitize'
 
 export default function OAuthCallbackPage() {
   const navigate = useNavigate()
@@ -22,7 +23,7 @@ export default function OAuthCallbackPage() {
       const error = searchParams.get('error')
 
       if (error) {
-        set錯誤訊息(`登入取消或失敗：${error}`)
+        set錯誤訊息(`登入取消或失敗：${淨化純文字(error)}`)
         return
       }
 

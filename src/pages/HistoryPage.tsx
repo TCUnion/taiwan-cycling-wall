@@ -6,6 +6,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 import { useAds } from '../hooks/useAds'
 import { 查找縣市 } from '../data/counties'
 import { 格式化日期, 格式化距離 } from '../utils/formatters'
+import { 安全URL, 淨化純文字 } from '../utils/sanitize'
 import Badge from '../components/ui/Badge'
 
 export default function HistoryPage() {
@@ -43,19 +44,19 @@ export default function HistoryPage() {
           {/* 廣告 */}
           {廣告 && (
             <a
-              href={廣告.product_url}
+              href={安全URL(廣告.product_url) ?? '#'}
               target="_blank"
               rel="noopener noreferrer"
               className="block rounded-xl bg-white shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
             >
               <div className="flex gap-4 p-4">
                 <div className="w-28 shrink-0 self-stretch rounded-lg overflow-hidden bg-gray-50">
-                  <img src={廣告.image_url} alt={廣告.product_name} className="w-full h-full object-contain" loading="lazy" />
+                  <img src={安全URL(廣告.image_url) ?? ''} alt={淨化純文字(廣告.product_name)} className="w-full h-full object-contain" loading="lazy" />
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col justify-center">
-                  <p className="text-xs text-strava font-medium">{廣告.brand_name}</p>
-                  <h3 className="font-bold text-sm leading-snug mt-0.5 line-clamp-2">{廣告.product_name}</h3>
-                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">{廣告.placement_text}</p>
+                  <p className="text-xs text-strava font-medium">{淨化純文字(廣告.brand_name)}</p>
+                  <h3 className="font-bold text-sm leading-snug mt-0.5 line-clamp-2">{淨化純文字(廣告.product_name)}</h3>
+                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">{淨化純文字(廣告.placement_text ?? '')}</p>
                 </div>
                 <div className="flex items-center shrink-0 text-gray-300">
                   <ExternalLink size={18} />

@@ -137,19 +137,19 @@ export default function CreateEventPage() {
     if (!儲存範本名.trim()) return
     新增範本({
       id: `tpl-${Date.now()}`,
-      name: 儲存範本名.trim(),
-      routeName,
-      routeDetail,
-      routeUrl,
-      spotName,
-      spotUrl,
+      name: 淨化純文字(儲存範本名.trim()),
+      routeName: 淨化純文字(routeName),
+      routeDetail: 淨化輸入文字(routeDetail),
+      routeUrl: 安全URL(routeUrl) ?? '',
+      spotName: 淨化純文字(spotName),
+      spotUrl: 安全URL(spotUrl) ?? '',
       countyId,
       time,
       distance,
       elevation,
-      pace,
+      pace: 淨化純文字(pace),
       maxParticipants,
-      notes: notes.split('\n').filter(s => s.trim()),
+      notes: notes.split('\n').filter(s => s.trim()).map(s => 淨化輸入文字(s)),
       creatorId: 使用者.id,
       creatorName: 使用者.name,
     })
@@ -438,8 +438,8 @@ export default function CreateEventPage() {
                   onClick={() => {
                     新增集合點範本({
                       id: `spot-${Date.now()}`,
-                      name: spotName.trim(),
-                      url: spotUrl.trim(),
+                      name: 淨化純文字(spotName.trim()),
+                      url: 安全URL(spotUrl.trim()) ?? '',
                       countyId,
                       creatorId: 使用者.id,
                     })
@@ -587,13 +587,13 @@ export default function CreateEventPage() {
                   onClick={() => {
                     新增路線範本({
                       id: `ri-${Date.now()}`,
-                      name: routeName.trim(),
-                      routeName: routeName.trim(),
-                      routeDetail,
-                      routeUrl,
+                      name: 淨化純文字(routeName.trim()),
+                      routeName: 淨化純文字(routeName.trim()),
+                      routeDetail: 淨化輸入文字(routeDetail),
+                      routeUrl: 安全URL(routeUrl) ?? '',
                       distance,
                       elevation,
-                      pace,
+                      pace: 淨化純文字(pace),
                       maxParticipants,
                       creatorId: 使用者.id,
                     })
@@ -710,11 +710,12 @@ export default function CreateEventPage() {
               {notes.trim() && (
                 <button
                   onClick={() => {
-                    const 預設名 = notes.trim().slice(0, 20) + (notes.trim().length > 20 ? '…' : '')
+                    const 安全備註 = 淨化輸入文字(notes.trim())
+                    const 預設名 = 安全備註.slice(0, 20) + (安全備註.length > 20 ? '…' : '')
                     新增備註範本({
                       id: `note-${Date.now()}`,
                       name: 預設名,
-                      notes: notes.trim(),
+                      notes: 安全備註,
                       creatorId: 使用者.id,
                     })
                   }}
