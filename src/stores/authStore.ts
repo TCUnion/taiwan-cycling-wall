@@ -56,6 +56,7 @@ async function 嘗試合併遠端資料(本地使用者: User): Promise<User> {
         countyId: 本地使用者.countyId || 遠端.countyId || '',
         stats: 遠端.stats ?? 本地使用者.stats,
         managedPages: 遠端.managedPages ?? 本地使用者.managedPages,
+        stampImage: 遠端.stampImage ?? 本地使用者.stampImage,
       }
     }
   } catch {

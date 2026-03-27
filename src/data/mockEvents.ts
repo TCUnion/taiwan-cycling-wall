@@ -1,6 +1,6 @@
-import type { CyclingEvent } from '../types'
+// 模擬資料（已遷移至 Supabase events 表，此檔僅作為種子資料參考）
 
-export const 模擬活動: CyclingEvent[] = [
+export const 模擬活動 = [
   {
     id: 'evt-1',
     title: '河濱晨騎團',

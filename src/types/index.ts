@@ -31,7 +31,6 @@ export interface CyclingEvent {
   distance: number    // 公里
   elevation: number   // 公尺
   pace: string        // 例如 '25-30 km/h'
-  participants: string[]  // 使用者 ID
   maxParticipants: number
   stravaRouteUrl?: string
   moakEventId?: string

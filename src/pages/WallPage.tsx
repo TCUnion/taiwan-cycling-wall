@@ -1,13 +1,18 @@
+import { useEffect } from 'react'
 import { useEventStore } from '../stores/eventStore'
 import { useAds } from '../hooks/useAds'
 import WallFilters from '../components/wall/WallFilters'
 import CorkBoard from '../components/wall/CorkBoard'
 
 export default function WallPage() {
-  const { 篩選區域, 排序, 設定篩選區域, 設定排序, 取得篩選後活動, 取得歷史活動 } = useEventStore()
+  const { 篩選區域, 排序, 設定篩選區域, 設定排序, 取得篩選後活動, 取得歷史活動, 載入活動 } = useEventStore()
   const 活動列表 = 取得篩選後活動()
   const 歷史數量 = 取得歷史活動().length
   const { 廣告列表 } = useAds()
+
+  useEffect(() => {
+    載入活動()
+  }, [載入活動])
 
   return (
     <div className="min-h-svh bg-cork">

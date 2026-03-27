@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Calendar, MapPin, Route, Mountain, ExternalLink } from 'lucide-react'
 import { useEventStore } from '../stores/eventStore'
@@ -8,8 +9,13 @@ import Badge from '../components/ui/Badge'
 
 export default function HistoryPage() {
   const navigate = useNavigate()
+  const 載入活動 = useEventStore(s => s.載入活動)
   const 歷史活動 = useEventStore(s => s.取得歷史活動)()
   const { 廣告列表 } = useAds()
+
+  useEffect(() => {
+    載入活動()
+  }, [載入活動])
   const 廣告 = 廣告列表[0]
 
   return (

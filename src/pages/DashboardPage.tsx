@@ -149,7 +149,7 @@ export default function DashboardPage() {
                   </p>
                 </div>
                 <div className="text-xs text-gray-500 shrink-0">
-                  {e.participants.length}/{e.maxParticipants} 人
+                  上限 {e.maxParticipants} 人
                 </div>
                 <ChevronRight size={16} className="text-gray-300 shrink-0" />
               </button>

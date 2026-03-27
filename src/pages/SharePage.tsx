@@ -74,7 +74,6 @@ export default function SharePage() {
               <div>
                 {活動.distance ? `🛣️ ${活動.distance}km` : ''}
                 {活動.elevation ? ` / ⛰️ ${活動.elevation}m` : ''}
-                {` / 👥 ${活動.participants.length}人`}
               </div>
             )}
           </div>

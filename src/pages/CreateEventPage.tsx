@@ -169,7 +169,7 @@ export default function CreateEventPage() {
   // 過濾 http 連結（安全性）
   const 過濾連結 = (text: string) => text.replace(/https?:\/\/\S+/g, '[連結已移除]')
 
-  const 提交 = () => {
+  const 提交 = async () => {
     if (!使用者 || !可提交) return
     const 有效縣市 = countyId || 使用者.countyId || 'taipei'
     const 縣市 = 查找縣市(有效縣市)
@@ -180,7 +180,7 @@ export default function CreateEventPage() {
 
     if (是編輯模式 && editId) {
       // 編輯模式：更新既有活動
-      更新活動(editId, {
+      await 更新活動(editId, {
         title: routeName.trim(),
         description: 各段.join('\n\n'),
         countyId: 有效縣市,
@@ -211,7 +211,6 @@ export default function CreateEventPage() {
       meetingPointUrl: spotUrl.trim() || undefined,
       distance, elevation,
       pace: pace || '自由配速',
-      participants: [使用者.id],
       maxParticipants,
       stravaRouteUrl: routeUrl.trim() || undefined,
       coverImage: coverImage || undefined,
@@ -220,7 +219,7 @@ export default function CreateEventPage() {
       creatorId: 目前身份.id,
       createdAt: new Date().toISOString(),
     }
-    新增活動(新活動)
+    await 新增活動(新活動)
     navigate('/wall', { replace: true })
   }
 

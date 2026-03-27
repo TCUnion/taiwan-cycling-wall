@@ -1,7 +1,6 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import type { CyclingEvent, Region, StickyColor } from '../types'
-import { 模擬活動 } from '../data/mockEvents'
+import { supabase } from '../utils/supabase'
 
 type 排序方式 = '最新' | '最熱門'
 
@@ -15,14 +14,14 @@ function 已過期(活動: CyclingEvent): boolean {
 
 interface EventState {
   活動列表: CyclingEvent[]
+  載入中: boolean
   篩選區域: Region | null
   排序: 排序方式
   設定篩選區域: (region: Region | null) => void
   設定排序: (sort: 排序方式) => void
-  新增活動: (event: CyclingEvent) => void
-  更新活動: (eventId: string, 更新: Partial<CyclingEvent>) => void
-  參加活動: (eventId: string, userId: string) => void
-  退出活動: (eventId: string, userId: string) => void
+  載入活動: () => Promise<void>
+  新增活動: (event: CyclingEvent) => Promise<void>
+  更新活動: (eventId: string, 更新: Partial<CyclingEvent>) => Promise<void>
   取得篩選後活動: () => CyclingEvent[]
   取得歷史活動: () => CyclingEvent[]
 }
@@ -49,55 +48,137 @@ export const 取得旋轉角度 = (id: string): string => {
   return `sticky-rotate-${角度 < 0 ? 'n' + Math.abs(角度) : 角度}`
 }
 
-export const useEventStore = create<EventState>()(
-  persist(
-    (set, get) => ({
-      活動列表: 模擬活動,
-      篩選區域: null,
-      排序: '最新',
-      設定篩選區域: (region) => set({ 篩選區域: region }),
-      設定排序: (sort) => set({ 排序: sort }),
-      新增活動: (event) => set((state) => ({
-        活動列表: [event, ...state.活動列表],
-      })),
-      更新活動: (eventId, 更新) => set((state) => ({
-        活動列表: state.活動列表.map(e => e.id === eventId ? { ...e, ...更新 } : e),
-      })),
-      參加活動: (eventId, userId) => set((state) => ({
-        活動列表: state.活動列表.map(e =>
-          e.id === eventId && !e.participants.includes(userId)
-            ? { ...e, participants: [...e.participants, userId] }
-            : e
-        ),
-      })),
-      退出活動: (eventId, userId) => set((state) => ({
-        活動列表: state.活動列表.map(e =>
-          e.id === eventId
-            ? { ...e, participants: e.participants.filter(p => p !== userId) }
-            : e
-        ),
-      })),
-      取得篩選後活動: () => {
-        const { 活動列表, 篩選區域, 排序 } = get()
-        // 排除過期活動（活動日期隔天後不顯示）
-        let 結果 = 活動列表.filter(e => !已過期(e))
-        if (篩選區域) {
-          結果 = 結果.filter(e => e.region === 篩選區域)
-        }
-        if (排序 === '最新') {
-          結果.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        } else {
-          結果.sort((a, b) => b.participants.length - a.participants.length)
-        }
-        return 結果
-      },
-      取得歷史活動: () => {
-        const { 活動列表 } = get()
-        return 活動列表
-          .filter(e => 已過期(e))
-          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      },
-    }),
-    { name: '約騎-events' }
-  )
-)
+// Supabase snake_case → 前端 camelCase
+function 轉換為活動(row: Record<string, unknown>): CyclingEvent {
+  return {
+    id: row.id as string,
+    title: row.title as string,
+    description: (row.description as string) || '',
+    countyId: row.county_id as string,
+    region: row.region as Region,
+    date: row.date as string,
+    time: row.time as string,
+    meetingPoint: (row.meeting_point as string) || '',
+    meetingPointUrl: (row.meeting_point_url as string) || undefined,
+    coverImage: (row.cover_image as string) || undefined,
+    distance: Number(row.distance) || 0,
+    elevation: Number(row.elevation) || 0,
+    pace: (row.pace as string) || '自由配速',
+    maxParticipants: (row.max_participants as number) || 20,
+    stravaRouteUrl: (row.strava_route_url as string) || undefined,
+    moakEventId: (row.moak_event_id as string) || undefined,
+    stickyColor: (row.sticky_color as StickyColor) || 'yellow',
+    tags: (row.tags as string[]) || [],
+    creatorId: row.creator_id as string,
+    createdAt: row.created_at as string,
+  }
+}
+
+// 前端 camelCase → Supabase snake_case
+function 轉換為資料列(e: CyclingEvent) {
+  return {
+    id: e.id,
+    title: e.title,
+    description: e.description,
+    county_id: e.countyId,
+    region: e.region,
+    date: e.date,
+    time: e.time,
+    meeting_point: e.meetingPoint,
+    meeting_point_url: e.meetingPointUrl || null,
+    cover_image: e.coverImage || null,
+    distance: e.distance,
+    elevation: e.elevation,
+    pace: e.pace,
+    max_participants: e.maxParticipants,
+    strava_route_url: e.stravaRouteUrl || null,
+    moak_event_id: e.moakEventId || null,
+    sticky_color: e.stickyColor,
+    tags: e.tags,
+    creator_id: e.creatorId,
+    created_at: e.createdAt,
+  }
+}
+
+// 部分更新用的轉換
+function 轉換部分更新(更新: Partial<CyclingEvent>) {
+  const result: Record<string, unknown> = {}
+  if (更新.title !== undefined) result.title = 更新.title
+  if (更新.description !== undefined) result.description = 更新.description
+  if (更新.countyId !== undefined) result.county_id = 更新.countyId
+  if (更新.region !== undefined) result.region = 更新.region
+  if (更新.date !== undefined) result.date = 更新.date
+  if (更新.time !== undefined) result.time = 更新.time
+  if (更新.meetingPoint !== undefined) result.meeting_point = 更新.meetingPoint
+  if (更新.meetingPointUrl !== undefined) result.meeting_point_url = 更新.meetingPointUrl || null
+  if (更新.coverImage !== undefined) result.cover_image = 更新.coverImage || null
+  if (更新.distance !== undefined) result.distance = 更新.distance
+  if (更新.elevation !== undefined) result.elevation = 更新.elevation
+  if (更新.pace !== undefined) result.pace = 更新.pace
+  if (更新.maxParticipants !== undefined) result.max_participants = 更新.maxParticipants
+  if (更新.stravaRouteUrl !== undefined) result.strava_route_url = 更新.stravaRouteUrl || null
+  if (更新.moakEventId !== undefined) result.moak_event_id = 更新.moakEventId || null
+  if (更新.stickyColor !== undefined) result.sticky_color = 更新.stickyColor
+  if (更新.tags !== undefined) result.tags = 更新.tags
+  return result
+}
+
+export const useEventStore = create<EventState>()((set, get) => ({
+  活動列表: [],
+  載入中: false,
+  篩選區域: null,
+  排序: '最新',
+
+  設定篩選區域: (region) => set({ 篩選區域: region }),
+  設定排序: (sort) => set({ 排序: sort }),
+
+  載入活動: async () => {
+    set({ 載入中: true })
+    const { data, error } = await supabase
+      .from('cycling_events')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (!error && data) {
+      set({ 活動列表: data.map(轉換為活動) })
+    }
+    set({ 載入中: false })
+  },
+
+  新增活動: async (event) => {
+    const row = 轉換為資料列(event)
+    const { error } = await supabase.from('cycling_events').insert(row)
+    if (!error) {
+      set((s) => ({ 活動列表: [event, ...s.活動列表] }))
+    }
+  },
+
+  更新活動: async (eventId, 更新) => {
+    const row = 轉換部分更新(更新)
+    const { error } = await supabase.from('cycling_events').update(row).eq('id', eventId)
+    if (!error) {
+      set((s) => ({
+        活動列表: s.活動列表.map(e => e.id === eventId ? { ...e, ...更新 } : e),
+      }))
+    }
+  },
+
+  取得篩選後活動: () => {
+    const { 活動列表, 篩選區域, 排序 } = get()
+    // 排除過期活動（活動日期隔天後不顯示）
+    let 結果 = 活動列表.filter(e => !已過期(e))
+    if (篩選區域) {
+      結果 = 結果.filter(e => e.region === 篩選區域)
+    }
+    if (排序 === '最新') {
+      結果.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    }
+    return 結果
+  },
+
+  取得歷史活動: () => {
+    const { 活動列表 } = get()
+    return 活動列表
+      .filter(e => 已過期(e))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  },
+}))

@@ -83,7 +83,7 @@ const OGImageGenerator = forwardRef<HTMLDivElement, Props>(({ 活動 }, ref) => 
           <div style={{ fontSize: 22, color: '#374151', lineHeight: 1.8 }}>
             <div>📅 {格式化完整日期(活動.date)} {活動.time}</div>
             <div>📍 {縣市?.name} · {活動.meetingPoint}</div>
-            <div>🛣️ {活動.distance}km / ⛰️ {活動.elevation}m / 👥 {活動.participants.length}人</div>
+            <div>🛣️ {活動.distance}km / ⛰️ {活動.elevation}m</div>
           </div>
 
           {/* 縣市印章 */}
