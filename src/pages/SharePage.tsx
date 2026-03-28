@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Share2, MessageCircle, Calendar, MapPin, Route, Mountain, Clock, Users, Zap, Loader2 } from 'lucide-react'
+import { ArrowLeft, Share2, MessageCircle, Calendar, MapPin, Route, Mountain, Clock, Zap, Loader2 } from 'lucide-react'
 import { useEventStore } from '../stores/eventStore'
 import { useAuthStore } from '../stores/authStore'
 import { 查找縣市 } from '../data/counties'
@@ -141,12 +141,6 @@ export default function SharePage() {
               <div className="flex items-center gap-2.5">
                 <Zap size={15} className="text-strava shrink-0" />
                 <span>{活動.pace}</span>
-              </div>
-            )}
-            {活動.maxParticipants > 0 && (
-              <div className="flex items-center gap-2.5">
-                <Users size={15} className="text-strava shrink-0" />
-                <span>上限 {活動.maxParticipants} 人</span>
               </div>
             )}
           </div>
