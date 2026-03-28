@@ -678,7 +678,21 @@ export default function CreateEventPage() {
             )
           })()}
           <div className={`${/strava\.com\/routes\/\d+/.test(routeUrl) || /ridewithgps\.com\/routes\/\d+/.test(routeUrl) ? '' : 'mt-3'}`}>
-            <Input name="pace" autoComplete="off" label="配速 / 難度" value={pace} onChange={e => setPace(e.target.value)} placeholder="例：Z2 穩定…" />
+            <label htmlFor="pace-select" className="block text-sm font-medium text-gray-700 mb-1">配速 / 難度</label>
+            <select
+              id="pace-select"
+              name="pace"
+              value={pace}
+              onChange={e => setPace(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm bg-white cursor-pointer focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20"
+            >
+              <option value="">自由配速（不限制）</option>
+              <option value="輕鬆騎">輕鬆騎 — 邊騎邊聊天，享受風景</option>
+              <option value="休閒騎">休閒騎 — 輕鬆節奏，適合所有人</option>
+              <option value="中等強度">中等強度 — 穩定配速，有一定體能需求</option>
+              <option value="進階挑戰">進階挑戰 — 丘陵爬坡，需要訓練基礎</option>
+              <option value="比賽強度">比賽強度 — 高強度騎乘，適合有經驗車手</option>
+            </select>
           </div>
         </div>
 
