@@ -662,6 +662,7 @@ export default function CreateEventPage() {
               <p className="text-emerald-600">Strava — 地圖嵌入 + 自動抓取</p>
               <p className="text-emerald-600">Ride with GPS — 地圖嵌入 + 自動抓取</p>
               <p className="text-amber-600">Garmin Connect — 僅連結（不支援嵌入）</p>
+              <p className="text-gray-400">其他平台待測試，有問題問憲哥</p>
             </div>
           </div>
           <hr className="my-3 border-gray-200" />
