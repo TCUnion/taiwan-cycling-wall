@@ -253,8 +253,9 @@ export default function EventDetailPage() {
               {rwgpsMatch && (
                 <iframe
                   title="Ride with GPS 路線預覽"
-                  src={`https://ridewithgps.com/embeds?type=route&id=${rwgpsMatch[1]}`}
-                  className="w-full h-80 border-0"
+                  src={`https://ridewithgps.com/embeds?type=route&id=${rwgpsMatch[1]}&sampleGraph=true`}
+                  className="w-full border-0"
+                  style={{ height: 500 }}
                   loading="lazy"
                   allowFullScreen={false}
                 />
