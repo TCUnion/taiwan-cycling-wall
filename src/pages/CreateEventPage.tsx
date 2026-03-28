@@ -112,22 +112,28 @@ export default function CreateEventPage() {
   const [自訂配速模式, set自訂配速模式] = useState(!預設配速.includes(pace))
 
   // 從路線連結抓取距離/爬升
-  const 抓取路線資訊 = (url: string) => {
+  const 抓取路線資訊 = async (url: string) => {
     const isStrava = /strava\.com\/routes\/\d+/.test(url)
     const isRwgps = /ridewithgps\.com\/routes\/\d+/.test(url)
     if (!isStrava && !isRwgps) return
 
     set抓取路線中(true)
-    const apiUrl = `/api/route-info?url=${encodeURIComponent(url)}`
-    fetch(apiUrl)
-      .then(r => r.json())
-      .then((info: { distance?: number; elevation?: number; title?: string }) => {
-        if (info.distance) setDistance(info.distance)
-        if (info.elevation) setElevation(info.elevation)
-        if (info.title && !routeName) setRouteName(info.title)
-      })
-      .catch(() => {})
-      .finally(() => set抓取路線中(false))
+    try {
+      const apiUrl = `/api/route-info?url=${encodeURIComponent(url)}`
+      const res = await fetch(apiUrl)
+      const info = await res.json() as { distance?: number; elevation?: number; title?: string; error?: string }
+      if (info.error) {
+        console.warn('[路線抓取] API 錯誤:', info.error)
+        return
+      }
+      if (info.distance) setDistance(info.distance)
+      if (info.elevation) setElevation(info.elevation)
+      if (info.title && !routeName) setRouteName(info.title)
+    } catch (err) {
+      console.warn('[路線抓取] 失敗:', err)
+    } finally {
+      set抓取路線中(false)
+    }
   }
 
   // 路線連結變更時自動抓取
