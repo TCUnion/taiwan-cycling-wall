@@ -83,29 +83,33 @@ export default function StickyNoteCard({ 活動 }: Props) {
       {/* 標題 */}
       <h3 className="font-bold text-sm leading-tight mb-1 line-clamp-2 pr-12">{活動.title}</h3>
 
-      {/* 粉絲頁發起人 */}
-      {是粉絲頁活動 && 粉絲頁資訊 && (
-        <div className="flex items-center gap-1 mb-1.5">
-          {粉絲頁資訊.pictureUrl ? (
-            <img src={粉絲頁資訊.pictureUrl} alt={粉絲頁資訊.name} className="w-4 h-4 rounded-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
-          ) : null}
-          <span className="text-[10px] text-gray-500 truncate">{粉絲頁資訊.name}</span>
-          {(() => {
-            const 管理者 = 所有使用者.find(u => u.managedPages?.some(p => p.pageId === 粉絲頁Id))
-            return 管理者?.verifiedAt ? <VerifiedBadge size="sm" /> : null
-          })()}
-        </div>
-      )}
+      {/* 發起人 + 角色標籤 */}
+      {(() => {
+        const 發起人 = 是粉絲頁活動
+          ? 所有使用者.find(u => u.managedPages?.some(p => p.pageId === 粉絲頁Id))
+          : 所有使用者.find(u => u.id === 活動.creatorId)
+        const 名稱 = 是粉絲頁活動 ? 粉絲頁資訊?.name : 發起人?.name
+        const 頭像URL = 是粉絲頁活動 ? 粉絲頁資訊?.pictureUrl : undefined
+        const 角色 = 發起人?.role
+        const 角色標籤 = 角色 === 'admin' ? '管理員'
+          : 角色 === 'business' ? '商家'
+          : 角色 === 'verified_page' ? '認證粉絲頁'
+          : null
 
-      {/* 個人發起人認證 Badge */}
-      {!是粉絲頁活動 && (() => {
-        const 發起人 = 所有使用者.find(u => u.id === 活動.creatorId)
-        return 發起人?.verifiedAt ? (
-          <div className="flex items-center gap-1 mb-1">
-            <span className="text-[10px] text-gray-500 truncate">{發起人.name}</span>
-            <VerifiedBadge size="sm" />
+        if (!名稱 && !角色標籤) return null
+
+        return (
+          <div className="flex items-center gap-1 mb-1 flex-wrap">
+            {頭像URL && (
+              <img src={頭像URL} alt={名稱} className="w-4 h-4 rounded-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
+            )}
+            {名稱 && <span className="text-[10px] text-gray-500 truncate">{名稱}</span>}
+            {發起人?.verifiedAt && <VerifiedBadge size="sm" />}
+            {角色標籤 && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-strava/10 text-strava font-medium leading-none">{角色標籤}</span>
+            )}
           </div>
-        ) : null
+        )
       })()}
 
       {/* 資訊列 */}

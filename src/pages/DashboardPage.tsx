@@ -126,7 +126,6 @@ export default function DashboardPage() {
         {/* LINE 認證 */}
         <VerificationSection />
 
-
         {/* 發起紀錄 */}
         <區塊標題 icon={History} title="發起紀錄" count={我的活動.length} />
         {我的活動.length === 0 ? (
@@ -161,6 +160,7 @@ export default function DashboardPage() {
         >
           <Plus size={18} /> 發起約騎
         </button>
+
       </div>
     </div>
   )
@@ -414,6 +414,20 @@ function 個人資料區塊() {
           <span className="text-sm font-medium">{縣市名稱}</span>
         )}
       </div>
+      {/* 會員等級 */}
+      <div className="flex items-center justify-between py-2 border-t border-gray-100">
+        <span className="text-sm text-gray-500">會員等級</span>
+        <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${
+          使用者.role === 'admin' ? 'text-strava' : 使用者.role === 'business' ? 'text-amber-600' : 使用者.role === 'verified_page' ? 'text-blue-600' : 使用者.verifiedAt ? 'text-emerald-600' : 'text-gray-500'
+        }`}>
+          {使用者.role === 'admin' ? '管理員'
+            : 使用者.role === 'business' ? '商家'
+            : 使用者.role === 'verified_page' ? '認證粉絲頁'
+            : 使用者.role === 'verified' || 使用者.verifiedAt ? '認證會員'
+            : '一般會員'}
+        </span>
+      </div>
+
       {使用者.authProvider && (
         <div className="flex items-center justify-between py-2">
           <span className="text-sm text-gray-500">登入方式</span>

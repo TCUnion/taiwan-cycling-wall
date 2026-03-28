@@ -17,6 +17,7 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
 const DataDeletionPage = lazy(() => import('./pages/DataDeletionPage'))
 const OAuthCallbackPage = lazy(() => import('./pages/OAuthCallbackPage'))
 const LiffVerifyPage = lazy(() => import('./pages/LiffVerifyPage'))
+const AdminPage = lazy(() => import('./pages/AdminPage'))
 
 // 載入中畫面 — 與 SplashPage 風格一致
 function Loading() {
@@ -33,6 +34,15 @@ function Loading() {
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const 已登入 = useAuthStore(s => s.已登入)
   if (!已登入) return <Navigate to="/login" replace />
+  return <>{children}</>
+}
+
+// 管理員路由保護
+function RequireAdmin({ children }: { children: React.ReactNode }) {
+  const 已登入 = useAuthStore(s => s.已登入)
+  const 角色 = useAuthStore(s => s.使用者?.role)
+  if (!已登入) return <Navigate to="/login" replace />
+  if (角色 !== 'admin') return <Navigate to="/wall" replace />
   return <>{children}</>
 }
 
@@ -61,6 +71,7 @@ export default function App() {
           <Route path="/event/:id/edit" element={<CreateEventPage />} />
           <Route path="/event/:id/share" element={<SharePage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
         </Route>
 
         {/* 未知路由導向首頁 */}

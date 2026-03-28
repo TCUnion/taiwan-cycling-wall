@@ -87,6 +87,7 @@ async function 嘗試合併遠端資料(本地使用者: User): Promise<User> {
         stampImages: (遠端.stampImages?.length ? 遠端.stampImages : 本地使用者.stampImages) ?? [],
         verifiedAt: 遠端.verifiedAt ?? 本地使用者.verifiedAt,
         lineVerifiedUserId: 遠端.lineVerifiedUserId ?? 本地使用者.lineVerifiedUserId,
+        role: 遠端.role ?? 本地使用者.role ?? 'unverified',
       }
     }
   } catch {

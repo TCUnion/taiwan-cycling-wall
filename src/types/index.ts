@@ -60,6 +60,15 @@ export interface User {
   verifiedAt?: string            // TCU 認證時間（ISO 字串）
   lineVerifiedUserId?: string    // 認證時使用的 LINE User ID
   mergedInto?: string            // 被合併到的主帳號 ID（標記已合併）
+  role?: string                  // 使用者角色（預設 'unverified'）
+}
+
+// 使用者角色定義（對應 Supabase user_roles 表）
+export interface UserRole {
+  id: string
+  name: string
+  maxActiveEvents: number
+  sortOrder: number
 }
 
 // TCU 認證記錄

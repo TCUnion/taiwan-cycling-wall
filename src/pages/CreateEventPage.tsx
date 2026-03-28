@@ -13,6 +13,7 @@ import { 查找縣市, 縣市列表 } from '../data/counties'
 import { 產生ID } from '../utils/formatters'
 import type { CyclingEvent, RideTemplate } from '../types'
 import { 淨化純文字, 淨化輸入文字, 安全URL } from '../utils/sanitize'
+import { 取得活動上限, 計算進行中活動數 } from '../utils/roleService'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Avatar from '../components/ui/Avatar'
@@ -51,7 +52,29 @@ export default function CreateEventPage() {
   // 載入所有範本
   useEffect(() => { 載入範本(); 載入集合點範本(); 載入路線範本(); 載入備註範本() }, [載入範本, 載入集合點範本, 載入路線範本, 載入備註範本])
 
+  // 活動額度檢查
+  const [額度上限, set額度上限] = useState<number | null>(null)
+  const [進行中數量, set進行中數量] = useState<number>(0)
+  const [額度檢查中, set額度檢查中] = useState(true)
+
+  useEffect(() => {
+    if (!使用者) return
+    async function 檢查額度() {
+      const 角色 = 使用者!.role ?? 'unverified'
+      const [上限, 數量] = await Promise.all([
+        取得活動上限(角色),
+        計算進行中活動數(使用者!.id, (使用者!.managedPages ?? []).map(p => p.pageId)),
+      ])
+      set額度上限(上限)
+      set進行中數量(數量)
+      set額度檢查中(false)
+    }
+    檢查額度()
+  }, [使用者?.id, 使用者?.role, 使用者?.managedPages])
+
   if (!使用者) return null
+
+  const 已達上限 = 額度上限 !== null && 進行中數量 >= 額度上限
 
   // 編輯模式：從 URL 取得既有活動
   const 編輯中活動 = editId ? 活動列表.find(e => e.id === editId) : undefined
@@ -137,7 +160,7 @@ export default function CreateEventPage() {
   const 篩選後範本 = 範本列表.filter(t => !範本縣市 || t.countyId === 範本縣市)
 
   const 今天 = new Date().toISOString().split('T')[0]
-  const 可提交 = routeName.trim() && date
+  const 可提交 = routeName.trim() && date && !已達上限 && !額度檢查中
 
   // 套用範本
   const 套用範本 = (t: RideTemplate) => {
@@ -278,6 +301,14 @@ export default function CreateEventPage() {
       </div>
 
       <div className="px-4 pb-8 space-y-4">
+
+        {/* 活動額度警告 */}
+        {!是編輯模式 && !額度檢查中 && 已達上限 && (
+          <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">
+            <p className="font-bold mb-1">已達活動上限</p>
+            <p>你目前有 {進行中數量} 個進行中的活動，已達角色上限（{額度上限}）。請等待既有活動結束後再發起新約騎。</p>
+          </div>
+        )}
 
         {/* 範本選擇器（共用範本） */}
         {顯示範本 && (

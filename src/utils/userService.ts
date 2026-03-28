@@ -19,6 +19,7 @@ function toDbRow(user: User) {
     verified_at: user.verifiedAt ?? null,
     line_verified_user_id: user.lineVerifiedUserId ?? null,
     merged_into: user.mergedInto ?? null,
+    role: user.role ?? 'unverified',
     updated_at: new Date().toISOString(),
   }
 }
@@ -49,6 +50,7 @@ function fromDbRow(row: Record<string, unknown>): Partial<User> {
     verifiedAt: row.verified_at as string | undefined,
     lineVerifiedUserId: row.line_verified_user_id as string | undefined,
     mergedInto: row.merged_into as string | undefined,
+    role: (row.role as string) ?? 'unverified',
   }
 }
 
@@ -95,6 +97,7 @@ export async function 更新使用者欄位(
   if (fields.verifiedAt !== undefined) dbFields.verified_at = fields.verifiedAt
   if (fields.lineVerifiedUserId !== undefined) dbFields.line_verified_user_id = fields.lineVerifiedUserId
   if (fields.mergedInto !== undefined) dbFields.merged_into = fields.mergedInto
+  if (fields.role !== undefined) dbFields.role = fields.role
 
   const { error } = await supabase
     .from('users')
