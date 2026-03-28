@@ -121,12 +121,11 @@ export default function EventDetailPage() {
       </div>
 
       <div className="px-4 space-y-4">
-        {/* 標題 + 發起人 */}
-        <div>
-          <Badge variant="region" region={活動.region} className="mb-1">{活動.region} · {縣市?.name}</Badge>
-          <h1 className="text-2xl font-bold">{活動.title}</h1>
+        {/* 區域 Badge + 發起人（右側） */}
+        <div className="flex items-center justify-between">
+          <Badge variant="region" region={活動.region}>{活動.region} · {縣市?.name}</Badge>
           {發起人 && (
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-2">
               <Avatar emoji={發起人.avatar} size="sm" />
               <span className="text-sm text-gray-600">{發起人.name} 發起</span>
               {(() => {
@@ -141,18 +140,21 @@ export default function EventDetailPage() {
           )}
         </div>
 
+        {/* 標題 */}
+        <h1 className="text-2xl font-bold -mt-2">{活動.title}</h1>
+
         {/* === 便當格：左圖章 + 右日期/數據 === */}
         <div className="grid grid-cols-[auto_1fr] gap-3">
-          {/* 左：圖章（跨 2 列） */}
-          <div className="row-span-2 flex items-center justify-center">
+          {/* 左：圖章（跨 2 列，高度撐滿） */}
+          <div className="row-span-2 flex items-stretch">
             {(() => {
               const 圖章 = 活動.coverImage || (!是粉絲頁活動 ? 所有使用者.find(u => u.id === 活動.creatorId)?.stampImage : undefined)
               return 圖章 ? (
-                <span className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white/80 border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center">
+                <span className="w-20 sm:w-24 rounded-2xl bg-white/80 border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center">
                   <img src={圖章} alt="活動圖章" className="w-full h-full object-cover" loading="lazy" />
                 </span>
               ) : (
-                <span className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white/60 border border-gray-200" />
+                <span className="w-20 sm:w-24 rounded-2xl bg-white/60 border border-gray-200" />
               )
             })()}
           </div>
