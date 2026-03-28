@@ -113,18 +113,24 @@ export default function LoginPage() {
             disabled={!有LineChannelId || 載入中Provider !== null}
             loading={載入中Provider === 'line'}
           />
-          <SocialLoginButton
-            provider="strava"
-            onClick={處理Strava登入}
-            disabled={true}
-            loading={false}
-          />
-          <SocialLoginButton
-            provider="facebook"
-            onClick={處理FB登入}
-            disabled={true}
-            loading={false}
-          />
+          <div className="relative">
+            <SocialLoginButton
+              provider="strava"
+              onClick={處理Strava登入}
+              disabled={true}
+              loading={false}
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">尚未開放</span>
+          </div>
+          <div className="relative">
+            <SocialLoginButton
+              provider="facebook"
+              onClick={處理FB登入}
+              disabled={true}
+              loading={false}
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">尚未開放</span>
+          </div>
         </div>
 
         {錯誤訊息 && (
