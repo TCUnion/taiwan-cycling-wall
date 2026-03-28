@@ -51,13 +51,15 @@ export interface User {
   rideHistory: RideRecord[]
   managedPages?: PageIdentity[]  // 管理的粉絲頁列表
   activePageId?: string          // 目前使用的粉絲頁 ID（空 = 個人身份）
-  stampImage?: string            // 活動專用圖章（base64 data URL）
+  stampImage?: string            // [已棄用] 單一圖章，保留向後相容
+  stampImages?: string[]         // 活動圖章（最多 3 個 base64 data URL）
   socialAvatar?: string          // 社群登入預設頭像 URL（FB/Google/LINE/Strava）
   authProvider?: AuthProvider    // 登入來源
   email?: string                 // Google 登入時取得
   stravaProfile?: StravaProfile  // Strava 登入時取得
   verifiedAt?: string            // TCU 認證時間（ISO 字串）
   lineVerifiedUserId?: string    // 認證時使用的 LINE User ID
+  mergedInto?: string            // 被合併到的主帳號 ID（標記已合併）
 }
 
 // TCU 認證記錄

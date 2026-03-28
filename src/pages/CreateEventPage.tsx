@@ -77,7 +77,8 @@ export default function CreateEventPage() {
   const [spotName, setSpotName] = useState(編輯中活動?.meetingPoint ?? '')
   const [spotUrl, setSpotUrl] = useState(編輯中活動?.meetingPointUrl ?? '')
   const [countyId, setCountyId] = useState(編輯中活動?.countyId ?? 使用者.countyId ?? '')
-  const coverImage = 使用者.stampImage || ''
+  const 所有圖章 = 使用者.stampImages ?? (使用者.stampImage ? [使用者.stampImage] : [])
+  const [選中圖章, set選中圖章] = useState(編輯中活動?.coverImage || 所有圖章[0] || '')
   const [notes, setNotes] = useState(編輯中活動 ? 解析備註文字(編輯中活動.description) : '')
   const [distance, setDistance] = useState(編輯中活動?.distance ?? 0)
   const [elevation, setElevation] = useState(編輯中活動?.elevation ?? 0)
@@ -224,7 +225,7 @@ export default function CreateEventPage() {
         pace: 安全配速,
         maxParticipants,
         stravaRouteUrl: 安全路線URL,
-        coverImage: coverImage || undefined,
+        coverImage: 選中圖章 || undefined,
       })
       navigate(`/event/${editId}`, { replace: true })
       return
@@ -245,7 +246,7 @@ export default function CreateEventPage() {
       pace: 安全配速,
       maxParticipants,
       stravaRouteUrl: 安全路線URL,
-      coverImage: coverImage || undefined,
+      coverImage: 選中圖章 || undefined,
       stickyColor: 取得便利貼顏色(id),
       tags: [],
       creatorId: 目前身份.id,
@@ -360,10 +361,24 @@ export default function CreateEventPage() {
               <p className="text-xs text-strava">以粉絲頁身份發起</p>
             )}
           </div>
-          {使用者.stampImage && (
-            <div className="rounded-xl bg-white p-4 shadow-sm flex flex-col items-center gap-2">
-              <h3 className="text-sm font-bold text-gray-700 self-start">活動圖章</h3>
-              <img src={使用者.stampImage} alt="活動圖章" className="w-20 h-20 rounded-lg object-cover" />
+          {所有圖章.length > 0 && (
+            <div className="rounded-xl bg-white p-4 shadow-sm flex flex-col gap-2">
+              <h3 className="text-sm font-bold text-gray-700">活動圖章</h3>
+              <div className="flex gap-2">
+                {所有圖章.map((img, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => set選中圖章(選中圖章 === img ? '' : img)}
+                    className={`w-16 h-16 rounded-lg overflow-hidden cursor-pointer transition-all ${
+                      選中圖章 === img ? 'ring-2 ring-strava ring-offset-1' : 'border border-gray-200 opacity-50 hover:opacity-80'
+                    }`}
+                  >
+                    <img src={img} alt={`圖章 ${i + 1}`} className="w-full h-full object-contain" />
+                  </button>
+                ))}
+              </div>
+              {!選中圖章 && <p className="text-xs text-gray-400">點擊選擇要使用的圖章</p>}
             </div>
           )}
         </div>

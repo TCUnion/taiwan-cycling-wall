@@ -148,7 +148,8 @@ export default function EventDetailPage() {
           {/* 左：圖章（跨 2 列，高度撐滿） */}
           <div className="row-span-2 flex items-stretch">
             {(() => {
-              const 圖章 = 活動.coverImage || (!是粉絲頁活動 ? 所有使用者.find(u => u.id === 活動.creatorId)?.stampImage : undefined)
+              const 發起人資料 = !是粉絲頁活動 ? 所有使用者.find(u => u.id === 活動.creatorId) : undefined
+              const 圖章 = 活動.coverImage || 發起人資料?.stampImages?.[0] || 發起人資料?.stampImage
               return 圖章 ? (
                 <span className="aspect-square self-stretch rounded-2xl bg-white/80 border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center p-1">
                   <img src={圖章} alt="活動圖章" className="w-full h-full object-contain" loading="lazy" />

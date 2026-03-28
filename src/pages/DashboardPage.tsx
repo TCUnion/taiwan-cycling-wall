@@ -202,7 +202,7 @@ function 個人資料區塊() {
   const 檔案輸入Ref = useRef<HTMLInputElement>(null)
 
   // 圖章相關 state
-  const [預覽圖章, set預覽圖章] = useState<string | null>(null)
+  const [預覽圖章列表, set預覽圖章列表] = useState<string[] | null>(null)
   const [圖章原始圖片, set圖章原始圖片] = useState<string | null>(null)
   const [圖章裁切縮放, set圖章裁切縮放] = useState(1)
   const [圖章裁切位移, set圖章裁切位移] = useState({ x: 0, y: 0 })
@@ -213,12 +213,15 @@ function 個人資料區塊() {
   if (!使用者) return null
   const 縣市名稱 = 查找縣市(使用者.countyId)?.name ?? (使用者.countyId || '尚未設定')
 
-  const 開始編輯 = () => { set編輯姓名(使用者.name); set編輯縣市(使用者.countyId); set預覽頭像(null); set原始圖片(null); set預覽圖章(null); set圖章原始圖片(null); set編輯中(true) }
+  const 開始編輯 = () => { set編輯姓名(使用者.name); set編輯縣市(使用者.countyId); set預覽頭像(null); set原始圖片(null); set預覽圖章列表(null); set圖章原始圖片(null); set編輯中(true) }
   const 儲存編輯 = () => {
     if (!編輯姓名.trim()) return
     const 更新資料: Record<string, string | undefined> = { name: 淨化純文字(編輯姓名.trim()), countyId: 編輯縣市 }
     if (預覽頭像) 更新資料.avatar = 預覽頭像
-    if (預覽圖章 !== null) 更新資料.stampImage = 預覽圖章 || undefined
+    if (預覽圖章列表 !== null) {
+      (更新資料 as Record<string, unknown>).stampImages = 預覽圖章列表
+      更新資料.stampImage = 預覽圖章列表[0] || undefined
+    }
     更新使用者(更新資料)
     set編輯中(false)
   }
@@ -305,7 +308,11 @@ function 個人資料區塊() {
       const cy = img.height / 2 - 圖章裁切位移.y * 基礎比例
       const 半徑 = 100 * 實際比例
       ctx.drawImage(img, cx - 半徑, cy - 半徑, 半徑 * 2, 半徑 * 2, 0, 0, 200, 200)
-      set預覽圖章(canvas.toDataURL('image/png'))
+      const 新圖章 = canvas.toDataURL('image/png')
+      set預覽圖章列表(prev => {
+        const 現有 = prev ?? 使用者?.stampImages ?? (使用者?.stampImage ? [使用者.stampImage] : [])
+        return [...現有, 新圖章].slice(0, 3)
+      })
       set圖章原始圖片(null)
     }
     img.src = 圖章原始圖片
@@ -420,33 +427,51 @@ function 個人資料區塊() {
         </div>
       )}
 
-      {/* 活動圖章 */}
-      <div className="flex items-center justify-between py-2 border-b border-gray-100">
-        <span className="text-sm text-gray-500">活動圖章</span>
-        <div className="flex items-center gap-2">
+      {/* 活動圖章（最多 3 個） */}
+      <div className="py-2 border-b border-gray-100">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-gray-500">活動圖章（最多 3 個）</span>
           {編輯中 && (
-            <>
-              <button onClick={() => 圖章檔案輸入Ref.current?.click()} aria-label="更換圖章"
-                className="flex items-center gap-1 text-xs text-strava cursor-pointer hover:text-orange-600 transition-colors">
-                <Camera size={14} /> {使用者.stampImage || 預覽圖章 ? '更換' : '上傳'}
-              </button>
-              {(使用者.stampImage || 預覽圖章) && (
-                <button onClick={() => set預覽圖章('')} aria-label="移除圖章"
-                  className="flex items-center gap-1 text-xs text-red-400 cursor-pointer hover:text-red-600 transition-colors">
-                  <X size={14} /> 移除
-                </button>
-              )}
-              <input ref={圖章檔案輸入Ref} type="file" accept="image/*" name="stamp-file" onChange={處理圖章選擇} className="hidden" />
-            </>
+            <input ref={圖章檔案輸入Ref} type="file" accept="image/*" name="stamp-file" onChange={處理圖章選擇} className="hidden" />
           )}
+        </div>
+        <div className="flex items-center gap-3">
           {(() => {
-            const 顯示圖章 = 預覽圖章 !== null ? 預覽圖章 : 使用者.stampImage
-            return 顯示圖章 ? (
-              <span className="w-10 h-10 rounded-xl bg-white border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center">
-                <img src={顯示圖章} alt="活動圖章" className="w-full h-full object-cover" />
-              </span>
-            ) : (
-              <span className="text-sm text-gray-400">尚未設定</span>
+            const 現有圖章 = 預覽圖章列表 ?? 使用者.stampImages ?? (使用者.stampImage ? [使用者.stampImage] : [])
+            return (
+              <>
+                {現有圖章.map((img, i) => (
+                  <div key={i} className="relative group">
+                    <span className="w-14 h-14 rounded-xl bg-white border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center">
+                      <img src={img} alt={`圖章 ${i + 1}`} className="w-full h-full object-contain" />
+                    </span>
+                    {編輯中 && (
+                      <button
+                        onClick={() => {
+                          const 新列表 = 現有圖章.filter((_, idx) => idx !== i)
+                          set預覽圖章列表(新列表)
+                        }}
+                        aria-label={`移除圖章 ${i + 1}`}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-400 text-white flex items-center justify-center cursor-pointer hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        <X size={10} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {編輯中 && 現有圖章.length < 3 && (
+                  <button
+                    onClick={() => 圖章檔案輸入Ref.current?.click()}
+                    aria-label="新增圖章"
+                    className="w-14 h-14 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-strava hover:text-strava transition-colors text-gray-400"
+                  >
+                    <Plus size={20} />
+                  </button>
+                )}
+                {!編輯中 && 現有圖章.length === 0 && (
+                  <span className="text-sm text-gray-400">尚未設定</span>
+                )}
+              </>
             )
           })()}
         </div>

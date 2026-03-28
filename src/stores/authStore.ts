@@ -2,7 +2,13 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { User, PageIdentity, StravaProfile } from '../types'
 import { 模擬使用者 } from '../data/mockUsers'
-import { 取得使用者, upsert使用者, 更新使用者欄位 } from '../utils/userService'
+import { 取得使用者, upsert使用者, 更新使用者欄位, 依Email查找帳號, 合併使用者 } from '../utils/userService'
+
+// 待合併帳號資訊（用於 Modal 顯示）
+export interface 待合併帳號資訊 {
+  舊帳號: Partial<User>
+  email: string
+}
 
 interface AuthState {
   使用者: User | null
@@ -10,8 +16,9 @@ interface AuthState {
   所有使用者: User[]
   目前身份: 'personal' | 'page'
   使用中的粉絲頁: PageIdentity | null
+  待合併帳號: 待合併帳號資訊 | null
   登入: (userId: string) => void
-  FB登入: (fbId: string, name: string, pictureUrl: string, countyId?: string) => void
+  FB登入: (fbId: string, name: string, pictureUrl: string, countyId?: string, email?: string) => void
   Google登入: (sub: string, name: string, pictureUrl: string, email: string) => void
   LINE登入: (userId: string, name: string, pictureUrl: string) => void
   Strava登入: (athleteId: number, name: string, pictureUrl: string, city: string, stravaProfile: StravaProfile) => void
@@ -22,6 +29,8 @@ interface AuthState {
   切換到粉絲頁: (pageId: string) => void
   切換回個人: () => void
   取得目前發文身份: () => { id: string; name: string; avatar: string }
+  執行合併: () => Promise<boolean>
+  取消合併: () => void
 }
 
 const 建立空白統計 = () => ({
@@ -30,6 +39,21 @@ const 建立空白統計 = () => ({
   totalElevation: 0,
   countiesVisited: [] as string[],
 })
+
+/** 背景偵測同 email 帳號（登入後觸發） */
+async function 背景偵測合併(email: string | undefined, 目前Id: string, set: (fn: (state: AuthState) => Partial<AuthState>) => void) {
+  if (!email) return
+  try {
+    const 同Email帳號 = await 依Email查找帳號(email, 目前Id)
+    if (同Email帳號.length > 0) {
+      set(() => ({
+        待合併帳號: { 舊帳號: 同Email帳號[0], email },
+      }))
+    }
+  } catch {
+    // 偵測失敗不影響登入
+  }
+}
 
 /** 背景同步使用者到 Supabase（不阻塞 UI） */
 function 背景同步(user: User) {
@@ -60,6 +84,7 @@ async function 嘗試合併遠端資料(本地使用者: User): Promise<User> {
         stats: 遠端.stats ?? 本地使用者.stats,
         managedPages: 遠端.managedPages ?? 本地使用者.managedPages,
         stampImage: 遠端.stampImage || 本地使用者.stampImage,
+        stampImages: (遠端.stampImages?.length ? 遠端.stampImages : 本地使用者.stampImages) ?? [],
         verifiedAt: 遠端.verifiedAt ?? 本地使用者.verifiedAt,
         lineVerifiedUserId: 遠端.lineVerifiedUserId ?? 本地使用者.lineVerifiedUserId,
       }
@@ -78,13 +103,14 @@ export const useAuthStore = create<AuthState>()(
       所有使用者: 模擬使用者,
       目前身份: 'personal',
       使用中的粉絲頁: null,
+      待合併帳號: null,
       登入: (userId: string) => {
         const 找到的使用者 = get().所有使用者.find(u => u.id === userId)
         if (找到的使用者) {
           set({ 使用者: 找到的使用者, 已登入: true })
         }
       },
-      FB登入: (fbId: string, name: string, pictureUrl: string, countyId?: string) => {
+      FB登入: (fbId: string, name: string, pictureUrl: string, countyId?: string, email?: string) => {
         const id = `fb-${fbId}`
         const 既有使用者 = get().所有使用者.find(u => u.id === id)
         if (既有使用者) {
@@ -93,6 +119,7 @@ export const useAuthStore = create<AuthState>()(
             avatar: pictureUrl,
             socialAvatar: pictureUrl,
             countyId: 既有使用者.countyId || countyId || '',
+            email: email || 既有使用者.email,
           }
           set((state) => ({
             使用者: 更新後,
@@ -106,6 +133,8 @@ export const useAuthStore = create<AuthState>()(
               所有使用者: state.所有使用者.map(u => u.id === id ? 合併後 : u),
             }))
             背景同步(合併後)
+            // 偵測同 email 帳號
+            背景偵測合併(email || 合併後.email, id, set)
           })
           return
         }
@@ -119,6 +148,7 @@ export const useAuthStore = create<AuthState>()(
           achievements: [],
           rideHistory: [],
           authProvider: 'facebook',
+          email,
         }
         set((state) => ({
           所有使用者: [...state.所有使用者, 新使用者],
@@ -132,6 +162,8 @@ export const useAuthStore = create<AuthState>()(
             所有使用者: state.所有使用者.map(u => u.id === id ? 合併後 : u),
           }))
           背景同步(合併後)
+          // 偵測同 email 帳號
+          背景偵測合併(email, id, set)
         })
       },
       Google登入: (sub: string, name: string, pictureUrl: string, email: string) => {
@@ -150,6 +182,8 @@ export const useAuthStore = create<AuthState>()(
               所有使用者: state.所有使用者.map(u => u.id === id ? 合併後 : u),
             }))
             背景同步(合併後)
+            // 偵測同 email 帳號
+            背景偵測合併(email, id, set)
           })
           return
         }
@@ -176,6 +210,8 @@ export const useAuthStore = create<AuthState>()(
             所有使用者: state.所有使用者.map(u => u.id === id ? 合併後 : u),
           }))
           背景同步(合併後)
+          // 偵測同 email 帳號
+          背景偵測合併(email, id, set)
         })
       },
       LINE登入: (userId: string, name: string, pictureUrl: string) => {
@@ -283,7 +319,7 @@ export const useAuthStore = create<AuthState>()(
         }))
         背景同步(新使用者)
       },
-      登出: () => set({ 使用者: null, 已登入: false, 目前身份: 'personal', 使用中的粉絲頁: null }),
+      登出: () => set({ 使用者: null, 已登入: false, 目前身份: 'personal', 使用中的粉絲頁: null, 待合併帳號: null }),
       更新使用者: (更新) => set((state) => {
         if (!state.使用者) return {}
         const 更新後使用者 = { ...state.使用者, ...更新 }
@@ -311,6 +347,29 @@ export const useAuthStore = create<AuthState>()(
         set({ 目前身份: 'page', 使用中的粉絲頁: 粉絲頁 })
       },
       切換回個人: () => set({ 目前身份: 'personal', 使用中的粉絲頁: null }),
+      執行合併: async () => {
+        const state = get()
+        const 主帳號 = state.使用者
+        const 待合併 = state.待合併帳號
+        if (!主帳號 || !待合併?.舊帳號?.id) return false
+
+        const 成功 = await 合併使用者(主帳號.id, 待合併.舊帳號.id)
+        if (成功) {
+          // 更新本地：主帳號可能獲得了舊帳號的認證、粉絲頁等
+          const 遠端主帳號 = await 取得使用者(主帳號.id)
+          const 更新後主帳號 = 遠端主帳號 ? { ...主帳號, ...遠端主帳號 } : 主帳號
+          // 本地使用者列表中標記舊帳號已合併
+          set((s) => ({
+            使用者: 更新後主帳號,
+            待合併帳號: null,
+            所有使用者: s.所有使用者
+              .map(u => u.id === 主帳號.id ? 更新後主帳號 : u)
+              .map(u => u.id === 待合併.舊帳號.id ? { ...u, mergedInto: 主帳號.id } : u),
+          }))
+        }
+        return 成功
+      },
+      取消合併: () => set({ 待合併帳號: null }),
       取得目前發文身份: () => {
         const state = get()
         if (state.目前身份 === 'page' && state.使用中的粉絲頁) {
@@ -332,6 +391,8 @@ export const useAuthStore = create<AuthState>()(
       // 持久化前移除敏感的 accessToken，避免暴露於 localStorage
       partialize: (state) => ({
         ...state,
+        // 待合併帳號為暫態，不持久化
+        待合併帳號: null,
         使用者: state.使用者 ? {
           ...state.使用者,
           stravaProfile: state.使用者.stravaProfile
