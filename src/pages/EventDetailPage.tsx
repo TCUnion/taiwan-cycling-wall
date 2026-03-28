@@ -192,54 +192,32 @@ export default function EventDetailPage() {
           </a>
         )}
 
-        {/* 集合地點 + 地圖預覽 */}
-        {活動.meetingPoint && (() => {
-          // 用集合點名稱 + 縣市名提高搜尋準確度
-          const 地圖查詢 = `${活動.meetingPoint} ${縣市?.name || ''}`
-          return (
-          <div className="rounded-xl bg-white shadow-sm overflow-hidden">
-            <iframe
-              title="集合地點地圖"
-              src={`https://maps.google.com/maps?q=${encodeURIComponent(地圖查詢)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-              className="w-full h-40 border-0"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              allowFullScreen={false}
-            />
-            <div className="p-4">
-              <div className="flex items-start gap-2.5">
-                <MapPin size={18} className="text-strava shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-medium text-sm">集合地點</p>
-                  <p className="text-gray-700 text-sm mt-0.5">{活動.meetingPoint}</p>
-                  <a href={安全URL(活動.meetingPointUrl) || 導航連結} target="_blank" rel="noopener noreferrer"
-                    className="mt-1.5 inline-flex items-center gap-1 text-xs text-strava cursor-pointer hover:underline">
-                    <ExternalLink size={12} /> 在 Google Maps 開啟
-                  </a>
-                </div>
+        {/* 集合地點 */}
+        {活動.meetingPoint && (
+          <div className="rounded-xl bg-white p-4 shadow-sm">
+            <div className="flex items-start gap-2.5">
+              <MapPin size={18} className="text-strava shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-sm">集合地點</p>
+                <p className="text-gray-700 text-sm mt-0.5">{活動.meetingPoint}</p>
+                <a href={安全URL(活動.meetingPointUrl) || 導航連結} target="_blank" rel="noopener noreferrer"
+                  className="mt-1.5 inline-flex items-center gap-1 text-xs text-strava cursor-pointer hover:underline">
+                  <ExternalLink size={12} /> 在 Google Maps 開啟
+                </a>
               </div>
             </div>
           </div>
-          )
-        })()}
+        )}
 
-        {/* 路線連結（Strava / Garmin / 其他） */}
-        {活動.stravaRouteUrl && 安全URL(活動.stravaRouteUrl) && (() => {
-          const url = 安全URL(活動.stravaRouteUrl)!
-          const stravaRouteMatch = url.match(/strava\.com\/routes\/(\d+)/)
-          return (
-            <div className="rounded-xl bg-white shadow-sm overflow-hidden">
-              {/* Strava 官方互動地圖 embed */}
-              {stravaRouteMatch && <StravaRouteEmbed routeId={stravaRouteMatch[1]} />}
-              <a href={url} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-3 text-sm text-strava cursor-pointer hover:bg-gray-50 transition-colors">
-                <Link size={18} />
-                <span className="font-medium">{路線連結類型(url)}：查看路線</span>
-                <ExternalLink size={14} className="ml-auto" />
-              </a>
-            </div>
-          )
-        })()}
+        {/* 路線連結（非 Strava） */}
+        {活動.stravaRouteUrl && 安全URL(活動.stravaRouteUrl) && !活動.stravaRouteUrl.includes('strava.com/routes/') && (
+          <a href={安全URL(活動.stravaRouteUrl)!} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm text-strava shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
+            <Link size={18} />
+            <span className="font-medium">{路線連結類型(活動.stravaRouteUrl)}：查看路線</span>
+            <ExternalLink size={14} className="ml-auto" />
+          </a>
+        )}
 
         {/* 活動說明（路線描述 + 注意事項，支援簡易 Markdown，DOMPurify 淨化） */}
         {活動.description && (
@@ -260,6 +238,26 @@ export default function EventDetailPage() {
         )}
 
       </div>
+
+      {/* Strava 路線地圖 — 全寬，與便當格同寬 */}
+      {活動.stravaRouteUrl && 安全URL(活動.stravaRouteUrl) && (() => {
+        const url = 安全URL(活動.stravaRouteUrl)!
+        const stravaRouteMatch = url.match(/strava\.com\/routes\/(\d+)/)
+        if (!stravaRouteMatch) return null
+        return (
+          <div className="px-4 mt-4">
+            <div className="rounded-xl bg-white shadow-sm overflow-hidden">
+              <StravaRouteEmbed routeId={stravaRouteMatch[1]} />
+              <a href={url} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-3 text-sm text-strava cursor-pointer hover:bg-gray-50 transition-colors border-t border-gray-100">
+                <Link size={18} />
+                <span className="font-medium">Strava：查看路線</span>
+                <ExternalLink size={14} className="ml-auto" />
+              </a>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
