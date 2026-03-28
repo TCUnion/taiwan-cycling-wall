@@ -5,6 +5,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Calendar, MapPin, Mountain, Route, ExternalLink, Share2, Zap, Link, AlertCircle, Pencil, Loader2 } from 'lucide-react'
 import { useEventStore } from '../stores/eventStore'
 import { useAuthStore } from '../stores/authStore'
+import { 取得使用者 } from '../utils/userService'
 import { useAds } from '../hooks/useAds'
 import { 查找縣市 } from '../data/counties'
 import { 格式化完整日期, 格式化距離 } from '../utils/formatters'
@@ -41,6 +42,23 @@ export default function EventDetailPage() {
     })
     return () => { cancelled = true }
   }, [id, 活動, 載入單一活動])
+
+  // 背景載入發起人資料（如果 store 中找不到）
+  useEffect(() => {
+    if (!活動) return
+    const creatorId = 活動.creatorId
+    if (creatorId.startsWith('page-')) return // 粉絲頁另行處理
+    const 已有 = 所有使用者.find(u => u.id === creatorId)
+    if (已有) return
+    取得使用者(creatorId).then((遠端使用者) => {
+      if (!遠端使用者 || !遠端使用者.id) return
+      // 以最小欄位 merge 進 store
+      useAuthStore.setState((s) => {
+        if (s.所有使用者.some(u => u.id === 遠端使用者.id)) return s
+        return { 所有使用者: [...s.所有使用者, 遠端使用者 as import('../types').User] }
+      })
+    })
+  }, [活動, 所有使用者])
 
   if (載入中) {
     return (
