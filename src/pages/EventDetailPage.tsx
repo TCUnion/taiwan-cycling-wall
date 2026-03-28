@@ -121,36 +121,39 @@ export default function EventDetailPage() {
       </div>
 
       <div className="px-4 space-y-4">
-        {/* 標題 + 發起人 + 圖章 */}
-        <div>
-          <Badge variant="region" region={活動.region} className="mb-2">{活動.region} · {縣市?.name}</Badge>
-          <h1 className="text-2xl font-bold">{活動.title}</h1>
-          {/* 發起人 + 圖章 — 同一列便當排列 */}
-          <div className="flex items-center gap-2 mt-2">
-            {發起人 && (
-              <>
-                <Avatar emoji={發起人.avatar} size="sm" />
-                <span className="text-sm text-gray-600">{發起人.name} 發起</span>
-                {(() => {
-                  if (是粉絲頁活動) {
-                    const 管理者 = 所有使用者.find(u => u.managedPages?.some(p => p.pageId === 粉絲頁Id))
-                    return 管理者?.verifiedAt ? <VerifiedBadge size="md" /> : null
-                  }
-                  const 使用者發起人 = 所有使用者.find(u => u.id === 活動.creatorId)
-                  return 使用者發起人?.verifiedAt ? <VerifiedBadge size="md" /> : null
-                })()}
-              </>
-            )}
-            {/* 個人圖章 — 靠右 */}
+        {/* === 便當格：標題 + 圖章 + 發起人 + 日期 + 數據 === */}
+        <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
+          {/* 左上：區域 + 標題 */}
+          <div>
+            <Badge variant="region" region={活動.region} className="mb-1">{活動.region} · {縣市?.name}</Badge>
+            <h1 className="text-2xl font-bold">{活動.title}</h1>
+          </div>
+          {/* 右上：個人圖章 */}
+          <div className="flex items-center">
             {(() => {
               const 圖章 = 活動.coverImage || (!是粉絲頁活動 ? 所有使用者.find(u => u.id === 活動.creatorId)?.stampImage : undefined)
               return 圖章 ? (
-                <span className="ml-auto shrink-0 w-10 h-10 rounded-xl bg-white/80 border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center">
+                <span className="w-14 h-14 rounded-xl bg-white/80 border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center">
                   <img src={圖章} alt="活動圖章" className="w-full h-full object-cover" loading="lazy" />
                 </span>
               ) : null
             })()}
           </div>
+          {/* 左下：發起人 */}
+          {發起人 && (
+            <div className="flex items-center gap-2 col-span-2">
+              <Avatar emoji={發起人.avatar} size="sm" />
+              <span className="text-sm text-gray-600">{發起人.name} 發起</span>
+              {(() => {
+                if (是粉絲頁活動) {
+                  const 管理者 = 所有使用者.find(u => u.managedPages?.some(p => p.pageId === 粉絲頁Id))
+                  return 管理者?.verifiedAt ? <VerifiedBadge size="md" /> : null
+                }
+                const 使用者發起人 = 所有使用者.find(u => u.id === 活動.creatorId)
+                return 使用者發起人?.verifiedAt ? <VerifiedBadge size="md" /> : null
+              })()}
+            </div>
+          )}
         </div>
 
         {/* 日期時間 */}
