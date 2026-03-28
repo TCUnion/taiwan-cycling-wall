@@ -1,6 +1,6 @@
 // 活動詳情頁面
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Calendar, MapPin, Mountain, Route, ExternalLink, Share2, Zap, Link, AlertCircle, Pencil, Loader2 } from 'lucide-react'
 import { useEventStore } from '../stores/eventStore'
@@ -224,14 +224,22 @@ export default function EventDetailPage() {
         })()}
 
         {/* 路線連結（Strava / Garmin / 其他） */}
-        {活動.stravaRouteUrl && 安全URL(活動.stravaRouteUrl) && (
-          <a href={安全URL(活動.stravaRouteUrl)!} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm text-strava shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
-            <Link size={18} />
-            <span className="font-medium">{路線連結類型(活動.stravaRouteUrl)}：查看路線</span>
-            <ExternalLink size={14} className="ml-auto" />
-          </a>
-        )}
+        {活動.stravaRouteUrl && 安全URL(活動.stravaRouteUrl) && (() => {
+          const url = 安全URL(活動.stravaRouteUrl)!
+          const stravaRouteMatch = url.match(/strava\.com\/routes\/(\d+)/)
+          return (
+            <div className="rounded-xl bg-white shadow-sm overflow-hidden">
+              {/* Strava 官方互動地圖 embed */}
+              {stravaRouteMatch && <StravaRouteEmbed routeId={stravaRouteMatch[1]} />}
+              <a href={url} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-3 text-sm text-strava cursor-pointer hover:bg-gray-50 transition-colors">
+                <Link size={18} />
+                <span className="font-medium">{路線連結類型(url)}：查看路線</span>
+                <ExternalLink size={14} className="ml-auto" />
+              </a>
+            </div>
+          )
+        })()}
 
         {/* 活動說明（路線描述 + 注意事項，支援簡易 Markdown，DOMPurify 淨化） */}
         {活動.description && (
@@ -252,6 +260,43 @@ export default function EventDetailPage() {
         )}
 
       </div>
+    </div>
+  )
+}
+
+/** Strava 官方路線 embed — 載入 strava-embeds.com/embed.js 動態渲染互動地圖 */
+function StravaRouteEmbed({ routeId }: { routeId: string }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    // 動態載入 Strava embed 腳本（若尚未載入）
+    const scriptId = 'strava-embed-script'
+    const existing = document.getElementById(scriptId)
+    if (existing) {
+      // 腳本已存在，需要重新觸發 embed 渲染
+      existing.remove()
+    }
+    const script = document.createElement('script')
+    script.id = scriptId
+    script.src = 'https://strava-embeds.com/embed.js'
+    script.async = true
+    document.body.appendChild(script)
+
+    return () => {
+      const s = document.getElementById(scriptId)
+      if (s) s.remove()
+    }
+  }, [routeId])
+
+  return (
+    <div ref={containerRef} className="strava-embed-container">
+      <div
+        className="strava-embed-placeholder"
+        data-embed-type="route"
+        data-embed-id={routeId}
+        data-style="standard"
+        data-from-embed="false"
+      />
     </div>
   )
 }
