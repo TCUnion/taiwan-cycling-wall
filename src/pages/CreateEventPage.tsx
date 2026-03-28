@@ -635,7 +635,7 @@ export default function CreateEventPage() {
               placeholder="例：樹王 7-11 → 中投公路 → 草屯 → 鳥嘴潭 BCD×4 圈…" rows={6}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20 focus-visible:ring-2 focus-visible:ring-strava/40 placeholder:text-gray-400" />
           </div>
-          <div className="mt-3 grid grid-cols-[1fr_auto] gap-3">
+          <div className="mt-3 grid grid-cols-2 gap-3">
             <div>
               <Input name="route-url" autoComplete="url" label="路線連結（Strava / Ride with GPS / Garmin）" value={routeUrl} onChange={e => setRouteUrl(e.target.value)}
                 placeholder="貼上路線分享連結…" />
@@ -657,7 +657,7 @@ export default function CreateEventPage() {
               })()}
             </div>
             {/* 右側：平台支援說明 */}
-            <div className="w-44 shrink-0 rounded-lg bg-gray-50 border border-gray-200 p-3 text-xs text-gray-500 space-y-1.5">
+            <div className="rounded-lg bg-gray-50 border border-gray-200 p-3 text-xs text-gray-500 space-y-1.5">
               <p className="font-medium text-gray-700">平台支援</p>
               <p className="text-emerald-600">Strava — 地圖嵌入 + 自動抓取</p>
               <p className="text-emerald-600">Ride with GPS — 地圖嵌入 + 自動抓取</p>
