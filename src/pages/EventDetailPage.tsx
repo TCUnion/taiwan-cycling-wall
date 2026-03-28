@@ -285,13 +285,14 @@ function StravaRouteEmbed({ routeId }: { routeId: string }) {
   }, [routeId])
 
   return (
-    <div ref={containerRef} className="strava-embed-container">
+    <div ref={containerRef} className="[&_iframe]:!w-full [&_.strava-embed-placeholder]:!max-w-none">
       <div
         className="strava-embed-placeholder"
         data-embed-type="route"
         data-embed-id={routeId}
         data-style="standard"
         data-from-embed="false"
+        style={{ maxWidth: 'none', width: '100%' }}
       />
     </div>
   )
