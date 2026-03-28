@@ -143,40 +143,39 @@ export default function EventDetailPage() {
         {/* 標題 */}
         <h1 className="text-2xl font-bold -mt-2">{活動.title}</h1>
 
-        {/* === 便當格：左圖章 + 右日期/數據 === */}
-        <div className="grid grid-cols-[auto_1fr] gap-3">
-          {/* 左：圖章（跨 2 列，高度撐滿） */}
-          <div className="row-span-2 flex items-stretch">
+        {/* === 資訊卡片區 === */}
+        <div className="space-y-2">
+          {/* 圖章 + 日期/集合地點：手機垂直、桌面水平 */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            {/* 圖章 */}
             {(() => {
               const 發起人資料 = !是粉絲頁活動 ? 所有使用者.find(u => u.id === 活動.creatorId) : undefined
               const 圖章 = 活動.coverImage || 發起人資料?.stampImages?.[0] || 發起人資料?.stampImage
               return 圖章 ? (
-                <span className="aspect-square self-stretch rounded-2xl bg-white/80 border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center p-1">
+                <span className="w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-2xl bg-white/80 border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center p-1">
                   <img src={圖章} alt="活動圖章" className="w-full h-full object-contain" loading="lazy" />
                 </span>
-              ) : (
-                <span className="aspect-square self-stretch rounded-2xl bg-white/60 border border-gray-200" />
-              )
+              ) : null
             })()}
-          </div>
-          {/* 右上：日期 + 集合地點 */}
-          <div className="grid grid-cols-2 gap-2">
-            <InfoCard icon={<Calendar size={18} />} label="約騎日期" value={`${格式化完整日期(活動.date)}　${活動.time} 集合`} />
-            {活動.meetingPoint ? (
-              <div className="flex items-start gap-2.5 rounded-xl bg-white p-3 shadow-sm">
-                <div className="text-strava mt-0.5"><MapPin size={18} /></div>
-                <div className="min-w-0">
-                  <p className="text-xs text-gray-500">集合地點</p>
-                  <p className="font-medium text-sm truncate">{活動.meetingPoint}</p>
-                  <a href={安全URL(活動.meetingPointUrl) || 導航連結} target="_blank" rel="noopener noreferrer"
-                    className="mt-1 inline-flex items-center gap-1 text-[11px] text-strava cursor-pointer hover:underline">
-                    <ExternalLink size={10} /> Google Maps
-                  </a>
+            {/* 日期 + 集合地點 */}
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <InfoCard icon={<Calendar size={18} />} label="約騎日期" value={`${格式化完整日期(活動.date)}　${活動.time} 集合`} />
+              {活動.meetingPoint && (
+                <div className="flex items-start gap-2.5 rounded-xl bg-white p-3 shadow-sm">
+                  <div className="text-strava mt-0.5"><MapPin size={18} /></div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-500">集合地點</p>
+                    <p className="font-medium text-sm truncate">{活動.meetingPoint}</p>
+                    <a href={安全URL(活動.meetingPointUrl) || 導航連結} target="_blank" rel="noopener noreferrer"
+                      className="mt-1 inline-flex items-center gap-1 text-[11px] text-strava cursor-pointer hover:underline">
+                      <ExternalLink size={10} /> Google Maps
+                    </a>
+                  </div>
                 </div>
-              </div>
-            ) : <div />}
+              )}
+            </div>
           </div>
-          {/* 右下：數據列（有 Strava/RWGPS embed 時只顯示配速，距離爬升由 embed 提供） */}
+          {/* 數據列（配速/距離/爬升） */}
           {(() => {
             const 有路線嵌入 = 活動.stravaRouteUrl && (
               /strava\.com\/routes\/\d+/.test(活動.stravaRouteUrl) ||
@@ -198,7 +197,7 @@ export default function EventDetailPage() {
             }
             if (數據項.length === 0) return null
             return (
-              <div className={`grid gap-2 grid-cols-${數據項.length}`}>
+              <div className={`grid gap-2 ${數據項.length === 1 ? 'grid-cols-1' : 數據項.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
                 {數據項.map(d => <InfoCard key={d.label} icon={d.icon} label={d.label} value={d.value} />)}
               </div>
             )
