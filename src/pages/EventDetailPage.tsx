@@ -192,18 +192,29 @@ export default function EventDetailPage() {
           </a>
         )}
 
-        {/* 集合地點 */}
+        {/* 集合地點 + 地圖預覽 */}
         {活動.meetingPoint && (
-          <div className="rounded-xl bg-white p-4 shadow-sm">
-            <div className="flex items-start gap-2.5">
-              <MapPin size={18} className="text-strava shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-sm">集合地點</p>
-                <p className="text-gray-700 text-sm mt-0.5">{活動.meetingPoint}</p>
-                <a href={安全URL(活動.meetingPointUrl) || 導航連結} target="_blank" rel="noopener noreferrer"
-                  className="mt-1.5 inline-flex items-center gap-1 text-xs text-strava cursor-pointer hover:underline">
-                  <ExternalLink size={12} /> 在 Google Maps 開啟
-                </a>
+          <div className="rounded-xl bg-white shadow-sm overflow-hidden">
+            {/* 地圖預覽 */}
+            <iframe
+              title="集合地點地圖"
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(活動.meetingPoint)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+              className="w-full h-40 border-0"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen={false}
+            />
+            <div className="p-4">
+              <div className="flex items-start gap-2.5">
+                <MapPin size={18} className="text-strava shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-sm">集合地點</p>
+                  <p className="text-gray-700 text-sm mt-0.5">{活動.meetingPoint}</p>
+                  <a href={安全URL(活動.meetingPointUrl) || 導航連結} target="_blank" rel="noopener noreferrer"
+                    className="mt-1.5 inline-flex items-center gap-1 text-xs text-strava cursor-pointer hover:underline">
+                    <ExternalLink size={12} /> 在 Google Maps 開啟
+                  </a>
+                </div>
               </div>
             </div>
           </div>
