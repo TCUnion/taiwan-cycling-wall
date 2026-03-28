@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Calendar, MapPin, Mountain, Route, Clock, ExternalLink, Share2, Zap, Link, AlertCircle, Pencil, Loader2 } from 'lucide-react'
+import { ArrowLeft, Calendar, MapPin, Mountain, Route, ExternalLink, Share2, Zap, Link, AlertCircle, Pencil, Loader2 } from 'lucide-react'
 import { useEventStore } from '../stores/eventStore'
 import { useAuthStore } from '../stores/authStore'
 import { useAds } from '../hooks/useAds'
@@ -120,15 +120,21 @@ export default function EventDetailPage() {
                 const 使用者發起人 = 所有使用者.find(u => u.id === 活動.creatorId)
                 return 使用者發起人?.verifiedAt ? <VerifiedBadge size="md" /> : null
               })()}
+              {/* 個人圖章 */}
+              {(() => {
+                const 圖章 = 活動.coverImage || (!是粉絲頁活動 ? 所有使用者.find(u => u.id === 活動.creatorId)?.stampImage : undefined)
+                return 圖章 ? (
+                  <span className="ml-auto w-10 h-10 rounded-xl bg-white/80 border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center">
+                    <img src={圖章} alt="活動圖章" className="w-full h-full object-cover" loading="lazy" />
+                  </span>
+                ) : null
+              })()}
             </div>
           )}
         </div>
 
-        {/* 時間 + 人數 */}
-        <div className="grid grid-cols-2 gap-3">
-          <InfoCard icon={<Calendar size={18} />} label="約騎日期" value={格式化完整日期(活動.date)} />
-          <InfoCard icon={<Clock size={18} />} label="集合時間" value={活動.time} />
-        </div>
+        {/* 日期時間 */}
+        <InfoCard icon={<Calendar size={18} />} label="約騎日期" value={`${格式化完整日期(活動.date)}　${活動.time} 集合`} />
 
         {/* 距離 / 爬升 / 配速（有值才顯示） */}
         {(活動.distance > 0 || 活動.elevation > 0 || 活動.pace !== '自由配速') && (
