@@ -682,8 +682,8 @@ export default function CreateEventPage() {
             <select
               id="pace-select"
               name="pace"
-              value={pace}
-              onChange={e => setPace(e.target.value)}
+              value={['', '輕鬆騎', '休閒騎', '中等強度', '進階挑戰', '比賽強度'].includes(pace) ? pace : '__custom__'}
+              onChange={e => setPace(e.target.value === '__custom__' ? '' : e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm bg-white cursor-pointer focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20"
             >
               <option value="">自由配速（不限制）</option>
@@ -692,7 +692,18 @@ export default function CreateEventPage() {
               <option value="中等強度">中等強度 — 穩定配速，有一定體能需求</option>
               <option value="進階挑戰">進階挑戰 — 丘陵爬坡，需要訓練基礎</option>
               <option value="比賽強度">比賽強度 — 高強度騎乘，適合有經驗車手</option>
+              <option value="__custom__">其他（自行填寫）</option>
             </select>
+            {!['', '輕鬆騎', '休閒騎', '中等強度', '進階挑戰', '比賽強度'].includes(pace) && (
+              <input
+                name="pace-custom"
+                autoComplete="off"
+                value={pace}
+                onChange={e => setPace(e.target.value)}
+                placeholder="請輸入配速 / 難度…"
+                className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20 placeholder:text-gray-400"
+              />
+            )}
           </div>
         </div>
 
