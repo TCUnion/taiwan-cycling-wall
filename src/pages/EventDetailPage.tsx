@@ -226,7 +226,7 @@ export default function EventDetailPage() {
         {/* 路線連結（Strava / Garmin / 其他） */}
         {活動.stravaRouteUrl && 安全URL(活動.stravaRouteUrl) && (
           <a href={安全URL(活動.stravaRouteUrl)!} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 rounded-xl bg-strava/10 px-4 py-3 text-sm text-strava cursor-pointer hover:bg-strava/20 transition-colors">
+            className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm text-strava shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
             <Link size={18} />
             <span className="font-medium">{路線連結類型(活動.stravaRouteUrl)}：查看路線</span>
             <ExternalLink size={14} className="ml-auto" />
