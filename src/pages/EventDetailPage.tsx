@@ -193,12 +193,15 @@ export default function EventDetailPage() {
         )}
 
         {/* 集合地點 + 地圖預覽 */}
-        {活動.meetingPoint && (
+        {活動.meetingPoint && (() => {
+          // 優先用 meetingPointUrl 作為地圖搜尋查詢（含座標更精確）
+          const 地圖查詢 = 安全URL(活動.meetingPointUrl) || 活動.meetingPoint
+          return (
           <div className="rounded-xl bg-white shadow-sm overflow-hidden">
-            {/* 地圖預覽 */}
+            {/* 地圖預覽 — 使用 meetingPointUrl 或地點名稱 */}
             <iframe
               title="集合地點地圖"
-              src={`https://maps.google.com/maps?q=${encodeURIComponent(活動.meetingPoint)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(地圖查詢)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
               className="w-full h-40 border-0"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
@@ -218,7 +221,8 @@ export default function EventDetailPage() {
               </div>
             </div>
           </div>
-        )}
+          )
+        })()}
 
         {/* 路線連結（Strava / Garmin / 其他）+ Strava embed 預覽 */}
         {活動.stravaRouteUrl && 安全URL(活動.stravaRouteUrl) && (() => {
@@ -229,7 +233,7 @@ export default function EventDetailPage() {
           const embedUrl = stravaRouteMatch
             ? `https://www.strava.com/routes/${stravaRouteMatch[1]}/embed`
             : stravaActivityMatch
-              ? `https://www.strava.com/activities/${stravaActivityMatch[1]}/embed`
+              ? `https://www.strava.com/activities/${stravaActivityMatch[1]}/embed/${stravaActivityMatch[1]}`
               : null
 
           return (
