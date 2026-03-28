@@ -7,24 +7,38 @@ function 產生認證碼(): string {
   return String(100000 + (array[0] % 900000))
 }
 
+/** 新 token 請求最短間隔（毫秒）— 防止暴力破解者快速重複請求新 token */
+const 最短請求間隔ms = 2 * 60 * 1000 // 2 分鐘
+
 /** 建立認證請求：檢查速率限制 → 產生 token → 存入 Supabase */
 export async function 建立認證請求(userId: string): Promise<{ token: string; expiresAt: string } | null> {
-  // 速率限制：同一使用者 10 分鐘內只能有一筆 pending 請求
-  const { data: existing } = await supabase
+  // 速率限制：檢查最近一筆請求（不論狀態），防止快速重複請求
+  const { data: recent } = await supabase
     .from('user_verifications')
-    .select('id')
+    .select('id, created_at, status, expires_at')
     .eq('user_id', userId)
-    .eq('status', 'pending')
-    .gte('expires_at', new Date().toISOString())
+    .order('created_at', { ascending: false })
     .limit(1)
 
-  if (existing && existing.length > 0) {
+  if (recent && recent.length > 0) {
+    const 上次建立時間 = new Date(recent[0].created_at).getTime()
+    const 經過時間 = Date.now() - 上次建立時間
+
+    // 冷卻時間未到 → 拒絕建立新 token
+    if (經過時間 < 最短請求間隔ms) {
+      const 剩餘秒 = Math.ceil((最短請求間隔ms - 經過時間) / 1000)
+      console.warn(`[認證] 請求過於頻繁，請等待 ${剩餘秒} 秒`)
+      return null
+    }
+
     // 將舊的 pending 請求標記為過期
-    await supabase
-      .from('user_verifications')
-      .update({ status: 'expired' })
-      .eq('user_id', userId)
-      .eq('status', 'pending')
+    if (recent[0].status === 'pending') {
+      await supabase
+        .from('user_verifications')
+        .update({ status: 'expired' })
+        .eq('user_id', userId)
+        .eq('status', 'pending')
+    }
   }
 
   const token = 產生認證碼()

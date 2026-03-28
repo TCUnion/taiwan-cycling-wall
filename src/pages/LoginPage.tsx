@@ -46,7 +46,8 @@ export default function LoginPage() {
       }
       navigate('/wall', { replace: true })
     } catch (err) {
-      set錯誤訊息(err instanceof Error ? err.message : '登入失敗，請稍後再試')
+      console.warn('[登入] Facebook 登入失敗:', err)
+      set錯誤訊息('Facebook 登入失敗，請稍後再試')
     } finally {
       set載入中Provider(null)
     }
@@ -60,7 +61,8 @@ export default function LoginPage() {
       Google登入Store(使用者資訊.sub, 使用者資訊.name, 使用者資訊.picture, 使用者資訊.email)
       navigate('/wall', { replace: true })
     } catch (err) {
-      set錯誤訊息(err instanceof Error ? err.message : 'Google 登入失敗')
+      console.warn('[登入] Google 登入失敗:', err)
+      set錯誤訊息('Google 登入失敗，請稍後再試')
     } finally {
       set載入中Provider(null)
     }
@@ -72,7 +74,8 @@ export default function LoginPage() {
       發起LINE登入()
       // redirect 後不會回到這裡
     } catch (err) {
-      set錯誤訊息(err instanceof Error ? err.message : 'LINE 登入失敗')
+      console.warn('[登入] LINE 登入失敗:', err)
+      set錯誤訊息('LINE 登入失敗，請稍後再試')
     }
   }
 
@@ -82,7 +85,8 @@ export default function LoginPage() {
       發起Strava登入()
       // redirect 後不會回到這裡
     } catch (err) {
-      set錯誤訊息(err instanceof Error ? err.message : 'Strava 登入失敗')
+      console.warn('[登入] Strava 登入失敗:', err)
+      set錯誤訊息('Strava 登入失敗，請稍後再試')
     }
   }
 

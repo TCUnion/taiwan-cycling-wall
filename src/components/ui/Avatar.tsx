@@ -22,6 +22,7 @@ export default function Avatar({ emoji, size = 'md', className = '' }: AvatarPro
         src={emoji}
         alt="頭像"
         referrerPolicy="no-referrer"
+        crossOrigin="anonymous"
         loading="lazy"
         className={`rounded-xl object-cover bg-gray-100 ${尺寸[size]} ${className}`}
       />
