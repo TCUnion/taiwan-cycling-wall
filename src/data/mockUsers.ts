@@ -95,7 +95,7 @@ export const 模擬粉絲: Record<string, FollowRelation[]> = {
 export const 模擬使用者: User[] = [
   {
     id: 'user-1',
-    name: '阿明',
+    name: '阿明（模擬）',
     avatar: '🚴',
     countyId: 'taipei',
     stats: { totalRides: 42, totalDistance: 3200, totalElevation: 45000, countiesVisited: ['taipei', 'new-taipei', 'taoyuan', 'hsinchu-city', 'yilan', 'hualien'] },
@@ -110,7 +110,7 @@ export const 模擬使用者: User[] = [
   },
   {
     id: 'user-2',
-    name: '小美',
+    name: '小美（模擬）',
     avatar: '🚲',
     countyId: 'taichung',
     stats: { totalRides: 28, totalDistance: 1800, totalElevation: 22000, countiesVisited: ['taichung', 'changhua', 'nantou', 'miaoli'] },
@@ -123,7 +123,7 @@ export const 模擬使用者: User[] = [
   },
   {
     id: 'user-3',
-    name: '大雄',
+    name: '大雄（模擬）',
     avatar: '🏔️',
     countyId: 'kaohsiung',
     stats: { totalRides: 55, totalDistance: 5500, totalElevation: 68000, countiesVisited: ['kaohsiung', 'pingtung', 'tainan', 'chiayi-city', 'chiayi-county', 'taitung', 'hualien'] },
@@ -137,7 +137,7 @@ export const 模擬使用者: User[] = [
   },
   {
     id: 'user-4',
-    name: '阿花',
+    name: '阿花（模擬）',
     avatar: '🌸',
     countyId: 'hualien',
     stats: { totalRides: 18, totalDistance: 1200, totalElevation: 15000, countiesVisited: ['hualien', 'taitung', 'yilan'] },
@@ -146,7 +146,7 @@ export const 模擬使用者: User[] = [
   },
   {
     id: 'user-5',
-    name: '建志',
+    name: '建志（模擬）',
     avatar: '💪',
     countyId: 'new-taipei',
     stats: { totalRides: 35, totalDistance: 2800, totalElevation: 35000, countiesVisited: ['taipei', 'new-taipei', 'keelung', 'taoyuan', 'yilan'] },
