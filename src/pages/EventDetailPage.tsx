@@ -184,7 +184,17 @@ export default function EventDetailPage() {
             const 數據項: { icon: React.ReactNode; label: string; value: string }[] = []
             if (!有路線嵌入 && 活動.distance > 0) 數據項.push({ icon: <Route size={16} />, label: '距離', value: 格式化距離(活動.distance) })
             if (!有路線嵌入 && 活動.elevation > 0) 數據項.push({ icon: <Mountain size={16} />, label: '爬升', value: `${活動.elevation} m` })
-            if (活動.pace !== '自由配速') 數據項.push({ icon: <Zap size={16} />, label: '配速', value: 活動.pace })
+            if (活動.pace !== '自由配速') {
+              const 配速描述: Record<string, string> = {
+                '輕鬆騎': '邊騎邊聊天，享受風景',
+                '休閒騎': '輕鬆節奏，適合所有人',
+                '中等強度': '穩定配速，有一定體能需求',
+                '進階挑戰': '丘陵爬坡，需要訓練基礎',
+                '比賽強度': '高強度騎乘，適合有經驗車手',
+              }
+              const 描述 = 配速描述[活動.pace]
+              數據項.push({ icon: <Zap size={16} />, label: '配速', value: 描述 ? `${活動.pace} — ${描述}` : 活動.pace })
+            }
             if (數據項.length === 0) return null
             return (
               <div className={`grid gap-2 grid-cols-${數據項.length}`}>
