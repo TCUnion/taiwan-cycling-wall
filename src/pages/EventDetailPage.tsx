@@ -207,8 +207,10 @@ export default function EventDetailPage() {
           </a>
         )}
 
-        {/* 路線連結（非 Strava） */}
-        {活動.stravaRouteUrl && 安全URL(活動.stravaRouteUrl) && !活動.stravaRouteUrl.includes('strava.com/routes/') && (
+        {/* 路線連結（無法嵌入地圖的平台：Garmin 等） */}
+        {活動.stravaRouteUrl && 安全URL(活動.stravaRouteUrl)
+          && !活動.stravaRouteUrl.includes('strava.com/routes/')
+          && !活動.stravaRouteUrl.includes('ridewithgps.com/routes/') && (
           <a href={安全URL(活動.stravaRouteUrl)!} target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm text-strava shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
             <Link size={18} />
@@ -237,19 +239,30 @@ export default function EventDetailPage() {
 
       </div>
 
-      {/* Strava 路線地圖 — 全寬，與便當格同寬 */}
+      {/* 路線地圖 embed（Strava / Ride with GPS）— 全寬，與便當格同寬 */}
       {活動.stravaRouteUrl && 安全URL(活動.stravaRouteUrl) && (() => {
         const url = 安全URL(活動.stravaRouteUrl)!
-        const stravaRouteMatch = url.match(/strava\.com\/routes\/(\d+)/)
-        if (!stravaRouteMatch) return null
+        const stravaMatch = url.match(/strava\.com\/routes\/(\d+)/)
+        const rwgpsMatch = url.match(/ridewithgps\.com\/routes\/(\d+)/)
+        // Garmin 已封鎖 iframe embed，不支援
+        if (!stravaMatch && !rwgpsMatch) return null
         return (
           <div className="px-4 mt-4">
             <div className="rounded-xl bg-white shadow-sm overflow-hidden">
-              <StravaRouteEmbed routeId={stravaRouteMatch[1]} />
+              {stravaMatch && <StravaRouteEmbed routeId={stravaMatch[1]} />}
+              {rwgpsMatch && (
+                <iframe
+                  title="Ride with GPS 路線預覽"
+                  src={`https://ridewithgps.com/embeds?type=route&id=${rwgpsMatch[1]}`}
+                  className="w-full h-80 border-0"
+                  loading="lazy"
+                  allowFullScreen={false}
+                />
+              )}
               <a href={url} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-2 px-4 py-3 text-sm text-strava cursor-pointer hover:bg-gray-50 transition-colors border-t border-gray-100">
                 <Link size={18} />
-                <span className="font-medium">Strava：查看路線</span>
+                <span className="font-medium">{路線連結類型(url)}：查看路線</span>
                 <ExternalLink size={14} className="ml-auto" />
               </a>
             </div>
