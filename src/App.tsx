@@ -18,11 +18,13 @@ const DataDeletionPage = lazy(() => import('./pages/DataDeletionPage'))
 const OAuthCallbackPage = lazy(() => import('./pages/OAuthCallbackPage'))
 const LiffVerifyPage = lazy(() => import('./pages/LiffVerifyPage'))
 
-// 載入中畫面
+// 載入中畫面 — 與 SplashPage 風格一致
 function Loading() {
   return (
-    <div className="flex min-h-svh items-center justify-center bg-cork">
-      <div className="text-4xl animate-bounce">🚴</div>
+    <div className="flex min-h-svh flex-col items-center justify-center bg-cream">
+      <h1 className="font-serif text-5xl text-gray-900 tracking-tight select-none">siokiu</h1>
+      <p className="mt-2 text-sm text-gray-400">相揪，呼朋引伴一起騎車</p>
+      <div className="mt-6 w-6 h-6 rounded-full border-2 border-gray-300 border-t-strava animate-spin" />
     </div>
   )
 }
