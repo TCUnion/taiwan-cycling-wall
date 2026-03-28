@@ -121,27 +121,12 @@ export default function EventDetailPage() {
       </div>
 
       <div className="px-4 space-y-4">
-        {/* === 便當格：標題 + 圖章 + 發起人 + 日期 + 數據 === */}
-        <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
-          {/* 左上：區域 + 標題 */}
-          <div>
-            <Badge variant="region" region={活動.region} className="mb-1">{活動.region} · {縣市?.name}</Badge>
-            <h1 className="text-2xl font-bold">{活動.title}</h1>
-          </div>
-          {/* 右上：個人圖章 */}
-          <div className="flex items-center">
-            {(() => {
-              const 圖章 = 活動.coverImage || (!是粉絲頁活動 ? 所有使用者.find(u => u.id === 活動.creatorId)?.stampImage : undefined)
-              return 圖章 ? (
-                <span className="w-14 h-14 rounded-xl bg-white/80 border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center">
-                  <img src={圖章} alt="活動圖章" className="w-full h-full object-cover" loading="lazy" />
-                </span>
-              ) : null
-            })()}
-          </div>
-          {/* 左下：發起人 */}
+        {/* 標題 + 發起人 */}
+        <div>
+          <Badge variant="region" region={活動.region} className="mb-1">{活動.region} · {縣市?.name}</Badge>
+          <h1 className="text-2xl font-bold">{活動.title}</h1>
           {發起人 && (
-            <div className="flex items-center gap-2 col-span-2">
+            <div className="flex items-center gap-2 mt-2">
               <Avatar emoji={發起人.avatar} size="sm" />
               <span className="text-sm text-gray-600">{發起人.name} 發起</span>
               {(() => {
@@ -156,17 +141,30 @@ export default function EventDetailPage() {
           )}
         </div>
 
-        {/* 日期時間 */}
-        <InfoCard icon={<Calendar size={18} />} label="約騎日期" value={`${格式化完整日期(活動.date)}　${活動.time} 集合`} />
-
-        {/* 距離 / 爬升 / 配速（有值才顯示） */}
-        {(活動.distance > 0 || 活動.elevation > 0 || 活動.pace !== '自由配速') && (
-          <div className="grid grid-cols-3 gap-3">
-            {活動.distance > 0 && <InfoCard icon={<Route size={18} />} label="距離" value={格式化距離(活動.distance)} />}
-            {活動.elevation > 0 && <InfoCard icon={<Mountain size={18} />} label="爬升" value={`${活動.elevation} m`} />}
-            {活動.pace !== '自由配速' && <InfoCard icon={<Zap size={18} />} label="配速" value={活動.pace} />}
+        {/* === 便當格：左圖章 + 右日期/數據 === */}
+        <div className="grid grid-cols-[auto_1fr] gap-3">
+          {/* 左：圖章（跨 2 列） */}
+          <div className="row-span-2 flex items-center justify-center">
+            {(() => {
+              const 圖章 = 活動.coverImage || (!是粉絲頁活動 ? 所有使用者.find(u => u.id === 活動.creatorId)?.stampImage : undefined)
+              return 圖章 ? (
+                <span className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white/80 border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center">
+                  <img src={圖章} alt="活動圖章" className="w-full h-full object-cover" loading="lazy" />
+                </span>
+              ) : (
+                <span className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white/60 border border-gray-200" />
+              )
+            })()}
           </div>
-        )}
+          {/* 右上：日期 */}
+          <InfoCard icon={<Calendar size={18} />} label="約騎日期" value={`${格式化完整日期(活動.date)}　${活動.time} 集合`} />
+          {/* 右下：數據列 */}
+          <div className="grid grid-cols-3 gap-2">
+            {活動.distance > 0 ? <InfoCard icon={<Route size={16} />} label="距離" value={格式化距離(活動.distance)} /> : <div />}
+            {活動.elevation > 0 ? <InfoCard icon={<Mountain size={16} />} label="爬升" value={`${活動.elevation} m`} /> : <div />}
+            {活動.pace !== '自由配速' ? <InfoCard icon={<Zap size={16} />} label="配速" value={活動.pace} /> : <div />}
+          </div>
+        </div>
 
         {/* 集合地點 */}
         {活動.meetingPoint && (
