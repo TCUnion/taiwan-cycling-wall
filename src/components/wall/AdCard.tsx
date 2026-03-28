@@ -41,7 +41,7 @@ export default function AdCard({ 廣告 }: Props) {
         {/* 文字內容 */}
         <div className="min-w-0">
           <p className="text-[10px] text-gray-400 truncate">{淨化純文字(廣告.brand_name)}</p>
-          <h3 className="font-bold text-xs leading-tight mb-0.5 line-clamp-2">
+          <h3 className="font-bold text-xs leading-tight mb-0.5 line-clamp-1">
             {淨化純文字(廣告.product_name)}
           </h3>
           <span className="inline-flex items-center gap-1 text-[10px] text-strava font-medium">
