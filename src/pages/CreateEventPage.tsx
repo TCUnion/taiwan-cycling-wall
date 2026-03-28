@@ -123,8 +123,8 @@ export default function CreateEventPage() {
     fetch(apiUrl)
       .then(r => r.json())
       .then((info: { distance?: number; elevation?: number; title?: string }) => {
-        if (info.distance && !distance) setDistance(info.distance)
-        if (info.elevation && !elevation) setElevation(info.elevation)
+        if (info.distance) setDistance(info.distance)
+        if (info.elevation) setElevation(info.elevation)
         if (info.title && !routeName) setRouteName(info.title)
       })
       .catch(() => {})
