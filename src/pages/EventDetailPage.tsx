@@ -54,7 +54,7 @@ export default function EventDetailPage() {
     return (
       <div className="flex min-h-svh items-center justify-center bg-cork">
         <div className="text-center">
-          <AlertCircle size={48} className="mx-auto mb-4 text-gray-400" />
+          <AlertCircle size={48} className="mx-auto mb-4 text-gray-500" />
           <p className="text-lg font-medium">{載入失敗 ? '找不到這個活動' : '載入中…'}</p>
           <Button variant="ghost" onClick={() => navigate('/wall')} className="mt-4">回到公布欄</Button>
         </div>
@@ -209,7 +209,7 @@ export default function EventDetailPage() {
                 <p className="text-xs text-gray-500 mt-1 line-clamp-2">{淨化純文字(廣告.placement_text ?? '')}</p>
               </div>
               {/* 箭頭 */}
-              <div className="flex items-center shrink-0 text-gray-300">
+              <div className="flex items-center shrink-0 text-gray-400">
                 <ExternalLink size={18} />
               </div>
             </div>

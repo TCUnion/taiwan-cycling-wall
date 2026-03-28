@@ -37,7 +37,7 @@ export default function Modal({ 開啟, 關閉, 標題, children }: ModalProps) 
         role="dialog"
         aria-modal="true"
         aria-label={標題 ?? '對話框'}
-        className="relative z-10 w-full max-w-lg rounded-t-2xl sm:rounded-2xl bg-white p-6 shadow-xl max-h-[85vh] overflow-y-auto motion-safe:transition-transform motion-safe:duration-200"
+        className="relative z-10 w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl bg-white p-6 shadow-xl max-h-[85vh] overflow-y-auto motion-safe:transition-transform motion-safe:duration-200"
       >
         <div className="flex items-center justify-between mb-4">
           {標題 && <h2 className="text-lg font-bold">{標題}</h2>}

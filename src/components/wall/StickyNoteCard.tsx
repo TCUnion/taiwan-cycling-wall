@@ -74,7 +74,7 @@ export default function StickyNoteCard({ 活動 }: Props) {
         return 頭像 ? (
           <span className="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/80 border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center text-lg">
             {是網址 ? (
-              <img src={頭像} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
+              <img src={頭像} alt="發起人頭像" className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
             ) : 頭像}
           </span>
         ) : null
@@ -87,7 +87,7 @@ export default function StickyNoteCard({ 活動 }: Props) {
       {是粉絲頁活動 && 粉絲頁資訊 && (
         <div className="flex items-center gap-1 mb-1.5">
           {粉絲頁資訊.pictureUrl ? (
-            <img src={粉絲頁資訊.pictureUrl} alt="" className="w-4 h-4 rounded-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
+            <img src={粉絲頁資訊.pictureUrl} alt={粉絲頁資訊.name} className="w-4 h-4 rounded-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
           ) : null}
           <span className="text-[10px] text-gray-500 truncate">{粉絲頁資訊.name}</span>
           {(() => {

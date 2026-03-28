@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Inbox } from 'lucide-react'
 import type { CyclingEvent, Region, AdPlacement } from '../../types'
 import StickyNoteCard from './StickyNoteCard'
 import AdCard from './AdCard'
@@ -70,7 +70,7 @@ export default function CorkBoard({ 活動列表, 廣告列表, 當前區域, on
   if (活動列表.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-        <div className="text-5xl mb-4">📭</div>
+        <Inbox size={48} className="mb-4 text-gray-400" />
         <p className="text-lg font-medium">目前沒有活動</p>
         <p className="text-sm mt-1">成為第一個發起約騎的人吧！</p>
       </div>

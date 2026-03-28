@@ -61,7 +61,7 @@ export default function DashboardPage() {
               {目前身份 === 'page' && 使用中的粉絲頁 ? (
                 <span className="inline-flex items-center gap-1.5 text-sm font-medium text-strava">
                   {使用中的粉絲頁.pictureUrl ? (
-                    <img src={使用中的粉絲頁.pictureUrl} alt="" className="w-5 h-5 rounded-full object-cover" referrerPolicy="no-referrer" />
+                    <img src={使用中的粉絲頁.pictureUrl} alt={使用中的粉絲頁.name} className="w-5 h-5 rounded-full object-cover" referrerPolicy="no-referrer" />
                   ) : null}
                   {使用中的粉絲頁.name}
                 </span>
@@ -103,9 +103,9 @@ export default function DashboardPage() {
                     }`}
                   >
                     {page.pictureUrl ? (
-                      <img src={page.pictureUrl} alt="" className="w-8 h-8 rounded-full object-cover" referrerPolicy="no-referrer" />
+                      <img src={page.pictureUrl} alt={page.name} className="w-8 h-8 rounded-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs">📄</div>
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center"><Users size={14} className="text-gray-400" /></div>
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{page.name}</p>

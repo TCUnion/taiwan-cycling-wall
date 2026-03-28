@@ -88,12 +88,12 @@ export default function HistoryPage() {
                       {(活動.distance > 0 || 活動.elevation > 0) && (
                         <div className="flex items-center gap-3">
                           {活動.distance > 0 && (
-                            <span className="flex items-center gap-1">
+                            <span className="flex items-center gap-1.5">
                               <Route size={12} /> {格式化距離(活動.distance)}
                             </span>
                           )}
                           {活動.elevation > 0 && (
-                            <span className="flex items-center gap-1">
+                            <span className="flex items-center gap-1.5">
                               <Mountain size={12} /> {活動.elevation}m
                             </span>
                           )}
