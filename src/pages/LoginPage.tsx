@@ -102,28 +102,28 @@ export default function LoginPage() {
         {/* 登入按鈕 */}
         <div className="flex flex-col gap-3">
           <SocialLoginButton
-            provider="line"
-            onClick={處理LINE登入}
-            disabled={!有LineChannelId || 載入中Provider !== null}
-            loading={載入中Provider === 'line'}
-          />
-          <SocialLoginButton
             provider="google"
             onClick={處理Google登入}
             disabled={!有GoogleClientId || !SDK就緒.google || 載入中Provider !== null}
             loading={載入中Provider === 'google'}
           />
           <SocialLoginButton
+            provider="line"
+            onClick={處理LINE登入}
+            disabled={!有LineChannelId || 載入中Provider !== null}
+            loading={載入中Provider === 'line'}
+          />
+          <SocialLoginButton
             provider="strava"
             onClick={處理Strava登入}
-            disabled={!有StravaClientId || 載入中Provider !== null}
-            loading={載入中Provider === 'strava'}
+            disabled={true}
+            loading={false}
           />
           <SocialLoginButton
             provider="facebook"
             onClick={處理FB登入}
-            disabled={!SDK就緒.facebook || 載入中Provider !== null}
-            loading={載入中Provider === 'facebook'}
+            disabled={true}
+            loading={false}
           />
         </div>
 
