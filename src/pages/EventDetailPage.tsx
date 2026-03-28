@@ -150,8 +150,8 @@ export default function EventDetailPage() {
             {(() => {
               const 圖章 = 活動.coverImage || (!是粉絲頁活動 ? 所有使用者.find(u => u.id === 活動.creatorId)?.stampImage : undefined)
               return 圖章 ? (
-                <span className="w-20 sm:w-24 rounded-2xl bg-white/80 border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center">
-                  <img src={圖章} alt="活動圖章" className="w-full h-full object-cover" loading="lazy" />
+                <span className="w-20 sm:w-24 rounded-2xl bg-white/80 border border-gray-200 shadow-sm overflow-hidden inline-flex items-center justify-center p-1">
+                  <img src={圖章} alt="活動圖章" className="w-full h-full object-contain" loading="lazy" />
                 </span>
               ) : (
                 <span className="w-20 sm:w-24 rounded-2xl bg-white/60 border border-gray-200" />
