@@ -25,23 +25,23 @@ export default function EventDetailPage() {
   const { 廣告列表 } = useAds()
   const 廣告 = 廣告列表[0] // 顯示一則廣告
 
-  const [載入中, set載入中] = useState(false)
   const [載入失敗, set載入失敗] = useState(false)
 
   const 活動 = 活動列表.find(e => e.id === id)
+  // 有活動就不需要載入；沒活動就視為載入中
+  const [載入中, set載入中] = useState(!活動)
 
   useEffect(() => {
-    if (!id || 活動) return
-    let cancelled = false
+    if (!id || 活動) { set載入中(false); return }
     set載入中(true)
     set載入失敗(false)
-    載入單一活動(id).then((result) => {
-      if (cancelled) return
-      if (!result) set載入失敗(true)
-      set載入中(false)
-    })
-    return () => { cancelled = true }
-  }, [id, 活動, 載入單一活動])
+    載入單一活動(id)
+      .then((result) => {
+        if (!result) set載入失敗(true)
+      })
+      .catch(() => set載入失敗(true))
+      .finally(() => set載入中(false))
+  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 背景載入發起人資料（如果 store 中找不到）
   useEffect(() => {
