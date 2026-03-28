@@ -615,14 +615,24 @@ export default function CreateEventPage() {
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20 focus-visible:ring-2 focus-visible:ring-strava/40 placeholder:text-gray-400" />
           </div>
           <div className="mt-3">
-            <Input name="route-url" autoComplete="url" label="路線連結（Strava / Garmin / 其他）" value={routeUrl} onChange={e => setRouteUrl(e.target.value)}
+            <Input name="route-url" autoComplete="url" label="路線連結（Strava / Ride with GPS / Garmin）" value={routeUrl} onChange={e => setRouteUrl(e.target.value)}
               placeholder="貼上路線分享連結…" />
-            {routeUrl && (
-              <a href={routeUrl} target="_blank" rel="noopener noreferrer"
-                className="mt-1 inline-flex items-center gap-1 text-xs text-strava cursor-pointer hover:underline">
-                <Link size={12} /> 開啟路線
-              </a>
-            )}
+            {routeUrl && (() => {
+              const isStrava = /strava\.com\/routes\/\d+/.test(routeUrl)
+              const isRwgps = /ridewithgps\.com\/routes\/\d+/.test(routeUrl)
+              const isGarmin = /connect\.garmin\.com/.test(routeUrl)
+              return (
+                <div className="mt-1.5 space-y-1">
+                  <a href={routeUrl} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-strava cursor-pointer hover:underline">
+                    <Link size={12} /> 開啟路線
+                  </a>
+                  {isStrava && <p className="text-xs text-emerald-600">Strava 路線 — 活動頁面將嵌入互動地圖</p>}
+                  {isRwgps && <p className="text-xs text-emerald-600">Ride with GPS 路線 — 活動頁面將嵌入互動地圖</p>}
+                  {isGarmin && <p className="text-xs text-amber-600">Garmin Connect 不支援地圖嵌入，僅顯示連結按鈕</p>}
+                </div>
+              )
+            })()}
           </div>
           <hr className="my-3 border-gray-200" />
           <div className="grid grid-cols-2 gap-3">
