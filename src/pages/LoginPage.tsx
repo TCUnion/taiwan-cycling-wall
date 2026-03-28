@@ -13,7 +13,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 // 檢查環境變數是否已設定
 const 有GoogleClientId = !!import.meta.env.VITE_GOOGLE_CLIENT_ID
 const 有LineChannelId = !!import.meta.env.VITE_LINE_CHANNEL_ID
-const 有StravaClientId = !!import.meta.env.VITE_STRAVA_CLIENT_ID
+// const 有StravaClientId = !!import.meta.env.VITE_STRAVA_CLIENT_ID // 暫時停用
 
 export default function LoginPage() {
   const navigate = useNavigate()

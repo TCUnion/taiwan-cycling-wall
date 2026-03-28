@@ -111,9 +111,8 @@ export default function CreateEventPage() {
   const 預設配速 = ['', '輕鬆騎', '休閒騎', '中等強度', '進階挑戰', '比賽強度']
   const [自訂配速模式, set自訂配速模式] = useState(!預設配速.includes(pace))
 
-  // 路線連結變更時自動抓取距離/爬升
-  useEffect(() => {
-    const url = routeUrl.trim()
+  // 從路線連結抓取距離/爬升
+  const 抓取路線資訊 = (url: string) => {
     const isStrava = /strava\.com\/routes\/\d+/.test(url)
     const isRwgps = /ridewithgps\.com\/routes\/\d+/.test(url)
     if (!isStrava && !isRwgps) return
@@ -129,6 +128,11 @@ export default function CreateEventPage() {
       })
       .catch(() => {})
       .finally(() => set抓取路線中(false))
+  }
+
+  // 路線連結變更時自動抓取
+  useEffect(() => {
+    抓取路線資訊(routeUrl.trim())
   }, [routeUrl]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 範本 UI
@@ -710,14 +714,26 @@ export default function CreateEventPage() {
               <p className="text-emerald-600">Strava — 地圖嵌入 + 自動抓取</p>
               <p className="text-emerald-600">Ride with GPS — 地圖嵌入 + 自動抓取</p>
               <p className="text-amber-600">Garmin Connect — 僅連結（不支援嵌入）</p>
-              <p className="text-gray-400">其他平台待測試，有問題問憲哥</p>
+              <p className="text-gray-400">其他平台待測試，有問題問<a href="https://page.line.me/criterium" target="_blank" rel="noopener noreferrer" className="text-line hover:underline">憲哥</a></p>
             </div>
           </div>
           <hr className="my-3 border-gray-200" />
           {(() => {
             const 有自動抓取 = /strava\.com\/routes\/\d+/.test(routeUrl) || /ridewithgps\.com\/routes\/\d+/.test(routeUrl)
             return 有自動抓取 ? (
-              <p className="text-xs text-gray-400 mb-2">距離與爬升將自動從 Strava / Ride with GPS 路線抓取，無需手動填寫</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-gray-400">
+                  {抓取路線中 ? '正在抓取路線資訊…' : distance || elevation ? `距離 ${distance} km · 爬升 ${elevation} m（自動抓取）` : '距離與爬升將自動從路線抓取'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => 抓取路線資訊(routeUrl.trim())}
+                  disabled={抓取路線中}
+                  className="text-xs text-strava hover:text-strava/80 disabled:text-gray-300 cursor-pointer transition-colors"
+                >
+                  {抓取路線中 ? '抓取中…' : '重新抓取'}
+                </button>
+              </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
                 <Input name="distance" label="距離 (km)" type="number" min="0" value={distance || ''} onChange={e => setDistance(Math.max(0, Number(e.target.value)))} placeholder="例：55…" />
