@@ -660,9 +660,8 @@ export default function CreateEventPage() {
             <Input name="distance" label="距離 (km)" type="number" min="0" value={distance || ''} onChange={e => setDistance(Math.max(0, Number(e.target.value)))} placeholder="例：55…" />
             <Input name="elevation" label="爬升 (m)" type="number" min="0" value={elevation || ''} onChange={e => setElevation(Math.max(0, Number(e.target.value)))} placeholder="例：400…" />
           </div>
-          <div className="grid grid-cols-2 gap-3 mt-3">
+          <div className="mt-3">
             <Input name="pace" autoComplete="off" label="配速 / 難度" value={pace} onChange={e => setPace(e.target.value)} placeholder="例：Z2 穩定…" />
-            <Input name="max-participants" label="人數上限" type="number" min="0" value={maxParticipants || ''} onChange={e => setMaxParticipants(Math.max(0, Number(e.target.value)))} placeholder="不限制" />
           </div>
         </div>
 
