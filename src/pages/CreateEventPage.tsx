@@ -84,6 +84,8 @@ export default function CreateEventPage() {
   const [pace, setPace] = useState(編輯中活動?.pace === '自由配速' ? '' : (編輯中活動?.pace ?? ''))
   const [maxParticipants, setMaxParticipants] = useState(編輯中活動?.maxParticipants ?? 0)
   const [抓取路線中, set抓取路線中] = useState(false)
+  const 預設配速 = ['', '輕鬆騎', '休閒騎', '中等強度', '進階挑戰', '比賽強度']
+  const [自訂配速模式, set自訂配速模式] = useState(!預設配速.includes(pace))
 
   // 路線連結變更時自動抓取距離/爬升
   useEffect(() => {
@@ -682,8 +684,11 @@ export default function CreateEventPage() {
             <select
               id="pace-select"
               name="pace"
-              value={['', '輕鬆騎', '休閒騎', '中等強度', '進階挑戰', '比賽強度'].includes(pace) ? pace : '__custom__'}
-              onChange={e => setPace(e.target.value === '__custom__' ? '' : e.target.value)}
+              value={自訂配速模式 ? '__custom__' : pace}
+              onChange={e => {
+                if (e.target.value === '__custom__') { set自訂配速模式(true); setPace('') }
+                else { set自訂配速模式(false); setPace(e.target.value) }
+              }}
               className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm bg-white cursor-pointer focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20"
             >
               <option value="">自由配速（不限制）</option>
@@ -694,7 +699,7 @@ export default function CreateEventPage() {
               <option value="比賽強度">比賽強度 — 高強度騎乘，適合有經驗車手</option>
               <option value="__custom__">其他（自行填寫）</option>
             </select>
-            {!['', '輕鬆騎', '休閒騎', '中等強度', '進階挑戰', '比賽強度'].includes(pace) && (
+            {自訂配速模式 && (
               <input
                 name="pace-custom"
                 autoComplete="off"
