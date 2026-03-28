@@ -240,7 +240,19 @@ function 使用者管理分頁({
                 <span className="font-medium text-sm truncate">{u.name}</span>
                 {u.verifiedAt && <ShieldCheck size={14} className="text-emerald-600 shrink-0" />}
               </div>
-              <p className="text-xs text-gray-400 truncate">{u.id}</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-gray-400 truncate">{u.id}</span>
+                {u.authProvider && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none ${
+                    ({ facebook: 'bg-facebook/10 text-facebook', google: 'bg-google/10 text-google', line: 'bg-line/10 text-line', strava: 'bg-strava/10 text-strava' } as Record<string, string>)[u.authProvider] ?? 'bg-gray-100 text-gray-500'
+                  }`}>
+                    {{ facebook: 'Facebook', google: 'Google', line: 'LINE', strava: 'Strava' }[u.authProvider] ?? u.authProvider}
+                  </span>
+                )}
+                {u.verifiedAt && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 font-medium leading-none">LINE 已認證</span>
+                )}
+              </div>
               {u.email && <p className="text-xs text-gray-400 truncate">{u.email}</p>}
             </div>
             <div className="shrink-0">
