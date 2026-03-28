@@ -9,10 +9,10 @@ interface BadgeProps {
 
 // 區域對應的徽章樣式
 const 區域樣式: Record<Region, string> = {
-  '北部': 'bg-region-north/20 text-region-north border border-region-north/30',
-  '中部': 'bg-region-central/20 text-region-central border border-region-central/30',
-  '南部': 'bg-region-south/20 text-region-south border border-region-south/30',
-  '東部': 'bg-region-east/20 text-region-east border border-region-east/30',
+  '北部': 'bg-region-north text-white',
+  '中部': 'bg-region-central text-white',
+  '南部': 'bg-region-south text-white',
+  '東部': 'bg-region-east text-white',
 }
 
 // 通用徽章元件，可依區域顯示不同顏色
