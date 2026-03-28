@@ -2,10 +2,9 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Users, History, ChevronRight, Pencil, Check, X, ArrowLeftRight, Camera, ZoomIn, ZoomOut, RotateCcw, Plus } from 'lucide-react'
+import { LogOut, Users, History, ChevronRight, Pencil, Check, X, ArrowLeftRight, ZoomIn, ZoomOut, Plus } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { useEventStore } from '../stores/eventStore'
-import { 模擬追蹤, 模擬粉絲 } from '../data/mockUsers'
 import { 查找縣市, 縣市列表 } from '../data/counties'
 import Avatar from '../components/ui/Avatar'
 import VerificationSection from '../components/dashboard/VerificationSection'
@@ -29,8 +28,6 @@ export default function DashboardPage() {
   // 包含個人與粉絲頁發起的活動
   const 我的粉絲頁Ids = (使用者.managedPages ?? []).map(p => `page-${p.pageId}`)
   const 我的活動 = 活動列表.filter(e => e.creatorId === 使用者.id || 我的粉絲頁Ids.includes(e.creatorId))
-  const 追蹤中 = 模擬追蹤[使用者.id] ?? []
-  const 粉絲 = 模擬粉絲[使用者.id] ?? []
 
   return (
     <div className="min-h-svh bg-cork pb-20">
@@ -129,8 +126,6 @@ export default function DashboardPage() {
         {/* LINE 認證 */}
         <VerificationSection />
 
-        {/* 追蹤 / 粉絲 */}
-        <粉絲區塊 追蹤中={追蹤中} 粉絲={粉絲} />
 
         {/* 發起紀錄 */}
         <區塊標題 icon={History} title="發起紀錄" count={我的活動.length} />
@@ -193,13 +188,6 @@ function 個人資料區塊() {
   const [編輯中, set編輯中] = useState(false)
   const [編輯姓名, set編輯姓名] = useState('')
   const [編輯縣市, set編輯縣市] = useState('')
-  const [預覽頭像, set預覽頭像] = useState<string | null>(null)
-  const [原始圖片, set原始圖片] = useState<string | null>(null)
-  const [裁切縮放, set裁切縮放] = useState(1)
-  const [裁切位移, set裁切位移] = useState({ x: 0, y: 0 })
-  const [拖曳中, set拖曳中] = useState(false)
-  const 拖曳起點 = useRef({ x: 0, y: 0, ox: 0, oy: 0 })
-  const 檔案輸入Ref = useRef<HTMLInputElement>(null)
 
   // 圖章相關 state
   const [預覽圖章列表, set預覽圖章列表] = useState<string[] | null>(null)
@@ -213,11 +201,10 @@ function 個人資料區塊() {
   if (!使用者) return null
   const 縣市名稱 = 查找縣市(使用者.countyId)?.name ?? (使用者.countyId || '尚未設定')
 
-  const 開始編輯 = () => { set編輯姓名(使用者.name); set編輯縣市(使用者.countyId); set預覽頭像(null); set原始圖片(null); set預覽圖章列表(null); set圖章原始圖片(null); set編輯中(true) }
+  const 開始編輯 = () => { set編輯姓名(使用者.name); set編輯縣市(使用者.countyId); set預覽圖章列表(null); set圖章原始圖片(null); set編輯中(true) }
   const 儲存編輯 = () => {
     if (!編輯姓名.trim()) return
     const 更新資料: Record<string, string | undefined> = { name: 淨化純文字(編輯姓名.trim()), countyId: 編輯縣市 }
-    if (預覽頭像) 更新資料.avatar = 預覽頭像
     if (預覽圖章列表 !== null) {
       (更新資料 as Record<string, unknown>).stampImages = 預覽圖章列表
       更新資料.stampImage = 預覽圖章列表[0] || undefined
@@ -225,58 +212,6 @@ function 個人資料區塊() {
     更新使用者(更新資料)
     set編輯中(false)
   }
-
-  // 選檔後開啟裁切編輯器
-  const 處理圖片選擇 = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      set原始圖片(reader.result as string)
-      set裁切縮放(1)
-      set裁切位移({ x: 0, y: 0 })
-    }
-    reader.readAsDataURL(file)
-    e.target.value = ''
-  }, [])
-
-  // 裁切確認 → 產出 200×200 PNG base64
-  const 確認裁切 = useCallback(() => {
-    if (!原始圖片) return
-    const img = new Image()
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      canvas.width = 200
-      canvas.height = 200
-      const ctx = canvas.getContext('2d')!
-      // 預覽區域 200px，圖片短邊 fit 200px，再套用縮放與位移
-      const 短邊 = Math.min(img.width, img.height)
-      const 基礎比例 = 短邊 / 200
-      const 實際比例 = 基礎比例 / 裁切縮放
-      const cx = img.width / 2 - 裁切位移.x * 基礎比例
-      const cy = img.height / 2 - 裁切位移.y * 基礎比例
-      const 半徑 = 100 * 實際比例
-      ctx.drawImage(img, cx - 半徑, cy - 半徑, 半徑 * 2, 半徑 * 2, 0, 0, 200, 200)
-      set預覽頭像(canvas.toDataURL('image/png'))
-      set原始圖片(null)
-    }
-    img.src = 原始圖片
-  }, [原始圖片, 裁切縮放, 裁切位移])
-
-  // 拖曳事件（支援滑鼠與觸控）
-  const 開始拖曳 = useCallback((clientX: number, clientY: number) => {
-    set拖曳中(true)
-    拖曳起點.current = { x: clientX, y: clientY, ox: 裁切位移.x, oy: 裁切位移.y }
-  }, [裁切位移])
-
-  const 移動中 = useCallback((clientX: number, clientY: number) => {
-    if (!拖曳中) return
-    const dx = clientX - 拖曳起點.current.x
-    const dy = clientY - 拖曳起點.current.y
-    set裁切位移({ x: 拖曳起點.current.ox + dx, y: 拖曳起點.current.oy + dy })
-  }, [拖曳中])
-
-  const 結束拖曳 = useCallback(() => set拖曳中(false), [])
 
   // 圖章選檔
   const 處理圖章選擇 = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -359,59 +294,6 @@ function 個人資料區塊() {
           {編輯中 && <span className="text-xs text-gray-400">由登入帳號提供</span>}
         </div>
       </div>
-
-      {/* 頭像裁切編輯器（已停用） */}
-      {false && 原始圖片 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" role="dialog" aria-modal="true" aria-label="調整頭像" onClick={() => set原始圖片(null)} onKeyDown={e => { if (e.key === 'Escape') set原始圖片(null) }}>
-          <div className="bg-white rounded-2xl p-5 mx-4 w-full max-w-xs space-y-4" onClick={e => e.stopPropagation()}>
-            <h4 className="text-center font-bold text-gray-800">調整頭像</h4>
-
-            {/* 圓形預覽區 */}
-            <div className="flex justify-center">
-              <div className="relative w-[200px] h-[200px] rounded-3xl overflow-hidden border-2 border-gray-200 bg-gray-100 select-none touch-none"
-                onMouseDown={e => 開始拖曳(e.clientX, e.clientY)}
-                onMouseMove={e => 移動中(e.clientX, e.clientY)}
-                onMouseUp={結束拖曳} onMouseLeave={結束拖曳}
-                onTouchStart={e => { const t = e.touches[0]; 開始拖曳(t.clientX, t.clientY) }}
-                onTouchMove={e => { const t = e.touches[0]; 移動中(t.clientX, t.clientY) }}
-                onTouchEnd={結束拖曳}>
-                <img src={原始圖片} alt="裁切預覽" draggable={false}
-                  className="absolute pointer-events-none"
-                  style={{
-                    minWidth: '100%', minHeight: '100%',
-                    width: `${裁切縮放 * 100}%`, height: `${裁切縮放 * 100}%`,
-                    left: `${50 + (裁切位移.x / 200) * 100}%`,
-                    top: `${50 + (裁切位移.y / 200) * 100}%`,
-                    transform: 'translate(-50%, -50%)',
-                    objectFit: 'cover',
-                  }} />
-              </div>
-            </div>
-
-            {/* 縮放滑桿 */}
-            <div className="flex items-center gap-3 px-2">
-              <ZoomOut size={16} className="text-gray-400 shrink-0" />
-              <input type="range" min="1" max="3" step="0.05" name="avatar-zoom" aria-label="頭像縮放" value={裁切縮放}
-                onChange={e => set裁切縮放(Number(e.target.value))}
-                className="flex-1 accent-strava cursor-pointer" />
-              <ZoomIn size={16} className="text-gray-400 shrink-0" />
-            </div>
-            <p className="text-center text-xs text-gray-400">拖曳圖片調整位置</p>
-
-            {/* 操作按鈕 */}
-            <div className="flex gap-3">
-              <button onClick={() => set原始圖片(null)}
-                className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-500 cursor-pointer hover:bg-gray-50 transition-colors">
-                取消
-              </button>
-              <button onClick={確認裁切}
-                className="flex-1 py-2 rounded-lg bg-strava text-white text-sm font-medium cursor-pointer hover:bg-orange-600 transition-colors">
-                確認
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 活動圖章（最多 3 個） */}
       <div className="py-2 border-b border-gray-100">
@@ -550,40 +432,3 @@ function 個人資料區塊() {
   )
 }
 
-/* ─── 粉絲區塊 ─── */
-function 粉絲區塊({ 追蹤中, 粉絲 }: { 追蹤中: import('../types').FollowRelation[]; 粉絲: import('../types').FollowRelation[] }) {
-  const [顯示, set顯示] = useState<'追蹤中' | '粉絲'>('追蹤中')
-  const 列表 = 顯示 === '追蹤中' ? 追蹤中 : 粉絲
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <Users size={16} className="text-gray-500" />
-        <h3 className="font-bold text-gray-800">社群</h3>
-      </div>
-      <div className="flex rounded-lg bg-white p-1 shadow-sm">
-        {(['追蹤中', '粉絲'] as const).map(tab => (
-          <button key={tab} onClick={() => set顯示(tab)}
-            className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
-              顯示 === tab ? 'bg-strava text-white' : 'text-gray-500 hover:text-gray-700'
-            }`}>
-            {tab} ({tab === '追蹤中' ? 追蹤中.length : 粉絲.length})
-          </button>
-        ))}
-      </div>
-      {列表.length === 0 ? (
-        <空白提示>尚無{顯示}</空白提示>
-      ) : (
-        <div className="space-y-2">
-          {列表.map(u => (
-            <div key={u.userId} className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm">
-              <Avatar emoji={u.avatar} size="sm" />
-              <span className="text-sm font-medium flex-1">{u.name}</span>
-              <ChevronRight size={16} className="text-gray-300" />
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
