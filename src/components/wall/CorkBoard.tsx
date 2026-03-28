@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Loader2 } from 'lucide-react'
 import type { CyclingEvent, Region, AdPlacement } from '../../types'
 import StickyNoteCard from './StickyNoteCard'
 import AdCard from './AdCard'
@@ -14,9 +15,10 @@ interface Props {
   廣告列表: AdPlacement[]
   當前區域: Region | null
   onChange區域: (region: Region | null) => void
+  載入中?: boolean
 }
 
-export default function CorkBoard({ 活動列表, 廣告列表, 當前區域, onChange區域 }: Props) {
+export default function CorkBoard({ 活動列表, 廣告列表, 當前區域, onChange區域, 載入中 = false }: Props) {
   // 滑動切換區域
   const swipeRef = useSwipeGesture<HTMLDivElement>({
     onSwipeLeft: () => {
@@ -55,6 +57,15 @@ export default function CorkBoard({ 活動列表, 廣告列表, 當前區域, on
 
     return 結果
   }, [活動列表, 廣告列表])
+
+  if (載入中) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+        <Loader2 size={32} className="text-strava animate-spin mb-3" />
+        <p className="text-sm">載入活動中…</p>
+      </div>
+    )
+  }
 
   if (活動列表.length === 0) {
     return (

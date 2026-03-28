@@ -126,7 +126,7 @@ function 轉換部分更新(更新: Partial<CyclingEvent>) {
 
 export const useEventStore = create<EventState>()((set, get) => ({
   活動列表: [],
-  載入中: false,
+  載入中: true,
   篩選區域: null,
   排序: '最新',
 
