@@ -1,6 +1,6 @@
 // 活動詳情頁面
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Calendar, MapPin, Mountain, Route, ExternalLink, Share2, Zap, Link, AlertCircle, Pencil, Loader2 } from 'lucide-react'
 import { useEventStore } from '../stores/eventStore'
@@ -295,41 +295,17 @@ export default function EventDetailPage() {
   )
 }
 
-/** Strava 官方路線 embed — 載入 strava-embeds.com/embed.js 動態渲染互動地圖 */
+/** Strava 路線 embed — 使用 iframe 直接嵌入（比 embed.js 更穩定） */
 function StravaRouteEmbed({ routeId }: { routeId: string }) {
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    // 動態載入 Strava embed 腳本（若尚未載入）
-    const scriptId = 'strava-embed-script'
-    const existing = document.getElementById(scriptId)
-    if (existing) {
-      // 腳本已存在，需要重新觸發 embed 渲染
-      existing.remove()
-    }
-    const script = document.createElement('script')
-    script.id = scriptId
-    script.src = 'https://strava-embeds.com/embed.js'
-    script.async = true
-    document.body.appendChild(script)
-
-    return () => {
-      const s = document.getElementById(scriptId)
-      if (s) s.remove()
-    }
-  }, [routeId])
-
   return (
-    <div ref={containerRef} className="[&_iframe]:!w-full [&_.strava-embed-placeholder]:!max-w-none">
-      <div
-        className="strava-embed-placeholder"
-        data-embed-type="route"
-        data-embed-id={routeId}
-        data-style="standard"
-        data-from-embed="false"
-        style={{ maxWidth: 'none', width: '100%' }}
-      />
-    </div>
+    <iframe
+      title="Strava 路線預覽"
+      src={`https://strava-embeds.com/route/${routeId}`}
+      className="w-full border-0"
+      style={{ height: 500 }}
+      loading="lazy"
+      allowFullScreen={false}
+    />
   )
 }
 
