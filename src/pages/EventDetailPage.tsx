@@ -194,11 +194,10 @@ export default function EventDetailPage() {
 
         {/* 集合地點 + 地圖預覽 */}
         {活動.meetingPoint && (() => {
-          // 優先用 meetingPointUrl 作為地圖搜尋查詢（含座標更精確）
-          const 地圖查詢 = 安全URL(活動.meetingPointUrl) || 活動.meetingPoint
+          // 用集合點名稱 + 縣市名提高搜尋準確度
+          const 地圖查詢 = `${活動.meetingPoint} ${縣市?.name || ''}`
           return (
           <div className="rounded-xl bg-white shadow-sm overflow-hidden">
-            {/* 地圖預覽 — 使用 meetingPointUrl 或地點名稱 */}
             <iframe
               title="集合地點地圖"
               src={`https://maps.google.com/maps?q=${encodeURIComponent(地圖查詢)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
@@ -224,39 +223,15 @@ export default function EventDetailPage() {
           )
         })()}
 
-        {/* 路線連結（Strava / Garmin / 其他）+ Strava embed 預覽 */}
-        {活動.stravaRouteUrl && 安全URL(活動.stravaRouteUrl) && (() => {
-          const url = 安全URL(活動.stravaRouteUrl)!
-          // 解析 Strava route/activity ID 用於 embed
-          const stravaRouteMatch = url.match(/strava\.com\/routes\/(\d+)/)
-          const stravaActivityMatch = url.match(/strava\.com\/activities\/(\d+)/)
-          const embedUrl = stravaRouteMatch
-            ? `https://www.strava.com/routes/${stravaRouteMatch[1]}/embed`
-            : stravaActivityMatch
-              ? `https://www.strava.com/activities/${stravaActivityMatch[1]}/embed/${stravaActivityMatch[1]}`
-              : null
-
-          return (
-            <div className="rounded-xl bg-white shadow-sm overflow-hidden">
-              {/* Strava 路線地圖預覽 */}
-              {embedUrl && (
-                <iframe
-                  title="Strava 路線預覽"
-                  src={embedUrl}
-                  className="w-full h-56 border-0"
-                  loading="lazy"
-                  allowFullScreen={false}
-                />
-              )}
-              <a href={url} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-3 text-sm text-strava cursor-pointer hover:bg-strava/5 transition-colors">
-                <Link size={18} />
-                <span className="font-medium">{路線連結類型(url)}：查看路線</span>
-                <ExternalLink size={14} className="ml-auto" />
-              </a>
-            </div>
-          )
-        })()}
+        {/* 路線連結（Strava / Garmin / 其他） */}
+        {活動.stravaRouteUrl && 安全URL(活動.stravaRouteUrl) && (
+          <a href={安全URL(活動.stravaRouteUrl)!} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2 rounded-xl bg-strava/10 px-4 py-3 text-sm text-strava cursor-pointer hover:bg-strava/20 transition-colors">
+            <Link size={18} />
+            <span className="font-medium">{路線連結類型(活動.stravaRouteUrl)}：查看路線</span>
+            <ExternalLink size={14} className="ml-auto" />
+          </a>
+        )}
 
         {/* 活動說明（路線描述 + 注意事項，支援簡易 Markdown，DOMPurify 淨化） */}
         {活動.description && (
