@@ -35,12 +35,34 @@
 body {
   @apply bg-cork font-sans text-gray-800 antialiased;
   margin: 0;
+  /* PWA：防止 pull-to-refresh 誤觸 + 消除 300ms tap delay */
+  overscroll-behavior-y: contain;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 #root {
   min-height: 100svh;
   display: flex;
   flex-direction: column;
+}
+
+/* iOS safe area — 底部導覽列用 */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* 防止 iOS 文字大小自動調整 */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* PWA standalone 模式：頂部 safe area */
+@media (display-mode: standalone) {
+  body {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
 }
 
 /* 便利貼旋轉角度 */

@@ -742,8 +742,8 @@ export default function CreateEventPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
-                <Input name="distance" label="距離 (km)" type="number" min="0" value={distance || ''} onChange={e => setDistance(Math.max(0, Number(e.target.value)))} placeholder="例：55…" />
-                <Input name="elevation" label="爬升 (m)" type="number" min="0" value={elevation || ''} onChange={e => setElevation(Math.max(0, Number(e.target.value)))} placeholder="例：400…" />
+                <Input name="distance" label="距離 (km)" type="number" inputMode="decimal" min="0" value={distance || ''} onChange={e => setDistance(Math.max(0, Number(e.target.value)))} placeholder="例：55…" />
+                <Input name="elevation" label="爬升 (m)" type="number" inputMode="numeric" min="0" value={elevation || ''} onChange={e => setElevation(Math.max(0, Number(e.target.value)))} placeholder="例：400…" />
               </div>
             )
           })()}
