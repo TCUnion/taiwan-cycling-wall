@@ -83,6 +83,27 @@ export default function CreateEventPage() {
   const [elevation, setElevation] = useState(編輯中活動?.elevation ?? 0)
   const [pace, setPace] = useState(編輯中活動?.pace === '自由配速' ? '' : (編輯中活動?.pace ?? ''))
   const [maxParticipants, setMaxParticipants] = useState(編輯中活動?.maxParticipants ?? 0)
+  const [抓取路線中, set抓取路線中] = useState(false)
+
+  // 路線連結變更時自動抓取距離/爬升
+  useEffect(() => {
+    const url = routeUrl.trim()
+    const isStrava = /strava\.com\/routes\/\d+/.test(url)
+    const isRwgps = /ridewithgps\.com\/routes\/\d+/.test(url)
+    if (!isStrava && !isRwgps) return
+
+    set抓取路線中(true)
+    const apiUrl = `/api/route-info?url=${encodeURIComponent(url)}`
+    fetch(apiUrl)
+      .then(r => r.json())
+      .then((info: { distance?: number; elevation?: number; title?: string }) => {
+        if (info.distance && !distance) setDistance(info.distance)
+        if (info.elevation && !elevation) setElevation(info.elevation)
+        if (info.title && !routeName) setRouteName(info.title)
+      })
+      .catch(() => {})
+      .finally(() => set抓取路線中(false))
+  }, [routeUrl]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 範本 UI
   const [顯示範本, set顯示範本] = useState(false)
@@ -627,9 +648,9 @@ export default function CreateEventPage() {
                     className="inline-flex items-center gap-1 text-xs text-strava cursor-pointer hover:underline">
                     <Link size={12} /> 開啟路線
                   </a>
-                  {isStrava && <p className="text-xs text-emerald-600">Strava 路線 — 活動頁面將嵌入互動地圖</p>}
-                  {isRwgps && <p className="text-xs text-emerald-600">Ride with GPS 路線 — 活動頁面將嵌入互動地圖</p>}
-                  {isGarmin && <p className="text-xs text-amber-600">Garmin Connect 不支援地圖嵌入，僅顯示連結按鈕</p>}
+                  {isStrava && <p className="text-xs text-emerald-600">Strava 路線 — 將嵌入互動地圖{抓取路線中 ? '，正在抓取距離/爬升…' : '，已自動填入距離/爬升'}</p>}
+                  {isRwgps && <p className="text-xs text-emerald-600">Ride with GPS 路線 — 將嵌入互動地圖{抓取路線中 ? '，正在抓取距離/爬升…' : '，已自動填入距離/爬升'}</p>}
+                  {isGarmin && <p className="text-xs text-amber-600">Garmin Connect 不支援地圖嵌入與自動抓取，請手動填寫距離/爬升</p>}
                 </div>
               )
             })()}
