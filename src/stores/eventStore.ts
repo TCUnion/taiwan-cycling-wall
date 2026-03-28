@@ -15,6 +15,7 @@ function 已過期(活動: CyclingEvent): boolean {
 interface EventState {
   活動列表: CyclingEvent[]
   載入中: boolean
+  已載入: boolean
   篩選區域: Region | null
   排序: 排序方式
   設定篩選區域: (region: Region | null) => void
@@ -126,7 +127,8 @@ function 轉換部分更新(更新: Partial<CyclingEvent>) {
 
 export const useEventStore = create<EventState>()((set, get) => ({
   活動列表: [],
-  載入中: true,
+  載入中: false,
+  已載入: false,
   篩選區域: null,
   排序: '最新',
 
@@ -162,7 +164,7 @@ export const useEventStore = create<EventState>()((set, get) => ({
     if (!error && data) {
       set({ 活動列表: data.map(轉換為活動) })
     }
-    set({ 載入中: false })
+    set({ 載入中: false, 已載入: true })
   },
 
   新增活動: async (event) => {
