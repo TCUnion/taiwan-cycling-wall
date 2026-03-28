@@ -229,7 +229,7 @@ export default function EventDetailPage() {
         {/* 操作按鈕 */}
         {是發起人 && (
           <div className="pt-2">
-            <Button fullWidth variant="outline" onClick={() => navigate(`/event/${活動.id}/edit`)}>
+            <Button fullWidth variant="primary" onClick={() => navigate(`/event/${活動.id}/edit`)}>
               <Pencil size={16} /> 編輯活動
             </Button>
           </div>
