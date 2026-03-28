@@ -158,8 +158,23 @@ export default function EventDetailPage() {
               )
             })()}
           </div>
-          {/* 右上：日期 */}
-          <InfoCard icon={<Calendar size={18} />} label="約騎日期" value={`${格式化完整日期(活動.date)}　${活動.time} 集合`} />
+          {/* 右上：日期 + 集合地點 */}
+          <div className="grid grid-cols-2 gap-2">
+            <InfoCard icon={<Calendar size={18} />} label="約騎日期" value={`${格式化完整日期(活動.date)}　${活動.time} 集合`} />
+            {活動.meetingPoint ? (
+              <div className="flex items-start gap-2.5 rounded-xl bg-white p-3 shadow-sm">
+                <div className="text-strava mt-0.5"><MapPin size={18} /></div>
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-500">集合地點</p>
+                  <p className="font-medium text-sm truncate">{活動.meetingPoint}</p>
+                  <a href={安全URL(活動.meetingPointUrl) || 導航連結} target="_blank" rel="noopener noreferrer"
+                    className="mt-1 inline-flex items-center gap-1 text-[11px] text-strava cursor-pointer hover:underline">
+                    <ExternalLink size={10} /> Google Maps
+                  </a>
+                </div>
+              </div>
+            ) : <div />}
+          </div>
           {/* 右下：數據列 */}
           <div className="grid grid-cols-3 gap-2">
             {活動.distance > 0 ? <InfoCard icon={<Route size={16} />} label="距離" value={格式化距離(活動.distance)} /> : <div />}
@@ -190,23 +205,6 @@ export default function EventDetailPage() {
               </div>
             </div>
           </a>
-        )}
-
-        {/* 集合地點 */}
-        {活動.meetingPoint && (
-          <div className="rounded-xl bg-white p-4 shadow-sm">
-            <div className="flex items-start gap-2.5">
-              <MapPin size={18} className="text-strava shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-sm">集合地點</p>
-                <p className="text-gray-700 text-sm mt-0.5">{活動.meetingPoint}</p>
-                <a href={安全URL(活動.meetingPointUrl) || 導航連結} target="_blank" rel="noopener noreferrer"
-                  className="mt-1.5 inline-flex items-center gap-1 text-xs text-strava cursor-pointer hover:underline">
-                  <ExternalLink size={12} /> 在 Google Maps 開啟
-                </a>
-              </div>
-            </div>
-          </div>
         )}
 
         {/* 路線連結（非 Strava） */}
