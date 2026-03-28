@@ -175,12 +175,23 @@ export default function EventDetailPage() {
               </div>
             ) : <div />}
           </div>
-          {/* 右下：數據列 */}
-          <div className="grid grid-cols-3 gap-2">
-            {活動.distance > 0 ? <InfoCard icon={<Route size={16} />} label="距離" value={格式化距離(活動.distance)} /> : <div />}
-            {活動.elevation > 0 ? <InfoCard icon={<Mountain size={16} />} label="爬升" value={`${活動.elevation} m`} /> : <div />}
-            {活動.pace !== '自由配速' ? <InfoCard icon={<Zap size={16} />} label="配速" value={活動.pace} /> : <div />}
-          </div>
+          {/* 右下：數據列（有 Strava/RWGPS embed 時只顯示配速，距離爬升由 embed 提供） */}
+          {(() => {
+            const 有路線嵌入 = 活動.stravaRouteUrl && (
+              /strava\.com\/routes\/\d+/.test(活動.stravaRouteUrl) ||
+              /ridewithgps\.com\/routes\/\d+/.test(活動.stravaRouteUrl)
+            )
+            const 數據項: { icon: React.ReactNode; label: string; value: string }[] = []
+            if (!有路線嵌入 && 活動.distance > 0) 數據項.push({ icon: <Route size={16} />, label: '距離', value: 格式化距離(活動.distance) })
+            if (!有路線嵌入 && 活動.elevation > 0) 數據項.push({ icon: <Mountain size={16} />, label: '爬升', value: `${活動.elevation} m` })
+            if (活動.pace !== '自由配速') 數據項.push({ icon: <Zap size={16} />, label: '配速', value: 活動.pace })
+            if (數據項.length === 0) return null
+            return (
+              <div className={`grid gap-2 grid-cols-${數據項.length}`}>
+                {數據項.map(d => <InfoCard key={d.label} icon={d.icon} label={d.label} value={d.value} />)}
+              </div>
+            )
+          })()}
         </div>
 
         {/* 廣告 */}

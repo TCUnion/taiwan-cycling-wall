@@ -656,11 +656,18 @@ export default function CreateEventPage() {
             })()}
           </div>
           <hr className="my-3 border-gray-200" />
-          <div className="grid grid-cols-2 gap-3">
-            <Input name="distance" label="距離 (km)" type="number" min="0" value={distance || ''} onChange={e => setDistance(Math.max(0, Number(e.target.value)))} placeholder="例：55…" />
-            <Input name="elevation" label="爬升 (m)" type="number" min="0" value={elevation || ''} onChange={e => setElevation(Math.max(0, Number(e.target.value)))} placeholder="例：400…" />
-          </div>
-          <div className="mt-3">
+          {(() => {
+            const 有自動抓取 = /strava\.com\/routes\/\d+/.test(routeUrl) || /ridewithgps\.com\/routes\/\d+/.test(routeUrl)
+            return 有自動抓取 ? (
+              <p className="text-xs text-gray-400 mb-2">距離與爬升將自動從 Strava / Ride with GPS 路線抓取，無需手動填寫</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <Input name="distance" label="距離 (km)" type="number" min="0" value={distance || ''} onChange={e => setDistance(Math.max(0, Number(e.target.value)))} placeholder="例：55…" />
+                <Input name="elevation" label="爬升 (m)" type="number" min="0" value={elevation || ''} onChange={e => setElevation(Math.max(0, Number(e.target.value)))} placeholder="例：400…" />
+              </div>
+            )
+          })()}
+          <div className={`${/strava\.com\/routes\/\d+/.test(routeUrl) || /ridewithgps\.com\/routes\/\d+/.test(routeUrl) ? '' : 'mt-3'}`}>
             <Input name="pace" autoComplete="off" label="配速 / 難度" value={pace} onChange={e => setPace(e.target.value)} placeholder="例：Z2 穩定…" />
           </div>
         </div>
