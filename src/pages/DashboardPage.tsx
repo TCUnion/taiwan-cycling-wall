@@ -355,27 +355,13 @@ function 個人資料區塊() {
       <div className="flex items-center justify-between py-2 border-b border-gray-100">
         <span className="text-sm text-gray-500">頭像</span>
         <div className="flex items-center gap-2">
-          {編輯中 && (
-            <>
-              <button onClick={() => 檔案輸入Ref.current?.click()} aria-label="更換頭像"
-                className="flex items-center gap-1 text-xs text-strava cursor-pointer hover:text-orange-600 transition-colors">
-                <Camera size={14} /> 更換
-              </button>
-              {使用者.socialAvatar && (預覽頭像 ?? 使用者.avatar) !== 使用者.socialAvatar && (
-                <button onClick={() => set預覽頭像(使用者.socialAvatar!)} aria-label="重設為預設頭像"
-                  className="flex items-center gap-1 text-xs text-blue-500 cursor-pointer hover:text-blue-600 transition-colors">
-                  <RotateCcw size={14} /> 重設為預設
-                </button>
-              )}
-              <input ref={檔案輸入Ref} type="file" accept="image/*" name="avatar-file" onChange={處理圖片選擇} className="hidden" />
-            </>
-          )}
-          <Avatar emoji={預覽頭像 ?? 使用者.avatar} size="md" />
+          <Avatar emoji={使用者.avatar} size="md" />
+          {編輯中 && <span className="text-xs text-gray-400">由登入帳號提供</span>}
         </div>
       </div>
 
-      {/* 頭像裁切編輯器 */}
-      {原始圖片 && (
+      {/* 頭像裁切編輯器（已停用） */}
+      {false && 原始圖片 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" role="dialog" aria-modal="true" aria-label="調整頭像" onClick={() => set原始圖片(null)} onKeyDown={e => { if (e.key === 'Escape') set原始圖片(null) }}>
           <div className="bg-white rounded-2xl p-5 mx-4 w-full max-w-xs space-y-4" onClick={e => e.stopPropagation()}>
             <h4 className="text-center font-bold text-gray-800">調整頭像</h4>
