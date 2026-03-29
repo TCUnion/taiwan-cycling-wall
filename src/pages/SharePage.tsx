@@ -54,8 +54,37 @@ export default function SharePage() {
   const 發起人 = 所有使用者.find(u => u.id === 活動.creatorId)
   const 活動連結 = `${window.location.origin}/event/${活動.id}`
 
-  // Facebook 分享（quote 會預填到貼文內容）
+  // 活動摘要（用於 FB quote 和複製連結）
   const FB摘要 = `${活動.title}\n${格式化完整日期(活動.date)} ${活動.time}\n${縣市?.name} · ${活動.meetingPoint}`
+
+  // 完整複製文字（含路線資訊 + 注意事項）
+  const 完整文字 = [
+    活動.title,
+    `${格式化完整日期(活動.date)} ${活動.time}`,
+    `${縣市?.name} · ${活動.meetingPoint}`,
+    '',
+    // 路線與騎乘資訊
+    活動.distance > 0 || 活動.elevation > 0 || (活動.pace && 活動.pace !== '自由配速') ? '【路線與騎乘資訊】' : '',
+    活動.distance > 0 ? `距離：${格式化距離(活動.distance)}` : '',
+    活動.elevation > 0 ? `爬升：${活動.elevation}m` : '',
+    活動.pace && 活動.pace !== '自由配速' ? `配速：${活動.pace}` : '',
+    活動.stravaRouteUrl ? `路線連結：${活動.stravaRouteUrl}` : '',
+    '',
+    // 從 description 解析路線描述和注意事項
+    ...(活動.description ? (() => {
+      const lines: string[] = []
+      const 路線match = 活動.description.match(/🛣️ 路線：\n([\s\S]*?)(?=\n\n⚠️|$)/)
+      if (路線match) lines.push('【路線描述】', 路線match[1].trim())
+      const 備註match = 活動.description.match(/⚠️ 注意事項：\n([\s\S]*)$/)
+      if (備註match) {
+        lines.push('', '【注意事項】')
+        lines.push(備註match[1].replace(/^• /gm, '· ').trim())
+      }
+      return lines
+    })() : []),
+    '',
+    活動連結,
+  ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n')
   const FB連結 = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(活動連結)}&quote=${encodeURIComponent(FB摘要)}`
 
   // LINE 分享
@@ -145,7 +174,7 @@ export default function SharePage() {
             variant="outline"
             className="mt-3 !bg-white !text-gray-800 !border-gray-200 hover:!bg-gray-50"
             onClick={async () => {
-              await navigator.clipboard.writeText(`${FB摘要}\n${活動連結}`)
+              await navigator.clipboard.writeText(完整文字)
               set已複製(true)
               setTimeout(() => set已複製(false), 2000)
             }}
