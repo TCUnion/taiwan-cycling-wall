@@ -79,7 +79,7 @@ export default function CorkBoard({ 活動列表, 廣告列表, 當前區域, on
 
   return (
     <div ref={swipeRef} className="px-4 pb-4">
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 auto-rows-fr">
         {混合列表.map((項目, i) =>
           項目.type === 'event' ? (
             <StickyNoteCard key={項目.data.id} 活動={項目.data} />

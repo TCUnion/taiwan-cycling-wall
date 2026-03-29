@@ -44,7 +44,7 @@ export default defineConfig({
         ],
       },
       manifest: {
-        name: '約騎公布欄',
+        name: '相揪約騎公布欄',
         short_name: '約騎',
         description: '台灣單車約騎社群平台',
         lang: 'zh-Hant-TW',

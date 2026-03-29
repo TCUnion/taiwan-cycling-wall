@@ -27,7 +27,7 @@ export default function WallFilters({ 篩選區域, 排序, onChange區域, onCh
     <div className="sticky top-0 z-30 bg-cork/95 backdrop-blur-sm pb-2">
       {/* 標題列 */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <h1 className="text-xl font-bold text-gray-800 flex items-center gap-1.5"><Bike size={22} className="text-strava" />約騎公布欄</h1>
+        <h1 className="text-xl font-bold text-gray-800 flex items-center gap-1.5"><Bike size={22} className="text-strava" />相揪約騎公布欄</h1>
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/history')}

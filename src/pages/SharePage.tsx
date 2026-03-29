@@ -66,7 +66,7 @@ export default function SharePage() {
   // Web Share API
   const 分享 = async () => {
     const shareData: ShareData = {
-      title: `${活動.title} — 約騎公布欄`,
+      title: `${活動.title} — 相揪約騎公布欄`,
       text: 分享文字,
       url: 活動連結,
     }
@@ -104,7 +104,7 @@ export default function SharePage() {
             <div className="flex items-start gap-3 mb-3">
               {發起人 && <Avatar emoji={發起人.avatar} size="md" />}
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-gray-400 mb-0.5">siokiu 約騎公布欄</div>
+                <div className="text-xs text-gray-400 mb-0.5">siokiu 相揪約騎公布欄</div>
                 <h2 className="text-lg font-bold text-gray-900 leading-snug">{活動.title}</h2>
               </div>
               <Badge variant="region" region={活動.region}>{活動.region}</Badge>

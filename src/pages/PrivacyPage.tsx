@@ -21,7 +21,7 @@ export default function PrivacyPage() {
         <section className="space-y-2">
           <h2 className="text-base font-bold text-gray-900">1. 服務說明</h2>
           <p>
-            「約騎公布欄」（siokiu.criterium.tw，以下簡稱「本服務」）是一個台灣單車約騎社群平台，
+            「相揪約騎公布欄」（siokiu.criterium.tw，以下簡稱「本服務」）是一個台灣單車約騎社群平台，
             提供使用者發起與參加約騎活動的公布欄功能。
           </p>
         </section>

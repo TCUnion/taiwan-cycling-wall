@@ -19,7 +19,7 @@ export default function DataDeletionPage() {
         <section className="space-y-2">
           <h2 className="text-base font-bold text-gray-900">如何刪除你的資料</h2>
           <p>
-            「約騎公布欄」尊重你的隱私權。你可以隨時刪除你在本服務中的所有資料。
+            「相揪約騎公布欄」尊重你的隱私權。你可以隨時刪除你在本服務中的所有資料。
             由於本服務的資料主要儲存在你的瀏覽器本地儲存空間（localStorage），
             你可以透過以下方式完全刪除：
           </p>
@@ -51,7 +51,7 @@ export default function DataDeletionPage() {
           <h2 className="text-base font-bold text-gray-900">方法三：移除 Facebook 應用程式授權</h2>
           <ol className="list-decimal pl-6 space-y-2">
             <li>前往 <a href="https://www.facebook.com/settings/?tab=applications" target="_blank" rel="noopener noreferrer" className="text-strava underline">Facebook 設定 &gt; 應用程式和網站</a></li>
-            <li>找到「約騎公布欄」</li>
+            <li>找到「相揪約騎公布欄」</li>
             <li>點擊「移除」</li>
           </ol>
           <p>這會撤銷本服務對你 Facebook 帳號的存取權限。</p>

@@ -15,7 +15,7 @@ export default function HistoryPage() {
   const 歷史活動 = useEventStore(s => s.取得歷史活動)()
   const { 廣告列表 } = useAds()
 
-  usePageMeta('歷史活動 — 約騎公布欄', '查看已結束的約騎活動紀錄。')
+  usePageMeta('歷史活動 — 相揪約騎公布欄', '查看已結束的約騎活動紀錄。')
 
   useEffect(() => {
     載入活動()

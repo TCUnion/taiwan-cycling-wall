@@ -71,7 +71,7 @@ const OGImageGenerator = forwardRef<HTMLDivElement, Props>(({ 活動 }, ref) => 
         {/* 上半部 */}
         <div>
           <div style={{ fontSize: 20, color: '#6b7280', marginBottom: 8 }}>
-            🚴 約騎公布欄
+            🚴 相揪約騎公布欄
           </div>
           <div style={{ fontSize: 48, fontWeight: 700, color: '#1f2937', lineHeight: 1.2 }}>
             {活動.title}

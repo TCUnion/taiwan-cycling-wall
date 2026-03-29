@@ -24,7 +24,7 @@ export default function LoginPage() {
   const [SDK就緒, setSDK就緒] = useState({ facebook: false, google: false })
   const [錯誤訊息, set錯誤訊息] = useState('')
 
-  usePageMeta('登入 — 約騎公布欄', '使用 Facebook、Google、LINE 或 Strava 帳號登入約騎公布欄。')
+  usePageMeta('登入 — 相揪約騎公布欄', '使用 Facebook、Google、LINE 或 Strava 帳號登入相揪約騎公布欄。')
 
   // 載入各 SDK
   useEffect(() => {
@@ -97,7 +97,7 @@ export default function LoginPage() {
         {/* 標題 */}
         <h1 className="text-5xl font-black text-strava mb-2">siokiu</h1>
         <p className="text-gray-500 mb-2">相揪來騎車</p>
-        <p className="text-sm text-gray-400 mb-10">約騎公布欄 — 找人一起騎車吧！</p>
+        <p className="text-sm text-gray-400 mb-10">相揪約騎公布欄 — 找人一起騎車吧！</p>
 
         {/* 登入按鈕 */}
         <div className="flex flex-col gap-3">

@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { 淨化純文字 } from '../utils/sanitize'
 
-const 預設標題 = '約騎公布欄 — 單車約騎社群平台'
+const 預設標題 = '相揪約騎公布欄 — 單車約騎社群平台'
 
 /** 設定頁面 title 和 meta description，離開時恢復預設值。輸入會淨化 HTML 標籤。 */
 export function usePageMeta(title: string, description?: string) {

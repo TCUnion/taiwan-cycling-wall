@@ -94,7 +94,7 @@ export default function LiffVerifyPage() {
         {狀態 === '輸入認證碼' && (
           <div className="space-y-4">
             <p className="text-sm text-gray-600 text-center">
-              請輸入約騎公布欄個人中心顯示的 6 位數認證碼
+              請輸入相揪約騎公布欄個人中心顯示的 6 位數認證碼
             </p>
             <label htmlFor="otp-input" className="sr-only">6 位數認證碼</label>
             <input
@@ -134,7 +134,7 @@ export default function LiffVerifyPage() {
             <CheckCircle2 size={48} className="text-emerald-600" />
             <p className="text-lg font-bold text-emerald-700">認證成功！</p>
             <p className="text-sm text-gray-500 text-center">
-              你已成為 LINE 認證車手，返回約騎公布欄即可看到認證徽章
+              你已成為 LINE 認證車手，返回相揪約騎公布欄即可看到認證徽章
             </p>
             <button
               onClick={關閉LIFF}
@@ -169,7 +169,7 @@ export default function LiffVerifyPage() {
             <p className="text-lg font-bold text-red-600">已暫時鎖定</p>
             <p className="text-sm text-gray-500 text-center">{錯誤訊息}</p>
             <p className="text-xs text-gray-400 text-center">
-              請返回約騎公布欄重新申請認證碼
+              請返回相揪約騎公布欄重新申請認證碼
             </p>
           </div>
         )}

@@ -80,18 +80,18 @@ function 產生OG_HTML(活動: Record<string, unknown>, 原始路徑: string): s
 <html lang="zh-Hant-TW">
 <head>
 <meta charset="UTF-8" />
-<title>${title} — 約騎公布欄</title>
+<title>${title} — 相揪約騎公布欄</title>
 <meta name="description" content="${description}" />
 <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
 <meta property="og:type" content="website" />
-<meta property="og:title" content="${title} — 約騎公布欄" />
+<meta property="og:title" content="${title} — 相揪約騎公布欄" />
 <meta property="og:description" content="${description}" />
 <meta property="og:image" content="${escapeHtml(ogImage)}" />
 <meta property="og:url" content="${escapeHtml(canonicalUrl)}" />
 <meta property="og:locale" content="zh_TW" />
-<meta property="og:site_name" content="約騎公布欄" />
+<meta property="og:site_name" content="相揪約騎公布欄" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="${title} — 約騎公布欄" />
+<meta name="twitter:title" content="${title} — 相揪約騎公布欄" />
 <meta name="twitter:description" content="${description}" />
 <meta name="twitter:image" content="${escapeHtml(ogImage)}" />
 </head>
