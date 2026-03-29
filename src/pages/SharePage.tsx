@@ -143,7 +143,7 @@ export default function SharePage() {
           <Button
             fullWidth
             variant="outline"
-            className="mt-3"
+            className="mt-3 !bg-white !text-gray-800 !border-gray-200 hover:!bg-gray-50"
             onClick={async () => {
               await navigator.clipboard.writeText(活動連結)
               set已複製(true)
