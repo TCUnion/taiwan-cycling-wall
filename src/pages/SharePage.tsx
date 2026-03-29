@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Share2, MessageCircle, Calendar, MapPin, Route, Mountain, Clock, Zap, Loader2 } from 'lucide-react'
+import { ArrowLeft, MessageCircle, Calendar, MapPin, Route, Mountain, Clock, Zap, Loader2, Facebook } from 'lucide-react'
 import { useEventStore } from '../stores/eventStore'
 import { useAuthStore } from '../stores/authStore'
 import { 查找縣市 } from '../data/counties'
@@ -63,25 +63,8 @@ export default function SharePage() {
     活動連結,
   ].filter(Boolean).join('\n')
 
-  // Web Share API
-  const 分享 = async () => {
-    const shareData: ShareData = {
-      title: `${活動.title} — 相揪約騎公布欄`,
-      text: 分享文字,
-      url: 活動連結,
-    }
-
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData)
-      } catch {
-        // 使用者取消分享
-      }
-    } else {
-      await navigator.clipboard.writeText(分享文字)
-      alert('已複製到剪貼簿！')
-    }
-  }
+  // Facebook 分享
+  const FB連結 = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(活動連結)}`
 
   // LINE 分享
   const LINE連結 = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(活動連結)}&text=${encodeURIComponent(`${活動.title} — 一起來騎車！`)}`
@@ -154,9 +137,11 @@ export default function SharePage() {
 
         {/* 分享按鈕 */}
         <div className="space-y-3">
-          <Button fullWidth variant="outline" onClick={分享}>
-            <Share2 size={18} /> 分享連結
-          </Button>
+          <a href={FB連結} target="_blank" rel="noopener noreferrer">
+            <Button fullWidth variant="outline" className="!border-facebook !text-facebook hover:!bg-facebook/5">
+              <Facebook size={18} /> 分享到 Facebook
+            </Button>
+          </a>
           <a href={LINE連結} target="_blank" rel="noopener noreferrer">
             <Button fullWidth variant="line" className="mt-3">
               <MessageCircle size={18} /> 分享到 LINE
