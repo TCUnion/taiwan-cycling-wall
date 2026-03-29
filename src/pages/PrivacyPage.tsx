@@ -2,12 +2,14 @@
 
 import { ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { usePageMeta } from '../hooks/usePageMeta'
 
 export default function PrivacyPage() {
   const navigate = useNavigate()
+  usePageMeta('隱私政策 — 相揪約騎公布欄', '了解相揪約騎公布欄如何收集、使用及保護您的個人資料。')
 
   return (
-    <div className="min-h-svh bg-white">
+    <main className="min-h-svh bg-white">
       <div className="sticky top-0 z-30 flex items-center gap-3 bg-white/95 backdrop-blur-sm px-4 py-3 border-b border-gray-100">
         <button onClick={() => navigate(-1)} aria-label="返回" className="p-2 -ml-1 rounded-full cursor-pointer hover:bg-black/5 transition-colors">
           <ArrowLeft size={22} />
@@ -96,6 +98,6 @@ export default function PrivacyPage() {
           </p>
         </section>
       </div>
-    </div>
+    </main>
   )
 }

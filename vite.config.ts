@@ -4,6 +4,27 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/') || id.includes('node_modules/react-router')) {
+            return 'vendor-react'
+          }
+          if (id.includes('node_modules/@supabase')) {
+            return 'vendor-supabase'
+          }
+          if (id.includes('node_modules/lucide-react') || id.includes('node_modules/zustand') || id.includes('node_modules/date-fns')) {
+            return 'vendor-ui'
+          }
+        },
+      },
+    },
+    minify: 'terser' as const,
+    terserOptions: {
+      format: { comments: false },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),
