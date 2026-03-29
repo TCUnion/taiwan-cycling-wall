@@ -82,7 +82,11 @@ export default function SharePage() {
     '',
     活動連結,
   ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n')
-  const FB連結 = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(活動連結)}&quote=${encodeURIComponent(完整文字)}`
+  const FB連結 = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(活動連結)}`
+  const 分享到FB = async () => {
+    await navigator.clipboard.writeText(完整文字)
+    window.open(FB連結, '_blank', 'noopener,noreferrer')
+  }
 
   // LINE 分享
   const LINE連結 = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(活動連結)}&text=${encodeURIComponent(完整文字)}`
@@ -155,12 +159,10 @@ export default function SharePage() {
 
         {/* 分享按鈕 */}
         <div className="space-y-3">
-          <a href={FB連結} target="_blank" rel="noopener noreferrer">
-            <Button fullWidth className="!bg-facebook !text-white hover:!bg-facebook/90">
-              <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-              分享到 Facebook
-            </Button>
-          </a>
+          <Button fullWidth className="!bg-facebook !text-white hover:!bg-facebook/90" onClick={分享到FB}>
+            <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            分享到 Facebook（已複製文字）
+          </Button>
           <a href={LINE連結} target="_blank" rel="noopener noreferrer">
             <Button fullWidth variant="line" className="mt-3">
               <MessageCircle size={18} /> 分享到 LINE
