@@ -22,7 +22,7 @@ export default function DashboardPage() {
 
   const 處理登出 = () => {
     登出()
-    navigate('/login', { replace: true })
+    navigate('/', { replace: true })
   }
 
   // 包含個人與粉絲頁發起的活動
