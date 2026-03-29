@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, MessageCircle, Calendar, MapPin, Route, Mountain, Clock, Zap, Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { ArrowLeft, MessageCircle, Calendar, MapPin, Route, Mountain, Clock, Zap, Loader2, Copy, Check } from 'lucide-react'
 import { useEventStore } from '../stores/eventStore'
 import { useAuthStore } from '../stores/authStore'
 import { 查找縣市 } from '../data/counties'
@@ -19,6 +20,7 @@ export default function SharePage() {
 
   const [載入中, set載入中] = useState(false)
   const [載入失敗, set載入失敗] = useState(false)
+  const [已複製, set已複製] = useState(false)
 
   useEffect(() => {
     if (!id || 活動) return
@@ -53,8 +55,9 @@ export default function SharePage() {
   const 發起人 = 所有使用者.find(u => u.id === 活動.creatorId)
   const 活動連結 = `${window.location.origin}/event/${活動.id}`
 
-  // Facebook 分享
-  const FB連結 = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(活動連結)}`
+  // Facebook 分享（quote 會預填到貼文內容）
+  const FB摘要 = `${活動.title}\n${格式化完整日期(活動.date)} ${活動.time}\n${縣市?.name} · ${活動.meetingPoint}`
+  const FB連結 = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(活動連結)}&quote=${encodeURIComponent(FB摘要)}`
 
   // LINE 分享
   const LINE連結 = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(活動連結)}&text=${encodeURIComponent(`${活動.title} — 一起來騎車！`)}`
@@ -138,6 +141,19 @@ export default function SharePage() {
               <MessageCircle size={18} /> 分享到 LINE
             </Button>
           </a>
+          <Button
+            fullWidth
+            variant="outline"
+            className="mt-3"
+            onClick={async () => {
+              await navigator.clipboard.writeText(活動連結)
+              set已複製(true)
+              setTimeout(() => set已複製(false), 2000)
+            }}
+          >
+            {已複製 ? <Check size={18} /> : <Copy size={18} />}
+            {已複製 ? '已複製' : '複製連結'}
+          </Button>
         </div>
       </div>
     </div>
