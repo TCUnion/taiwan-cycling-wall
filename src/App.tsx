@@ -62,6 +62,7 @@ export default function App() {
         <Route element={<AppShell />}>
           <Route path="/wall" element={<WallPage />} />
           <Route path="/event/:id" element={<EventDetailPage />} />
+          <Route path="/event/:id/share" element={<SharePage />} />
           <Route path="/history" element={<HistoryPage />} />
         </Route>
 
@@ -69,7 +70,6 @@ export default function App() {
         <Route element={<RequireAuth><AppShell /></RequireAuth>}>
           <Route path="/create" element={<CreateEventPage />} />
           <Route path="/event/:id/edit" element={<CreateEventPage />} />
-          <Route path="/event/:id/share" element={<SharePage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
         </Route>
