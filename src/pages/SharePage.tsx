@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
 import { ArrowLeft, MessageCircle, Calendar, MapPin, Route, Mountain, Clock, Zap, Loader2, Copy, Check } from 'lucide-react'
 import { useEventStore } from '../stores/eventStore'
 import { useAuthStore } from '../stores/authStore'
