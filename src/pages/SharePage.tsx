@@ -85,10 +85,10 @@ export default function SharePage() {
     '',
     活動連結,
   ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n')
-  const FB連結 = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(活動連結)}&quote=${encodeURIComponent(FB摘要)}`
+  const FB連結 = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(活動連結)}&quote=${encodeURIComponent(完整文字)}`
 
   // LINE 分享
-  const LINE連結 = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(活動連結)}&text=${encodeURIComponent(`${活動.title} — 一起來騎車！`)}`
+  const LINE連結 = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(活動連結)}&text=${encodeURIComponent(完整文字)}`
 
   return (
     <div className="min-h-svh bg-cork pb-8">
