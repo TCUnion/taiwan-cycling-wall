@@ -13,6 +13,7 @@
 - **Zustand**（狀態管理 + localStorage 持久化）
 - **React Router v7**
 - **Lucide React**（圖示 — 禁止使用 emoji 作為 UI icon）
+- **Leaflet** + OpenStreetMap（互動式地圖 — 路線規劃 / GPX 預覽，無需 API Key）
 - **Facebook JavaScript SDK**（登入驗證）
 - **Google Identity Services**（Google 登入，前端 JWT 解碼）
 - **LINE Login**（OAuth 2.0 + PKCE）
@@ -57,6 +58,7 @@ src/
 ├── stores/                 # Zustand stores（均使用 persist middleware）
 │   ├── authStore.ts        # 登入狀態（FB / Google / LINE / Strava 登入 / 一般註冊 / 所有使用者列表 / 粉絲頁身份切換）
 │   ├── eventStore.ts       # 活動 CRUD（新增 / 更新 / 載入單一活動）+ 篩選排序 + 歷史活動
+│   ├── routeStore.ts       # 個人路線庫 CRUD（Supabase: saved_routes，不使用 persist）
 │   ├── templateStore.ts    # 約騎範本 CRUD（新增 / 刪除 / 更新）
 │   ├── spotTemplateStore.ts    # 集合點範本 CRUD（Supabase: spot_templates）
 │   ├── routeInfoTemplateStore.ts # 路線與騎乘資訊範本 CRUD（Supabase: route_info_templates）
@@ -75,6 +77,8 @@ src/
 │   ├── pkce.ts             # PKCE 共用工具（SHA-256 + base64url + 隨機字串）
 │   ├── supabase.ts         # Supabase client 初始化
 │   ├── ogConstants.ts      # OG 圖片常數
+│   ├── gpxParser.ts        # GPX 解析（DOMParser + Haversine 距離 + 爬升計算 + 座標降采樣）
+│   ├── osrmService.ts      # OSRM 路線規劃（router.project-osrm.org，cycling profile）
 │   ├── verificationService.ts  # TCU 認證服務（建立請求 / 驗證碼比對 / 狀態查詢）
 │   └── liff.ts             # LINE LIFF SDK 封裝（初始化 / 取得使用者 / 關閉）
 ├── components/
@@ -82,7 +86,8 @@ src/
 │   ├── layout/             # AppShell, BottomNavBar, RegionTabs
 │   ├── dashboard/          # VerificationSection（TCU 認證區塊）
 │   ├── wall/               # CorkBoard, StickyNoteCard, WallFilters, AdCard（廣告卡片）
-│   └── event/              # CountyPicker, RouteTemplatePicker, ParticipantMap, MoakBadge
+│   ├── event/              # CountyPicker, RouteTemplatePicker, ParticipantMap, MoakBadge
+│   └── route/              # RouteMap（Leaflet 地圖）, GpxUploader（拖放上傳）, RoutePlanner（互動規劃）, RouteCard（路線卡片）, RoutePickerModal（路線庫選取器）
 ├── pages/                  # 頁面（均為 lazy-loaded）
 functions/
 └── event/[[id]].ts         # Cloudflare Pages Function（社群媒體爬蟲動態 OG meta）
@@ -97,6 +102,7 @@ functions/
 | `/privacy` | PrivacyPage（隱私政策） | 否 |
 | `/data-deletion` | DataDeletionPage（資料刪除指示） | 否 |
 | `/wall` | WallPage（約騎公布欄主頁面） | 是 |
+| `/routes` | RoutesPage（個人路線庫 / 規劃路線 / 上傳軌跡） | 是 |
 | `/create` | CreateEventPage（發起約騎） | 是 |
 | `/event/:id` | EventDetailPage | 是 |
 | `/event/:id/edit` | CreateEventPage（編輯模式） | 是 |
@@ -182,6 +188,11 @@ functions/
 - 右上角書籤+按鈕：把當前表單儲存為範本
 - 範本儲存路線/集合點/騎乘資訊/注意事項，不含日期
 
+### 路線庫整合（routeStore + RoutePickerModal）
+- 路線區塊右上角「路線庫」按鈕（Map icon）開啟 RoutePickerModal
+- 選取路線後自動填入路線名稱、距離、爬升、縣市
+- 套用 GPX / 規劃路線的 `routeCoordinates` 存入活動供詳情頁地圖顯示
+
 ### 區塊範本功能（各自獨立，存入 Supabase）
 各區塊右上角有範本按鈕，點擊展開/收合範本面板，支援新增、套用、inline 編輯、刪除：
 - **集合點範本**（`spot_templates`）— 儲存地點名稱 + Google Maps 連結 + 縣市
@@ -204,6 +215,44 @@ functions/
 5. **發起紀錄** — 以 `creatorId` 篩選我建立的活動
 6. **個人路線** — 收藏路線列表（mock 資料）
 7. **常用集合點** — 點擊開啟 Google Maps
+
+## 路線管理（RoutesPage）
+
+三個分頁：
+1. **我的路線** — 顯示 `routeStore` 中的 `SavedRoute` 列表（RouteCard），支援刪除；每張卡有 Leaflet 迷你地圖預覽（高度 `h-32`，非互動）
+2. **規劃路線** — RoutePlanner：點擊 Leaflet 地圖新增航點，≥2 點自動呼叫 OSRM 沿道路規劃，顯示距離/時間，可刪除航點，儲存時命名後存入路線庫
+3. **上傳軌跡** — GpxUploader：拖放或選取 `.gpx` 檔案，DOMParser 解析後顯示名稱/距離/爬升/點數 + Leaflet 預覽，命名 + 選縣市後儲存
+
+### RouteMap 元件
+- 用 Leaflet 原生 API（`useRef` + `useEffect`），台灣中心 `[23.5, 121]` zoom `8`
+- `coordinates` prop → Polyline；`waypoints` prop → 帶編號 Marker
+- `interactive` prop 切換點擊功能（`onMapClick` 回調）
+- Vite Leaflet icon 路徑手動修復（`L.Icon.Default.mergeOptions`）
+
+### OSRM 路線規劃
+- 端點：`https://router.project-osrm.org/route/v1/cycling/`
+- 免費公開服務，無需 API Key；適合 Demo，生產建議自架
+- debounce 300ms 避免頻繁請求
+
+### Supabase `saved_routes` 資料表
+```sql
+CREATE TABLE saved_routes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  distance NUMERIC(8,2) NOT NULL DEFAULT 0,
+  elevation NUMERIC(8,1) NOT NULL DEFAULT 0,
+  county_id TEXT NOT NULL DEFAULT '',
+  coordinates JSONB NOT NULL DEFAULT '[]',
+  waypoints JSONB NOT NULL DEFAULT '[]',
+  source TEXT NOT NULL DEFAULT 'manual',  -- 'manual' | 'gpx' | 'planned'
+  gpx_file_name TEXT,
+  creator_id TEXT NOT NULL,
+  is_public BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+GRANT ALL ON saved_routes TO anon, authenticated;
+```
 
 ## 約騎公布欄便利貼（StickyNoteCard）
 
@@ -257,6 +306,7 @@ Supabase 資料表（無 persist，每次 mount 載入）：
 - `spot_templates` — 集合點範本
 - `route_info_templates` — 路線與騎乘資訊範本
 - `notes_templates` — 注意事項範本
+- `saved_routes` — 個人路線庫（GPX 軌跡 / 規劃路線，`creator_id` 隔離）
 - `user_verifications` — TCU 認證記錄（token / status / user_id / line_user_id）
 - `users` — 使用者表（含 `verified_at` / `line_verified_user_id` 欄位）
 
@@ -310,6 +360,8 @@ Supabase 資料表（無 persist，每次 mount 載入）：
 - Strava / Garmin Connect：路線連結（自動辨識類型顯示）
 - MOAK：連結活動頁面
 - LINE：使用 `social-plugins.line.me/lineit/share` 分享
+- Facebook 分享：使用 `facebook.com/sharer/sharer.php?u=` （`dialog/share` API 需用戶開啟平台功能，改用 sharer.php 相容性最佳）
+- OSRM：`router.project-osrm.org/route/v1/cycling/`（免費路線規劃，無需 API Key）
 
 ## 回應語言
 
