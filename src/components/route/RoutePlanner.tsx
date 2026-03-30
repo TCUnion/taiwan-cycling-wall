@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { Trash2, Navigation, Check } from 'lucide-react'
+import { Trash2, Navigation, Check, AlertCircle } from 'lucide-react'
 import type { SavedRoute } from '../../types'
 import { 規劃騎車路線 } from '../../utils/osrmService'
 import { 格式化距離 } from '../../utils/formatters'
@@ -27,6 +27,7 @@ export default function RoutePlanner({ onSaved }: Props) {
   const [countyId, setCountyId] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState(false)
   const [showSaveForm, setShowSaveForm] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -88,10 +89,14 @@ export default function RoutePlanner({ onSaved }: Props) {
       createdAt: now,
       updatedAt: now,
     }
-    await 新增路線(route)
+    const ok = await 新增路線(route)
     setSaving(false)
-    setSaved(true)
-    onSaved?.(route)
+    if (ok) {
+      setSaved(true)
+      onSaved?.(route)
+    } else {
+      setSaveError(true)
+    }
   }
 
   return (
@@ -181,6 +186,13 @@ export default function RoutePlanner({ onSaved }: Props) {
         <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 rounded-xl px-4 py-3">
           <Check size={16} />
           路線已儲存到路線庫
+        </div>
+      )}
+
+      {saveError && (
+        <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3">
+          <AlertCircle size={16} />
+          儲存失敗，請確認網路連線並重試
         </div>
       )}
     </div>

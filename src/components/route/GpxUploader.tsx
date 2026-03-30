@@ -68,10 +68,14 @@ export default function GpxUploader({ onSaved }: Props) {
       createdAt: now,
       updatedAt: now,
     }
-    await 新增路線(route)
+    const ok = await 新增路線(route)
     setSaving(false)
-    setSaved(true)
-    onSaved?.(route)
+    if (ok) {
+      setSaved(true)
+      onSaved?.(route)
+    } else {
+      setError('儲存失敗，請確認網路連線並重試')
+    }
   }
 
   const onDrop = (e: React.DragEvent) => {

@@ -6,7 +6,7 @@ interface RouteState {
   路線列表: SavedRoute[]
   載入中: boolean
   載入路線: (creatorId: string) => Promise<void>
-  新增路線: (route: SavedRoute) => Promise<void>
+  新增路線: (route: SavedRoute) => Promise<boolean>
   更新路線: (route: SavedRoute) => Promise<void>
   刪除路線: (id: string) => Promise<void>
 }
@@ -67,9 +67,12 @@ export const useRouteStore = create<RouteState>()((set) => ({
   新增路線: async (route) => {
     const row = 轉換為資料列(route)
     const { error } = await supabase.from('saved_routes').insert(row)
-    if (!error) {
-      set((s) => ({ 路線列表: [route, ...s.路線列表] }))
+    if (error) {
+      console.error('新增路線失敗:', error.message)
+      return false
     }
+    set((s) => ({ 路線列表: [route, ...s.路線列表] }))
+    return true
   },
 
   更新路線: async (route) => {
