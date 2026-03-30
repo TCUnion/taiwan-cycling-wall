@@ -56,9 +56,11 @@ export default function SharePage() {
 
   // 完整分享文字（含路線資訊 + 注意事項）
   const 完整文字 = [
+    '【 #siokiu約騎資訊】',
+    '',
     活動.title,
-    `${格式化完整日期(活動.date)} ${活動.time}`,
-    `${縣市?.name} · ${活動.meetingPoint}`,
+    `【集合時間】 ${格式化完整日期(活動.date)} ${活動.time}`,
+    `【集合地點】 ${活動.meetingPoint}`,
     '',
     // 路線與騎乘資訊
     活動.distance > 0 || 活動.elevation > 0 || (活動.pace && 活動.pace !== '自由配速') ? '【路線與騎乘資訊】' : '',
@@ -71,16 +73,15 @@ export default function SharePage() {
     ...(活動.description ? (() => {
       const lines: string[] = []
       const 路線match = 活動.description.match(/🛣️ 路線：\n([\s\S]*?)(?=\n\n⚠️|$)/)
-      if (路線match) lines.push('【路線描述】', 路線match[1].trim())
+      if (路線match) lines.push('【路線描述】', 路線match[1].trim(), '')
       const 備註match = 活動.description.match(/⚠️ 注意事項：\n([\s\S]*)$/)
       if (備註match) {
-        lines.push('', '【注意事項】')
-        lines.push(備註match[1].replace(/^• /gm, '· ').trim())
+        lines.push('【注意事項】')
+        lines.push(備註match[1].replace(/^• /gm, '· ').trim(), '')
       }
       return lines
     })() : []),
-    '',
-    活動連結,
+    `【更多資訊請看】 ${活動連結}`,
   ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n')
   const FB連結 = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(活動連結)}`
   const 分享到FB = async () => {
