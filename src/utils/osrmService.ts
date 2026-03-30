@@ -1,7 +1,8 @@
-// 呼叫 OSRM demo server 取得自行車路線
+// 呼叫 OSRM demo server 取得路線
 // 文件：https://project-osrm.org/docs/v5.24.0/api/
+// car profile：沿一般道路規劃，適合台灣路騎（cycling profile 會繞河濱自行車道）
 
-const OSRM_BASE = 'https://router.project-osrm.org/route/v1/cycling'
+const OSRM_BASE = 'https://router.project-osrm.org/route/v1/car'
 
 export interface OsrmResult {
   coordinates: [number, number][]  // [lat, lng][] 解碼後的折線座標
@@ -49,7 +50,7 @@ export async function 規劃騎車路線(
 
   // OSRM 格式：lng,lat;lng,lat
   const coords = waypoints.map(([lat, lng]) => `${lng},${lat}`).join(';')
-  const url = `${OSRM_BASE}/${coords}?overview=full&geometries=polyline`
+  const url = `${OSRM_BASE}/${coords}?overview=full&geometries=polyline&continue_straight=true`
 
   try {
     const res = await fetch(url)
