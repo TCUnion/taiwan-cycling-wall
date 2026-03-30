@@ -298,8 +298,7 @@ export default function EventDetailPage() {
           })() : []),
           `【更多資訊請看】 ${活動連結}`,
         ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n')
-        const FB_APP_ID = import.meta.env.VITE_FB_APP_ID as string
-        const FB連結 = `https://www.facebook.com/dialog/share?app_id=${FB_APP_ID}&href=${encodeURIComponent(活動連結)}&display=popup`
+        const FB連結 = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(活動連結)}`
         const LINE連結 = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(活動連結)}&text=${encodeURIComponent(完整文字)}`
         return (
           <div className="px-4 mt-6 space-y-3">

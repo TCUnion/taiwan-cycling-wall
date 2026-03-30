@@ -83,8 +83,7 @@ export default function SharePage() {
     })() : []),
     `【更多資訊請看】 ${活動連結}`,
   ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n')
-  const FB_APP_ID = import.meta.env.VITE_FB_APP_ID as string
-  const FB連結 = `https://www.facebook.com/dialog/share?app_id=${FB_APP_ID}&href=${encodeURIComponent(活動連結)}&display=popup`
+  const FB連結 = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(活動連結)}`
   const 分享到FB = async () => {
     await navigator.clipboard.writeText(完整文字)
     window.open(FB連結, '_blank', 'noopener,noreferrer,width=600,height=500')
