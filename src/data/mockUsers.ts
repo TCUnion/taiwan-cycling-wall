@@ -1,27 +1,28 @@
 import type { User, SavedRoute, MeetingSpot, FollowRelation } from '../types'
 
 // 個人收藏路線 mock 資料
+const 空路線基底 = { coordinates: [] as [number, number][], waypoints: [] as [number, number][], source: 'manual' as const, creatorId: '', isPublic: false, createdAt: '', updatedAt: '' }
 export const 模擬收藏路線: Record<string, SavedRoute[]> = {
   'user-1': [
-    { id: 'route-1', name: '風櫃嘴—萬里', distance: 45, elevation: 680, countyId: 'taipei' },
-    { id: 'route-2', name: '北宜公路全段', distance: 58, elevation: 920, countyId: 'new-taipei' },
-    { id: 'route-3', name: '陽金公路', distance: 32, elevation: 550, countyId: 'taipei' },
+    { id: 'route-1', name: '風櫃嘴—萬里', distance: 45, elevation: 680, countyId: 'taipei', ...空路線基底 },
+    { id: 'route-2', name: '北宜公路全段', distance: 58, elevation: 920, countyId: 'new-taipei', ...空路線基底 },
+    { id: 'route-3', name: '陽金公路', distance: 32, elevation: 550, countyId: 'taipei', ...空路線基底 },
   ],
   'user-2': [
-    { id: 'route-4', name: '大甲溪自行車道', distance: 35, elevation: 120, countyId: 'taichung' },
-    { id: 'route-5', name: '日月潭環湖', distance: 30, elevation: 350, countyId: 'nantou' },
+    { id: 'route-4', name: '大甲溪自行車道', distance: 35, elevation: 120, countyId: 'taichung', ...空路線基底 },
+    { id: 'route-5', name: '日月潭環湖', distance: 30, elevation: 350, countyId: 'nantou', ...空路線基底 },
   ],
   'user-3': [
-    { id: 'route-6', name: '西濱快速道路南段', distance: 85, elevation: 50, countyId: 'kaohsiung' },
-    { id: 'route-7', name: '南迴公路', distance: 95, elevation: 620, countyId: 'taitung' },
-    { id: 'route-8', name: '壽卡鐵馬驛站', distance: 40, elevation: 480, countyId: 'pingtung' },
+    { id: 'route-6', name: '西濱快速道路南段', distance: 85, elevation: 50, countyId: 'kaohsiung', ...空路線基底 },
+    { id: 'route-7', name: '南迴公路', distance: 95, elevation: 620, countyId: 'taitung', ...空路線基底 },
+    { id: 'route-8', name: '壽卡鐵馬驛站', distance: 40, elevation: 480, countyId: 'pingtung', ...空路線基底 },
   ],
   'user-4': [
-    { id: 'route-9', name: '花東縱谷自行車道', distance: 55, elevation: 280, countyId: 'hualien' },
+    { id: 'route-9', name: '花東縱谷自行車道', distance: 55, elevation: 280, countyId: 'hualien', ...空路線基底 },
   ],
   'user-5': [
-    { id: 'route-10', name: '巴拉卡公路', distance: 28, elevation: 650, countyId: 'new-taipei' },
-    { id: 'route-11', name: '106 乙線平溪段', distance: 22, elevation: 380, countyId: 'new-taipei' },
+    { id: 'route-10', name: '巴拉卡公路', distance: 28, elevation: 650, countyId: 'new-taipei', ...空路線基底 },
+    { id: 'route-11', name: '106 乙線平溪段', distance: 22, elevation: 380, countyId: 'new-taipei', ...空路線基底 },
   ],
 }
 
