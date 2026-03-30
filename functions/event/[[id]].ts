@@ -62,7 +62,9 @@ function 產生OG_HTML(活動: Record<string, unknown>, 原始路徑: string): s
   const countyId = String(活動.county_id || '')
   const distance = Number(活動.distance) || 0
   const elevation = Number(活動.elevation) || 0
-  const coverImage = 活動.cover_image ? String(活動.cover_image) : ''
+  // base64 data URL 無法被社群媒體爬蟲抓取，改用預設 OG 圖片
+  const rawCoverImage = 活動.cover_image ? String(活動.cover_image) : ''
+  const coverImage = rawCoverImage.startsWith('data:') ? '' : rawCoverImage
 
   // 組合描述文字
   const 描述片段: string[] = []
