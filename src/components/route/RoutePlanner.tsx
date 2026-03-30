@@ -103,7 +103,7 @@ export default function RoutePlanner({ onSaved }: Props) {
         waypoints={waypoints}
         interactive
         onMapClick={新增航點}
-        className="h-72"
+        className="h-[60vh]"
       />
 
       {/* 路線資訊 */}
