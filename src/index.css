@@ -96,3 +96,24 @@ html {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Leaflet 地圖樣式覆蓋 */
+.leaflet-container {
+  border-radius: inherit;
+  z-index: 0;
+}
+.leaflet-control-attribution {
+  font-size: 10px;
+}
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-pane,
+.leaflet-overlay-pane,
+.leaflet-shadow-pane,
+.leaflet-marker-pane,
+.leaflet-tooltip-pane,
+.leaflet-popup-pane {
+  z-index: auto;
+}

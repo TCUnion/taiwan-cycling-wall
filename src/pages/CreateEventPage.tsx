@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ExternalLink, Bike, MapPin, Link, BookmarkPlus, Bookmark, Trash2, Save, MapPinPlus, Pencil, Check, Route, StickyNote } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Bike, MapPin, Link, BookmarkPlus, Bookmark, Trash2, Save, MapPinPlus, Pencil, Check, Route, StickyNote, Map } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { useEventStore, 取得便利貼顏色 } from '../stores/eventStore'
 import { useTemplateStore } from '../stores/templateStore'
@@ -11,12 +11,13 @@ import { useRouteInfoTemplateStore } from '../stores/routeInfoTemplateStore'
 import { useNotesTemplateStore } from '../stores/notesTemplateStore'
 import { 查找縣市, 縣市列表 } from '../data/counties'
 import { 產生ID } from '../utils/formatters'
-import type { CyclingEvent, RideTemplate } from '../types'
+import type { CyclingEvent, RideTemplate, SavedRoute } from '../types'
 import { 淨化純文字, 淨化輸入文字, 安全URL } from '../utils/sanitize'
 import { 取得活動上限, 計算進行中活動數 } from '../utils/roleService'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Avatar from '../components/ui/Avatar'
+import RoutePickerModal from '../components/route/RoutePickerModal'
 
 // 從文字推斷縣市
 function 從文字推斷縣市(text: string): string {
@@ -152,6 +153,16 @@ export default function CreateEventPage() {
   const [編輯集合點名, set編輯集合點名] = useState('')
   const [編輯集合點URL, set編輯集合點URL] = useState('')
   const [編輯集合點縣市, set編輯集合點縣市] = useState('')
+  // 路線庫 Modal
+  const [顯示路線庫, set顯示路線庫] = useState(false)
+
+  const 套用路線庫路線 = (route: SavedRoute) => {
+    if (route.name) setRouteName(route.name)
+    if (route.distance) setDistance(route.distance)
+    if (route.elevation) setElevation(route.elevation)
+    if (route.countyId) setCountyId(route.countyId)
+  }
+
   // 路線範本 UI
   const [顯示路線範本, set顯示路線範本] = useState(false)
   const [編輯中路線, set編輯中路線] = useState<string | null>(null)
@@ -557,10 +568,16 @@ export default function CreateEventPage() {
         <div className="rounded-xl bg-white p-4 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-gray-700">路線與騎乘資訊</h3>
-            <button onClick={() => set顯示路線範本(!顯示路線範本)} aria-label="路線範本"
-              className={`p-1.5 rounded-full cursor-pointer hover:bg-black/5 transition-colors ${顯示路線範本 ? 'text-strava' : 'text-gray-500'}`}>
-              <Route size={18} />
-            </button>
+            <div className="flex items-center gap-1">
+              <button onClick={() => set顯示路線庫(true)} aria-label="路線庫"
+                className="p-1.5 rounded-full cursor-pointer hover:bg-black/5 transition-colors text-gray-500">
+                <Map size={18} />
+              </button>
+              <button onClick={() => set顯示路線範本(!顯示路線範本)} aria-label="路線範本"
+                className={`p-1.5 rounded-full cursor-pointer hover:bg-black/5 transition-colors ${顯示路線範本 ? 'text-strava' : 'text-gray-500'}`}>
+                <Route size={18} />
+              </button>
+            </div>
           </div>
 
           {/* 路線範本面板 */}
@@ -889,6 +906,12 @@ export default function CreateEventPage() {
           {是編輯模式 ? <><Save size={20} /> 儲存變更</> : <><Bike size={20} /> 發布約騎！</>}
         </Button>
       </div>
+
+      <RoutePickerModal
+        開啟={顯示路線庫}
+        關閉={() => set顯示路線庫(false)}
+        onSelect={套用路線庫路線}
+      />
     </div>
   )
 }

@@ -18,6 +18,7 @@ const DataDeletionPage = lazy(() => import('./pages/DataDeletionPage'))
 const OAuthCallbackPage = lazy(() => import('./pages/OAuthCallbackPage'))
 const LiffVerifyPage = lazy(() => import('./pages/LiffVerifyPage'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
+const RoutesPage = lazy(() => import('./pages/RoutesPage'))
 
 // 載入中畫面 — 與 SplashPage 風格一致
 function Loading() {
@@ -71,6 +72,7 @@ export default function App() {
           <Route path="/create" element={<CreateEventPage />} />
           <Route path="/event/:id/edit" element={<CreateEventPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/routes" element={<RoutesPage />} />
           <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
         </Route>
 

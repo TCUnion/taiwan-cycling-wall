@@ -136,13 +136,33 @@ export interface RideTemplate {
   creatorName?: string   // 建立者名稱（方便顯示）
 }
 
-// 個人收藏路線
+// 路線來源
+export type RouteSource = 'manual' | 'gpx' | 'planned'
+
+// 個人儲存路線
 export interface SavedRoute {
   id: string
   name: string
-  distance: number     // 公里
-  elevation: number    // 公尺
+  distance: number              // 公里
+  elevation: number             // 公尺
   countyId: string
+  coordinates: [number, number][] // [lat, lng][]
+  waypoints: [number, number][]   // [lat, lng][]（規劃路線的航點）
+  source: RouteSource
+  gpxFileName?: string
+  creatorId: string
+  isPublic: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+// GPX 解析結果
+export interface GpxParseResult {
+  name: string
+  coordinates: [number, number][]
+  distance: number    // 公里
+  elevation: number   // 公尺
+  pointCount: number
 }
 
 // 集合點
