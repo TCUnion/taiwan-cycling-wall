@@ -60,7 +60,7 @@ export default function SharePage() {
     '',
     活動.title,
     `【集合時間】 ${格式化完整日期(活動.date)} ${活動.time}`,
-    `【集合地點】 ${活動.meetingPoint}`,
+    `【集合地點】 ${活動.meetingPoint}${活動.meetingPointUrl ? `\n${活動.meetingPointUrl}` : ''}`,
     '',
     // 路線與騎乘資訊
     活動.distance > 0 || 活動.elevation > 0 || (活動.pace && 活動.pace !== '自由配速') ? '【路線與騎乘資訊】' : '',
