@@ -32,6 +32,7 @@ export default function RouteMap({
   const mapRef = useRef<LeafletMap | null>(null)
   const polylineRef = useRef<Polyline | null>(null)
   const markersRef = useRef<Marker[]>([])
+  const hasFitRef = useRef(false)
 
   // 初始化地圖（只跑一次）
   useEffect(() => {
@@ -80,7 +81,10 @@ export default function RouteMap({
       const line = L.polyline(coordinates, { color: '#FC4C02', weight: 3, opacity: 0.85 })
       line.addTo(map)
       polylineRef.current = line
-      map.fitBounds(line.getBounds(), { padding: [20, 20] })
+      if (!interactive || !hasFitRef.current) {
+        map.fitBounds(line.getBounds(), { padding: [20, 20] })
+        hasFitRef.current = true
+      }
     }
   }, [coordinates])
 
