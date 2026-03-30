@@ -298,12 +298,13 @@ export default function EventDetailPage() {
           })() : []),
           `【更多資訊請看】 ${活動連結}`,
         ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n')
-        const FB連結 = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(活動連結)}`
+        const FB_APP_ID = import.meta.env.VITE_FB_APP_ID as string
+        const FB連結 = `https://www.facebook.com/dialog/share?app_id=${FB_APP_ID}&href=${encodeURIComponent(活動連結)}&display=popup`
         const LINE連結 = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(活動連結)}&text=${encodeURIComponent(完整文字)}`
         return (
           <div className="px-4 mt-6 space-y-3">
             <button
-              onClick={async () => { await navigator.clipboard.writeText(完整文字); window.open(FB連結, '_blank', 'noopener,noreferrer') }}
+              onClick={async () => { await navigator.clipboard.writeText(完整文字); window.open(FB連結, '_blank', 'noopener,noreferrer,width=600,height=500') }}
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-facebook text-white py-3 text-sm font-semibold cursor-pointer hover:bg-facebook/90 transition-colors"
             >
               <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
