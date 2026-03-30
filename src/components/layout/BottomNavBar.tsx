@@ -3,11 +3,11 @@ import { Home, PlusCircle, User, Shield, Map } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 
 const 導航項目 = [
-  { path: '/wall', icon: Home, label: '公布欄', 需登入: false, 需管理員: false },
-  { path: '/routes', icon: Map, label: '路線', 需登入: true, 需管理員: false },
-  { path: '/create', icon: PlusCircle, label: '發起', 需登入: true, 需管理員: false },
-  { path: '/dashboard', icon: User, label: '我的', 需登入: true, 需管理員: false },
-  { path: '/admin', icon: Shield, label: '管理', 需登入: true, 需管理員: true },
+  { path: '/wall', icon: Home, label: '公布欄', 需登入: false, 需管理員: false, 未登入隱藏: false },
+  { path: '/routes', icon: Map, label: '路線', 需登入: true, 需管理員: false, 未登入隱藏: true },
+  { path: '/create', icon: PlusCircle, label: '發起', 需登入: true, 需管理員: false, 未登入隱藏: false },
+  { path: '/dashboard', icon: User, label: '我的', 需登入: true, 需管理員: false, 未登入隱藏: false },
+  { path: '/admin', icon: Shield, label: '管理', 需登入: true, 需管理員: true, 未登入隱藏: false },
 ]
 
 export default function BottomNavBar() {
@@ -21,6 +21,7 @@ export default function BottomNavBar() {
       <div className="mx-auto flex max-w-lg items-center justify-around py-2">
         {導航項目
           .filter(item => !item.需管理員 || 是管理員)
+          .filter(item => !item.未登入隱藏 || 已登入)
           .map(({ path, icon: Icon, label, 需登入 }) => {
           const 啟用 = location.pathname === path ||
             (path === '/wall' && location.pathname.startsWith('/event'))
