@@ -67,7 +67,7 @@ export default function SharePage() {
     活動.distance > 0 ? `距離：${格式化距離(活動.distance)}` : '',
     活動.elevation > 0 ? `爬升：${活動.elevation}m` : '',
     活動.pace && 活動.pace !== '自由配速' ? `配速：${活動.pace}` : '',
-    活動.stravaRouteUrl ? `路線連結：${活動.stravaRouteUrl}` : '',
+    活動.stravaRouteUrl ? `路線連結： ${活動.stravaRouteUrl}` : '',
     '',
     // 從 description 解析路線描述和注意事項
     ...(活動.description ? (() => {
