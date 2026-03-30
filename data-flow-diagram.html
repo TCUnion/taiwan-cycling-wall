@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { margin: 0; background: white; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c" width="900" height="520"></canvas>
+<script>
+const ctx = document.getElementById('c').getContext('2d');
+
+// 背景
+ctx.fillStyle = '#ffffff';
+ctx.fillRect(0, 0, 900, 520);
+
+// 標題
+ctx.fillStyle = '#333';
+ctx.font = 'bold 22px "Helvetica Neue", Arial, sans-serif';
+ctx.textAlign = 'center';
+ctx.fillText('約騎公布欄 — 資料流程圖 (Data Flow Diagram)', 450, 40);
+
+ctx.font = '14px "Helvetica Neue", Arial, sans-serif';
+ctx.fillStyle = '#666';
+ctx.fillText('siokiu.criterium.tw', 450, 62);
+
+// 繪製圓角矩形
+function roundRect(x, y, w, h, r, fill, stroke) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke(); }
+}
+
+// 箭頭
+function arrow(x1, y1, x2, y2, label, color) {
+  ctx.strokeStyle = color || '#555';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  // 箭頭頭部
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+  const len = 10;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - len * Math.cos(angle - 0.4), y2 - len * Math.sin(angle - 0.4));
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - len * Math.cos(angle + 0.4), y2 - len * Math.sin(angle + 0.4));
+  ctx.stroke();
+  // 標籤
+  if (label) {
+    ctx.fillStyle = '#333';
+    ctx.font = '12px "Helvetica Neue", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    ctx.fillText(label, mx, my - 8);
+  }
+}
+
+// ① 使用者
+roundRect(40, 140, 180, 100, 12, '#E3F2FD', '#1565C0');
+ctx.fillStyle = '#1565C0';
+ctx.font = 'bold 15px "Helvetica Neue", Arial, sans-serif';
+ctx.textAlign = 'center';
+ctx.fillText('使用者瀏覽器', 130, 175);
+ctx.font = '12px "Helvetica Neue", Arial, sans-serif';
+ctx.fillStyle = '#555';
+ctx.fillText('Chrome / Safari / PWA', 130, 195);
+ctx.fillText('（前端 React App）', 130, 212);
+
+// ② Facebook Graph API
+roundRect(360, 100, 200, 80, 12, '#E8F5E9', '#2E7D32');
+ctx.fillStyle = '#2E7D32';
+ctx.font = 'bold 15px "Helvetica Neue", Arial, sans-serif';
+ctx.textAlign = 'center';
+ctx.fillText('Facebook Graph API', 460, 132);
+ctx.font = '12px "Helvetica Neue", Arial, sans-serif';
+ctx.fillStyle = '#555';
+ctx.fillText('graph.facebook.com', 460, 152);
+ctx.fillText('/me?fields=id,name,picture,', 460, 168);
+
+// ③ localStorage
+roundRect(360, 260, 200, 90, 12, '#FFF3E0', '#E65100');
+ctx.fillStyle = '#E65100';
+ctx.font = 'bold 15px "Helvetica Neue", Arial, sans-serif';
+ctx.textAlign = 'center';
+ctx.fillText('瀏覽器 localStorage', 460, 295);
+ctx.font = '12px "Helvetica Neue", Arial, sans-serif';
+ctx.fillStyle = '#555';
+ctx.fillText('key: 約騎-auth', 460, 315);
+ctx.fillText('（姓名、頭像 URL、縣市）', 460, 332);
+
+// ④ 無後端伺服器
+roundRect(660, 180, 200, 80, 12, '#FFEBEE', '#C62828');
+ctx.fillStyle = '#C62828';
+ctx.font = 'bold 15px "Helvetica Neue", Arial, sans-serif';
+ctx.textAlign = 'center';
+ctx.fillText('後端伺服器', 760, 212);
+ctx.font = '12px "Helvetica Neue", Arial, sans-serif';
+ctx.fillText('❌ 不儲存任何平台資料', 760, 232);
+
+// 箭頭
+arrow(220, 170, 358, 140, '① FB Login SDK 授權', '#1565C0');
+arrow(460, 182, 460, 258, '② 回傳資料存入本地', '#2E7D32');
+arrow(360, 305, 222, 220, '③ 讀取顯示於 UI', '#E65100');
+
+// 虛線到後端（表示不傳送）
+ctx.setLineDash([6, 4]);
+ctx.strokeStyle = '#C62828';
+ctx.lineWidth = 2;
+ctx.beginPath();
+ctx.moveTo(562, 305);
+ctx.lineTo(658, 240);
+ctx.stroke();
+ctx.setLineDash([]);
+// X 標記
+ctx.fillStyle = '#C62828';
+ctx.font = 'bold 18px Arial';
+ctx.textAlign = 'center';
+ctx.fillText('✕', 610, 265);
+ctx.font = '11px "Helvetica Neue", Arial, sans-serif';
+ctx.fillText('不傳送', 610, 280);
+
+// 底部說明
+roundRect(40, 400, 820, 100, 10, '#F5F5F5', '#CCC');
+ctx.fillStyle = '#333';
+ctx.font = 'bold 14px "Helvetica Neue", Arial, sans-serif';
+ctx.textAlign = 'left';
+ctx.fillText('說明：', 60, 425);
+ctx.font = '13px "Helvetica Neue", Arial, sans-serif';
+ctx.fillStyle = '#555';
+ctx.fillText('1. 使用者透過 Facebook JavaScript SDK 授權登入，前端直接呼叫 Graph API 取得 public_profile、hometown、location', 60, 448);
+ctx.fillText('2. 取得的資料（姓名、大頭照 URL、所在縣市）僅儲存於使用者瀏覽器的 localStorage', 60, 468);
+ctx.fillText('3. 資料不會傳送至任何後端伺服器或第三方服務，使用者清除瀏覽器資料即完全刪除', 60, 488);
+</script>
+</body>
+</html>

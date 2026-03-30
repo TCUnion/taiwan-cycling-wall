@@ -1,0 +1,5 @@
+{
+  "enabledPlugins": {
+    "elixir-ls-lsp@claude-plugins-official": true
+  }
+}

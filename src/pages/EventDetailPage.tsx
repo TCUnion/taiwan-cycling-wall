@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Calendar, MapPin, Mountain, Route, ExternalLink, Share2, Zap, Link, AlertCircle, Pencil, Loader2 } from 'lucide-react'
+import { ArrowLeft, Calendar, MapPin, Mountain, Route, ExternalLink, Zap, Link, AlertCircle, Pencil, Loader2, MessageCircle, Copy, Check } from 'lucide-react'
 import { useEventStore } from '../stores/eventStore'
 import { useAuthStore } from '../stores/authStore'
 import { 取得使用者 } from '../utils/userService'
@@ -27,6 +27,7 @@ export default function EventDetailPage() {
   const 廣告 = 廣告列表[0] // 顯示一則廣告
 
   const [載入失敗, set載入失敗] = useState(false)
+  const [已複製, set已複製] = useState(false)
 
   const 活動 = 活動列表.find(e => e.id === id)
   // 有活動就不需要載入；沒活動就視為載入中
@@ -112,12 +113,9 @@ export default function EventDetailPage() {
       <div className={`${區域背景色[活動.region]} h-2`} />
 
       {/* 導覽列 */}
-      <div className="flex items-center justify-between px-4 py-3">
+      <div className="flex items-center px-4 py-3">
         <button onClick={() => navigate('/wall')} aria-label="返回" className="p-2 -ml-1 rounded-full cursor-pointer hover:bg-black/5 transition-colors">
           <ArrowLeft size={22} />
-        </button>
-        <button onClick={() => navigate(`/event/${活動.id}/share`)} aria-label="分享" className="p-2 rounded-full cursor-pointer hover:bg-black/5 transition-colors">
-          <Share2 size={20} />
         </button>
       </div>
 
@@ -273,6 +271,60 @@ export default function EventDetailPage() {
           </div>
         </div>
       )}
+
+      {/* 分享區塊 */}
+      {(() => {
+        const 活動連結 = `${window.location.origin}/event/${活動.id}`
+        const 完整文字 = [
+          '【 #siokiu約騎資訊】',
+          '',
+          活動.title,
+          `【集合時間】 ${格式化完整日期(活動.date)} ${活動.time}`,
+          `【集合地點】 ${活動.meetingPoint}${活動.meetingPointUrl ? `\n${活動.meetingPointUrl}` : ''}`,
+          '',
+          活動.distance > 0 || 活動.elevation > 0 || (活動.pace && 活動.pace !== '自由配速') ? '【路線與騎乘資訊】' : '',
+          活動.distance > 0 ? `距離：${格式化距離(活動.distance)}` : '',
+          活動.elevation > 0 ? `爬升：${活動.elevation}m` : '',
+          活動.pace && 活動.pace !== '自由配速' ? `配速：${活動.pace}` : '',
+          活動.stravaRouteUrl ? `路線連結： ${活動.stravaRouteUrl}` : '',
+          '',
+          ...(活動.description ? (() => {
+            const lines: string[] = []
+            const 路線match = 活動.description.match(/🛣️ 路線：\n([\s\S]*?)(?=\n\n⚠️|$)/)
+            if (路線match) lines.push('【路線描述】', 路線match[1].trim(), '')
+            const 備註match = 活動.description.match(/⚠️ 注意事項：\n([\s\S]*)$/)
+            if (備註match) { lines.push('【注意事項】'); lines.push(備註match[1].replace(/^• /gm, '· ').trim(), '') }
+            return lines
+          })() : []),
+          `【更多資訊請看】 ${活動連結}`,
+        ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n')
+        const FB連結 = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(活動連結)}`
+        const LINE連結 = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(活動連結)}&text=${encodeURIComponent(完整文字)}`
+        return (
+          <div className="px-4 mt-6 space-y-3">
+            <button
+              onClick={async () => { await navigator.clipboard.writeText(完整文字); window.open(FB連結, '_blank', 'noopener,noreferrer') }}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-facebook text-white py-3 text-sm font-semibold cursor-pointer hover:bg-facebook/90 transition-colors"
+            >
+              <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              分享到 Facebook
+            </button>
+            <p className="text-xs text-center text-gray-600 -mt-1">點擊後活動資訊已複製，請在 FB 貼文中按「貼上」</p>
+            <a href={LINE連結} target="_blank" rel="noopener noreferrer" className="block">
+              <button className="w-full flex items-center justify-center gap-2 rounded-xl bg-line text-white py-3 text-sm font-semibold cursor-pointer hover:bg-line/90 transition-colors">
+                <MessageCircle size={18} /> 分享到 LINE
+              </button>
+            </a>
+            <button
+              onClick={async () => { await navigator.clipboard.writeText(完整文字); set已複製(true); setTimeout(() => set已複製(false), 2000) }}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-white border border-gray-200 text-gray-800 py-3 text-sm font-semibold cursor-pointer hover:bg-gray-50 transition-colors"
+            >
+              {已複製 ? <Check size={18} /> : <Copy size={18} />}
+              {已複製 ? '已複製' : '複製連結'}
+            </button>
+          </div>
+        )
+      })()}
 
       {/* 路線地圖 embed（Strava / Ride with GPS）— 全寬，與便當格同寬 */}
       {活動.stravaRouteUrl && 安全URL(活動.stravaRouteUrl) && (() => {
