@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ExternalLink, Bike, MapPin, Link, BookmarkPlus, Bookmark, Trash2, Save, MapPinPlus, Pencil, Check, Route, StickyNote, Map } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Bike, MapPin, Link, BookmarkPlus, Bookmark, Trash2, Save, MapPinPlus, Pencil, Check, Route, StickyNote, Map, X } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { useEventStore, 取得便利貼顏色 } from '../stores/eventStore'
 import { useTemplateStore } from '../stores/templateStore'
@@ -155,12 +155,20 @@ export default function CreateEventPage() {
   const [編輯集合點縣市, set編輯集合點縣市] = useState('')
   // 路線庫 Modal
   const [顯示路線庫, set顯示路線庫] = useState(false)
+  const [已套用路線庫路線名, set已套用路線庫路線名] = useState('')
+  const [已套用路線庫座標, set已套用路線庫座標] = useState<[number, number][]>([])
 
   const 套用路線庫路線 = (route: SavedRoute) => {
-    if (route.name) setRouteName(route.name)
     if (route.distance) setDistance(route.distance)
     if (route.elevation) setElevation(route.elevation)
     if (route.countyId) setCountyId(route.countyId)
+    set已套用路線庫路線名(route.name)
+    set已套用路線庫座標(route.coordinates ?? [])
+  }
+
+  const 清除路線庫套用 = () => {
+    set已套用路線庫路線名('')
+    set已套用路線庫座標([])
   }
 
   // 路線範本 UI
@@ -269,6 +277,7 @@ export default function CreateEventPage() {
         pace: 安全配速,
         maxParticipants,
         stravaRouteUrl: 安全路線URL,
+        routeCoordinates: 已套用路線庫座標.length > 0 ? 已套用路線庫座標 : undefined,
         coverImage: 選中圖章 || undefined,
       })
       navigate(`/event/${editId}`, { replace: true })
@@ -290,6 +299,7 @@ export default function CreateEventPage() {
       pace: 安全配速,
       maxParticipants,
       stravaRouteUrl: 安全路線URL,
+      routeCoordinates: 已套用路線庫座標.length > 0 ? 已套用路線庫座標 : undefined,
       coverImage: 選中圖章 || undefined,
       stickyColor: 取得便利貼顏色(id),
       tags: [],
@@ -569,10 +579,6 @@ export default function CreateEventPage() {
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-gray-700">路線與騎乘資訊</h3>
             <div className="flex items-center gap-1">
-              <button onClick={() => set顯示路線庫(true)} aria-label="路線庫"
-                className="p-1.5 rounded-full cursor-pointer hover:bg-black/5 transition-colors text-gray-500">
-                <Map size={18} />
-              </button>
               <button onClick={() => set顯示路線範本(!顯示路線範本)} aria-label="路線範本"
                 className={`p-1.5 rounded-full cursor-pointer hover:bg-black/5 transition-colors ${顯示路線範本 ? 'text-strava' : 'text-gray-500'}`}>
                 <Route size={18} />
@@ -712,9 +718,27 @@ export default function CreateEventPage() {
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3">
             <div>
+              {已套用路線庫路線名 ? (
+                <div className="mb-2 flex items-center gap-2 rounded-lg border border-strava/40 bg-strava/5 px-3 py-2">
+                  <Map size={14} className="text-strava shrink-0" />
+                  <span className="text-sm text-strava font-medium flex-1 truncate">{已套用路線庫路線名}</span>
+                  <button type="button" onClick={清除路線庫套用} aria-label="取消套用路線"
+                    className="text-strava/60 hover:text-strava cursor-pointer transition-colors">
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => set顯示路線庫(true)}
+                  className="mb-2 w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-gray-300 text-sm text-gray-600 cursor-pointer hover:border-strava hover:text-strava transition-colors"
+                >
+                  <Map size={14} /> 從路線庫選取
+                </button>
+              )}
               <Input name="route-url" autoComplete="url" label="路線連結（Strava / Ride with GPS / Garmin）" value={routeUrl} onChange={e => setRouteUrl(e.target.value)}
-                placeholder="貼上路線分享連結…" />
-              {routeUrl && (() => {
+                placeholder="貼上路線分享連結…" disabled={!!已套用路線庫路線名} />
+              {!已套用路線庫路線名 && routeUrl && (() => {
                 const isStrava = /strava\.com\/routes\/\d+/.test(routeUrl)
                 const isRwgps = /ridewithgps\.com\/routes\/\d+/.test(routeUrl)
                 const isGarmin = /connect\.garmin\.com/.test(routeUrl)

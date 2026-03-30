@@ -68,6 +68,7 @@ function 轉換為活動(row: Record<string, unknown>): CyclingEvent {
     pace: (row.pace as string) || '自由配速',
     maxParticipants: (row.max_participants as number) || 20,
     stravaRouteUrl: (row.strava_route_url as string) || undefined,
+    routeCoordinates: (row.route_coordinates as [number, number][]) || undefined,
     moakEventId: (row.moak_event_id as string) || undefined,
     stickyColor: (row.sticky_color as StickyColor) || 'yellow',
     tags: (row.tags as string[]) || [],
@@ -94,6 +95,7 @@ function 轉換為資料列(e: CyclingEvent) {
     pace: e.pace,
     max_participants: e.maxParticipants,
     strava_route_url: e.stravaRouteUrl || null,
+    route_coordinates: e.routeCoordinates || null,
     moak_event_id: e.moakEventId || null,
     sticky_color: e.stickyColor,
     tags: e.tags,
@@ -119,6 +121,7 @@ function 轉換部分更新(更新: Partial<CyclingEvent>) {
   if (更新.pace !== undefined) result.pace = 更新.pace
   if (更新.maxParticipants !== undefined) result.max_participants = 更新.maxParticipants
   if (更新.stravaRouteUrl !== undefined) result.strava_route_url = 更新.stravaRouteUrl || null
+  if (更新.routeCoordinates !== undefined) result.route_coordinates = 更新.routeCoordinates || null
   if (更新.moakEventId !== undefined) result.moak_event_id = 更新.moakEventId || null
   if (更新.stickyColor !== undefined) result.sticky_color = 更新.stickyColor
   if (更新.tags !== undefined) result.tags = 更新.tags

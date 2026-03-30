@@ -15,6 +15,7 @@ import Badge from '../components/ui/Badge'
 import Avatar from '../components/ui/Avatar'
 import MoakBadge from '../components/event/MoakBadge'
 import VerifiedBadge from '../components/ui/VerifiedBadge'
+import RouteMap from '../components/route/RouteMap'
 import { 安全渲染Markdown, 安全URL, 淨化純文字 } from '../utils/sanitize'
 
 export default function EventDetailPage() {
@@ -259,6 +260,19 @@ export default function EventDetailPage() {
         )}
 
       </div>
+
+      {/* 路線庫地圖（GPX 上傳 / 規劃路線） */}
+      {活動.routeCoordinates && 活動.routeCoordinates.length >= 2 && (
+        <div className="px-4 mt-4">
+          <div className="rounded-xl bg-white shadow-sm overflow-hidden">
+            <RouteMap coordinates={活動.routeCoordinates} className="h-64" />
+            <div className="flex items-center gap-2 px-4 py-3 text-sm text-gray-600 border-t border-gray-100">
+              <Route size={16} className="text-strava" />
+              <span className="font-medium">路線庫路線</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 路線地圖 embed（Strava / Ride with GPS）— 全寬，與便當格同寬 */}
       {活動.stravaRouteUrl && 安全URL(活動.stravaRouteUrl) && (() => {

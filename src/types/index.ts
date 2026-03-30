@@ -33,6 +33,7 @@ export interface CyclingEvent {
   pace: string        // 例如 '25-30 km/h'
   maxParticipants: number
   stravaRouteUrl?: string
+  routeCoordinates?: [number, number][]  // 路線庫套用時的座標（GPX/規劃路線）
   moakEventId?: string
   stickyColor: StickyColor
   tags: string[]

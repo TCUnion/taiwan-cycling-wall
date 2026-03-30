@@ -22,6 +22,7 @@ export default function Input({ label, error, className = '', id, ...props }: In
           focus:border-strava focus:outline-none focus-visible:ring-2 focus-visible:ring-strava/40
           placeholder:text-gray-400
           ${error ? 'border-red-500' : ''}
+          disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed
           ${className}
         `}
         {...props}

@@ -56,7 +56,7 @@ src/
 │   └── mockUsers.ts        # 5 位模擬使用者 + 收藏路線 / 集合點 / 追蹤粉絲 mock 資料
 ├── stores/                 # Zustand stores（均使用 persist middleware）
 │   ├── authStore.ts        # 登入狀態（FB / Google / LINE / Strava 登入 / 一般註冊 / 所有使用者列表 / 粉絲頁身份切換）
-│   ├── eventStore.ts       # 活動 CRUD（新增 / 更新 / 參加 / 退出）+ 篩選排序 + 歷史活動
+│   ├── eventStore.ts       # 活動 CRUD（新增 / 更新 / 載入單一活動）+ 篩選排序 + 歷史活動
 │   ├── templateStore.ts    # 約騎範本 CRUD（新增 / 刪除 / 更新）
 │   ├── spotTemplateStore.ts    # 集合點範本 CRUD（Supabase: spot_templates）
 │   ├── routeInfoTemplateStore.ts # 路線與騎乘資訊範本 CRUD（Supabase: route_info_templates）
@@ -83,7 +83,9 @@ src/
 │   ├── dashboard/          # VerificationSection（TCU 認證區塊）
 │   ├── wall/               # CorkBoard, StickyNoteCard, WallFilters, AdCard（廣告卡片）
 │   └── event/              # CountyPicker, RouteTemplatePicker, ParticipantMap, MoakBadge
-└── pages/                  # 頁面（均為 lazy-loaded）
+├── pages/                  # 頁面（均為 lazy-loaded）
+functions/
+└── event/[[id]].ts         # Cloudflare Pages Function（社群媒體爬蟲動態 OG meta）
 ```
 
 ## 路由
@@ -205,7 +207,7 @@ src/
 
 ## 約騎公布欄便利貼（StickyNoteCard）
 
-- 標題 + 活動圖章（右上角，高度佔卡片 80%，正方形，自動縮放）
+- 標題 + 活動圖章（右上角，固定 40×40px，與頭像同尺寸）
 - 日期時間 + 集合地點含縣市 + 距離/爬升（有值才顯示）
 - 參加者頭像（支援 FB 大頭照 URL）
 - 區域 Badge — 僅在「全部」區域時顯示於左下角，選擇特定區域時隱藏
@@ -260,6 +262,20 @@ Supabase 資料表（無 persist，每次 mount 載入）：
 
 首次載入從 mockEvents/mockUsers 取得種子資料。
 
+### 活動即時載入（分享連結支援）
+
+- `eventStore.載入單一活動(id)` — 先查 store，沒有就從 Supabase 即時載入並 merge 進 store
+- `EventDetailPage` / `SharePage` — 若 store 無資料會自動觸發即時載入，顯示 loading spinner
+- 分享連結（`/event/{id}`）在無 localStorage 的環境下也能正常顯示
+
+### Cloudflare Pages Function（社群媒體 OG 預覽）
+
+- 檔案：`functions/event/[[id]].ts`
+- 偵測社群爬蟲 User-Agent（LINE / Facebook / Twitter / Discord 等）
+- 爬蟲：從 Supabase REST API 抓活動 → 回傳含動態 OG meta 的 HTML
+- 人類：`context.next()` 正常回傳 SPA
+- 環境變數：Cloudflare Pages 需設定 `SUPABASE_ANON_KEY`（非 `VITE_` 前綴）
+
 ## 環境變數
 
 | 變數 | 說明 |
@@ -275,6 +291,12 @@ Supabase 資料表（無 persist，每次 mount 載入）：
 | `VITE_LIFF_ID` | LINE LIFF App ID（TCU 認證用） |
 
 `.env` 檔案不入版控（已加入 `.gitignore`）。
+
+### Cloudflare Pages 環境變數
+
+| 變數 | 說明 |
+|------|------|
+| `SUPABASE_ANON_KEY` | Supabase anon key（供 Pages Function 伺服器端使用，與 `VITE_SUPABASE_ANON_KEY` 同值） |
 
 ## 外部連結（不需 API Key）
 

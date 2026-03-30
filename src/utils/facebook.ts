@@ -28,6 +28,7 @@ interface FBLoginResponse {
 interface FBApiResponse {
   id?: string
   name?: string
+  email?: string
   picture?: { data?: { url?: string } }
   hometown?: { name?: string }
   location?: { name?: string }
@@ -40,6 +41,7 @@ export interface FBUserInfo {
   name: string
   pictureUrl: string
   countyId: string  // 從 hometown/location 自動比對
+  email?: string    // 使用者可能拒絕提供
 }
 
 // 粉絲頁資訊（從 /me/accounts API 回傳）
@@ -115,8 +117,8 @@ export function FB登入(): Promise<FBUserInfo> {
         return
       }
 
-      // 取得姓名、頭像、家鄉、所在地
-      const fields = 'id,name,picture.width(200).height(200),hometown,location'
+      // 取得姓名、頭像、家鄉、所在地、email
+      const fields = 'id,name,picture.width(200).height(200),hometown,location,email'
       window.FB.api(`/me?fields=${fields}`, (apiRes) => {
         if (apiRes.error) {
           reject(new Error(apiRes.error.message))
@@ -132,9 +134,10 @@ export function FB登入(): Promise<FBUserInfo> {
           name: apiRes.name!,
           pictureUrl: apiRes.picture?.data?.url ?? '',
           countyId,
+          email: apiRes.email as string | undefined,
         })
       })
-    }, { scope: 'public_profile,user_hometown,user_location' })
+    }, { scope: 'public_profile,email,user_hometown,user_location' })
   })
 }
 
