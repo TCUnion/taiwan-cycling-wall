@@ -719,11 +719,11 @@ export default function CreateEventPage() {
           <div className="mt-3 grid grid-cols-2 gap-3">
             <div>
               {已套用路線庫路線名 ? (
-                <div className="mb-2 flex items-center gap-2 rounded-lg border border-strava/40 bg-strava/5 px-3 py-2">
-                  <Map size={14} className="text-strava shrink-0" />
-                  <span className="text-sm text-strava font-medium flex-1 truncate">{已套用路線庫路線名}</span>
+                <div className="mb-2 flex items-center gap-2 rounded-lg bg-strava px-3 py-2">
+                  <Map size={14} className="text-white shrink-0" />
+                  <span className="text-sm text-white font-medium flex-1 truncate">{已套用路線庫路線名}</span>
                   <button type="button" onClick={清除路線庫套用} aria-label="取消套用路線"
-                    className="text-strava/60 hover:text-strava cursor-pointer transition-colors">
+                    className="text-white/70 hover:text-white cursor-pointer transition-colors">
                     <X size={14} />
                   </button>
                 </div>
