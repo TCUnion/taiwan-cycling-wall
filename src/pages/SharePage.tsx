@@ -81,7 +81,7 @@ export default function SharePage() {
     })() : []),
     `【更多資訊請看】 ${活動連結}`,
     '',
-    '【 #siokiu約騎資訊】',
+    '#siokiu #相揪 #約騎資訊',
   ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n')
   // LINE 分享（含完整活動文字）
   const LINE連結 = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(活動連結)}&text=${encodeURIComponent(完整文字)}`
