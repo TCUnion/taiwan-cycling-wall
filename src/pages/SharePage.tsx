@@ -82,8 +82,15 @@ export default function SharePage() {
     '#siokiu #相揪 #明天騎哪 #約騎資訊',
     `【更多資訊請看】 ${活動連結}`,
   ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n')
-  // LINE 分享（完整文字含末尾 URL，LINE 會自動偵測 URL 並顯示 OG 卡片）
-  const LINE連結 = `https://line.me/R/msg/text/?${encodeURIComponent(完整文字)}`
+  const 分享到LINE = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ text: 完整文字 })
+        return
+      } catch { /* 使用者取消或不支援，fallback */ }
+    }
+    window.open(`https://line.me/R/msg/text/?${encodeURIComponent(完整文字)}`, '_blank')
+  }
 
   return (
     <div className="min-h-svh bg-cork pb-8">
@@ -157,11 +164,9 @@ export default function SharePage() {
             <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
             Facebook 分享（尚未開放）
           </Button>
-          <a href={LINE連結} target="_blank" rel="noopener noreferrer">
-            <Button fullWidth variant="line">
-              <MessageCircle size={18} /> 分享到 LINE
-            </Button>
-          </a>
+          <Button fullWidth variant="line" onClick={分享到LINE}>
+            <MessageCircle size={18} /> 分享到 LINE
+          </Button>
           <Button
             fullWidth
             variant="outline"
