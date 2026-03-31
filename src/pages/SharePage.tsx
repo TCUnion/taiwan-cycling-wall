@@ -20,6 +20,7 @@ export default function SharePage() {
   const [載入中, set載入中] = useState(false)
   const [載入失敗, set載入失敗] = useState(false)
   const [已複製, set已複製] = useState(false)
+  const [LINE提示, setLINE提示] = useState(false)
 
   useEffect(() => {
     if (!id || 活動) return
@@ -89,7 +90,10 @@ export default function SharePage() {
         return
       } catch { /* 使用者取消或不支援，fallback */ }
     }
-    window.open(`https://line.me/R/msg/text/?${encodeURIComponent(完整文字)}`, '_blank')
+    // fallback：複製內文到剪貼簿，提示使用者手動貼到 LINE
+    try { await navigator.clipboard.writeText(完整文字) } catch { /* ignore */ }
+    setLINE提示(true)
+    setTimeout(() => setLINE提示(false), 4000)
   }
 
   return (
@@ -167,6 +171,11 @@ export default function SharePage() {
           <Button fullWidth variant="line" onClick={分享到LINE}>
             <MessageCircle size={18} /> 分享到 LINE
           </Button>
+          {LINE提示 && (
+            <p className="text-center text-sm text-green-700 bg-green-50 rounded-lg py-2 px-3">
+              內文已複製！開啟 LINE 後長按貼上即可
+            </p>
+          )}
           <Button
             fullWidth
             variant="outline"
