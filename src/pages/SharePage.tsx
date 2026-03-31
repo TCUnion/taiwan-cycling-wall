@@ -52,7 +52,7 @@ export default function SharePage() {
 
   const 縣市 = 查找縣市(活動.countyId)
   const 發起人 = 所有使用者.find(u => u.id === 活動.creatorId)
-  const 活動連結 = `${window.location.origin}/event/${活動.id}`
+  const 活動連結 = `https://siokiu.criterium.tw/event/${活動.id}`
 
   // 完整分享文字（含路線資訊 + 注意事項）
   const 完整文字 = [

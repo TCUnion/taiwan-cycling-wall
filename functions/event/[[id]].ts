@@ -54,7 +54,7 @@ async function 取得活動(id: string, anonKey: string) {
 }
 
 // 產生注入 OG meta 的 HTML
-function 產生OG_HTML(活動: Record<string, unknown>, 原始路徑: string): string {
+function 產生OG_HTML(活動: Record<string, unknown>): string {
   const title = escapeHtml(String(活動.title || '約騎活動'))
   const date = String(活動.date || '')
   const time = String(活動.time || '')
@@ -76,7 +76,9 @@ function 產生OG_HTML(活動: Record<string, unknown>, 原始路徑: string): s
   const description = escapeHtml(描述片段.join(' | ') || '一起來騎車吧！')
 
   const ogImage = coverImage || DEFAULT_OG_IMAGE
-  const canonicalUrl = `${SITE_URL}${原始路徑}`
+  // 預設 OG 圖片尺寸已知（1200×630）；自訂封面圖尺寸不確定，不強制指定
+  const 使用預設圖 = !coverImage
+  const eventPath = `${SITE_URL}/event/${活動.id ?? ''}`
 
   return `<!DOCTYPE html>
 <html lang="zh-Hant-TW">
@@ -84,12 +86,15 @@ function 產生OG_HTML(活動: Record<string, unknown>, 原始路徑: string): s
 <meta charset="UTF-8" />
 <title>${title} — 相揪約騎公布欄</title>
 <meta name="description" content="${description}" />
-<link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
+<link rel="canonical" href="${escapeHtml(eventPath)}" />
 <meta property="og:type" content="website" />
 <meta property="og:title" content="${title} — 相揪約騎公布欄" />
 <meta property="og:description" content="${description}" />
 <meta property="og:image" content="${escapeHtml(ogImage)}" />
-<meta property="og:url" content="${escapeHtml(canonicalUrl)}" />
+<meta property="og:image:secure_url" content="${escapeHtml(ogImage)}" />
+<meta property="og:image:type" content="image/png" />
+${使用預設圖 ? '<meta property="og:image:width" content="1200" />\n<meta property="og:image:height" content="630" />' : ''}
+<meta property="og:url" content="${escapeHtml(eventPath)}" />
 <meta property="og:locale" content="zh_TW" />
 <meta property="og:site_name" content="相揪約騎公布欄" />
 <meta name="twitter:card" content="summary_large_image" />
@@ -100,7 +105,7 @@ function 產生OG_HTML(活動: Record<string, unknown>, 原始路徑: string): s
 <body>
 <h1>${title}</h1>
 <p>${description}</p>
-<a href="${escapeHtml(canonicalUrl)}">查看活動詳情</a>
+<a href="${escapeHtml(eventPath)}">查看活動詳情</a>
 </body>
 </html>`
 }
@@ -133,7 +138,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     return context.next()
   }
 
-  const html = 產生OG_HTML(活動, url.pathname)
+  const html = 產生OG_HTML(活動)
   return new Response(html, {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
