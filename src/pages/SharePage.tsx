@@ -82,8 +82,8 @@ export default function SharePage() {
     '#siokiu #相揪 #明天騎哪 #約騎資訊',
     `【更多資訊請看】 ${活動連結}`,
   ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n')
-  // LINE 分享（含完整活動文字）
-  const LINE連結 = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(活動連結)}&text=${encodeURIComponent(完整文字)}`
+  // LINE 分享（完整文字含末尾 URL，LINE 會自動偵測 URL 並顯示 OG 卡片）
+  const LINE連結 = `https://line.me/R/msg/text/?${encodeURIComponent(完整文字)}`
 
   return (
     <div className="min-h-svh bg-cork pb-8">
