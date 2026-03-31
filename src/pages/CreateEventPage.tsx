@@ -101,8 +101,11 @@ export default function CreateEventPage() {
   const [spotName, setSpotName] = useState(編輯中活動?.meetingPoint ?? '')
   const [spotUrl, setSpotUrl] = useState(編輯中活動?.meetingPointUrl ?? '')
   const [countyId, setCountyId] = useState(編輯中活動?.countyId ?? 使用者.countyId ?? '')
-  const 所有圖章 = 使用者.stampImages ?? (使用者.stampImage ? [使用者.stampImage] : [])
-  const [選中圖章, set選中圖章] = useState(編輯中活動?.coverImage || 所有圖章[0] || '')
+  const 使用者圖章 = 使用者.stampImages ?? (使用者.stampImage ? [使用者.stampImage] : [])
+  // 編輯模式：若活動圖章是 Supabase URL（非 base64），加入選項以便正確比對
+  const 編輯中圖章 = 編輯中活動?.coverImage && !使用者圖章.includes(編輯中活動.coverImage) ? [編輯中活動.coverImage] : []
+  const 所有圖章 = [...編輯中圖章, ...使用者圖章]
+  const [選中圖章, set選中圖章] = useState(編輯中活動?.coverImage || 使用者圖章[0] || '')
   const [notes, setNotes] = useState(編輯中活動 ? 解析備註文字(編輯中活動.description) : '')
   const [distance, setDistance] = useState(編輯中活動?.distance ?? 0)
   const [elevation, setElevation] = useState(編輯中活動?.elevation ?? 0)
