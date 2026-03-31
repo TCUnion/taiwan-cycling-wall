@@ -147,9 +147,6 @@ export default function DashboardPage() {
                     {format(new Date(e.date), 'yyyy/MM/dd', { locale: zhTW })} · {查找縣市(e.countyId)?.name} · {e.distance}km
                   </p>
                 </div>
-                <div className="text-xs text-gray-500 shrink-0">
-                  上限 {e.maxParticipants} 人
-                </div>
                 <ChevronRight size={16} className="text-gray-300 shrink-0" />
               </button>
             ))}
