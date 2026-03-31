@@ -297,8 +297,6 @@ export default function EventDetailPage() {
             return lines
           })() : []),
           `【更多資訊請看】 ${活動連結}`,
-          '',
-          '#siokiu #相揪 #約騎資訊',
         ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n')
         const LINE連結 = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(活動連結)}&text=${encodeURIComponent(完整文字)}`
         return (
