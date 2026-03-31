@@ -276,8 +276,6 @@ export default function EventDetailPage() {
       {(() => {
         const 活動連結 = `${window.location.origin}/event/${活動.id}`
         const 完整文字 = [
-          '【 #siokiu約騎資訊】',
-          '',
           活動.title,
           `【集合時間】 ${格式化完整日期(活動.date)} ${活動.time}`,
           `【集合地點】 ${活動.meetingPoint}${活動.meetingPointUrl ? `\n${活動.meetingPointUrl}` : ''}`,
