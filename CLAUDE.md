@@ -76,6 +76,7 @@ src/
 │   ├── strava.ts           # Strava OAuth redirect + n8n 後端換 token
 │   ├── pkce.ts             # PKCE 共用工具（SHA-256 + base64url + 隨機字串）
 │   ├── supabase.ts         # Supabase client 初始化
+│   ├── storageService.ts   # Supabase Storage 上傳（base64 圖章 → 公開 URL，bucket: stamps）
 │   ├── ogConstants.ts      # OG 圖片常數
 │   ├── gpxParser.ts        # GPX 解析（DOMParser + Haversine 距離 + 爬升計算 + 座標降采樣）
 │   ├── osrmService.ts      # OSRM 路線規劃（router.project-osrm.org，cycling profile）
@@ -309,6 +310,12 @@ Supabase 資料表（無 persist，每次 mount 載入）：
 - `saved_routes` — 個人路線庫（GPX 軌跡 / 規劃路線，`creator_id` 隔離）
 - `user_verifications` — TCU 認證記錄（token / status / user_id / line_user_id）
 - `users` — 使用者表（含 `verified_at` / `line_verified_user_id` 欄位）
+
+Supabase Storage：
+- `stamps`（Public bucket）— 活動圖章圖片，路徑 `events/{eventId}.{ext}`
+  - 新增/更新活動時，若 `coverImage` 為 base64 data URL，自動上傳並將公開 URL 存入 `cycling_events.cover_image`
+  - 本地 store 保留原始 base64 供 UI 顯示；公開 URL 供 Cloudflare Pages Function 當 OG image
+  - RLS Policy：INSERT / SELECT / UPDATE 開放 anon + authenticated
 
 首次載入從 mockEvents/mockUsers 取得種子資料。
 
