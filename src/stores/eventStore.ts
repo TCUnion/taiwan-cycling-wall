@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { CyclingEvent, Region, StickyColor } from '../types'
 import { supabase } from '../utils/supabase'
+import { 上傳圖章到Storage } from '../utils/storageService'
 
 type 排序方式 = '最新' | '最熱門'
 
@@ -171,17 +172,31 @@ export const useEventStore = create<EventState>()((set, get) => ({
   },
 
   新增活動: async (event) => {
-    const row = 轉換為資料列(event)
+    // 若圖章為 base64，先上傳到 Storage 取得公開 URL（供 OG 圖片使用）
+    let supabaseCoverImage = event.coverImage
+    if (event.coverImage?.startsWith('data:')) {
+      const publicUrl = await 上傳圖章到Storage(event.coverImage, event.id)
+      if (!publicUrl.startsWith('data:')) supabaseCoverImage = publicUrl
+    }
+    const row = 轉換為資料列({ ...event, coverImage: supabaseCoverImage })
     const { error } = await supabase.from('cycling_events').insert(row)
     if (!error) {
+      // 本地 store 保留原始 base64，UI 顯示不需網路
       set((s) => ({ 活動列表: [event, ...s.活動列表] }))
     }
   },
 
   更新活動: async (eventId, 更新) => {
-    const row = 轉換部分更新(更新)
+    // 若圖章為 base64，先上傳到 Storage 取得公開 URL（供 OG 圖片使用）
+    let supabase更新 = 更新
+    if (更新.coverImage?.startsWith('data:')) {
+      const publicUrl = await 上傳圖章到Storage(更新.coverImage, eventId)
+      if (!publicUrl.startsWith('data:')) supabase更新 = { ...更新, coverImage: publicUrl }
+    }
+    const row = 轉換部分更新(supabase更新)
     const { error } = await supabase.from('cycling_events').update(row).eq('id', eventId)
     if (!error) {
+      // 本地 store 保留原始 base64，UI 顯示不需網路
       set((s) => ({
         活動列表: s.活動列表.map(e => e.id === eventId ? { ...e, ...更新 } : e),
       }))
