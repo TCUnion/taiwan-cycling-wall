@@ -9,19 +9,13 @@
 ## 技術棧
 
 - **Vite 8** + **React 19** + **TypeScript**
-- **Tailwind CSS v4**（使用 `@tailwindcss/vite` 插件，設定在 `src/index.css` 的 `@theme` 區塊）
-- **Zustand**（狀態管理 + localStorage 持久化）
-- **React Router v7**
-- **Lucide React**（圖示 — 禁止使用 emoji 作為 UI icon）
-- **Leaflet** + OpenStreetMap（互動式地圖 — 路線規劃 / GPX 預覽，無需 API Key）
-- **Facebook JavaScript SDK**（登入驗證）
-- **Google Identity Services**（Google 登入，前端 JWT 解碼）
-- **LINE Login**（OAuth 2.0 + PKCE）
-- **Strava OAuth**（redirect → n8n 後端換 token）
-- **@supabase/supabase-js**（Supabase 客戶端 — 自架實例 `db.criterium.tw`）
-- **@line/liff**（LINE LIFF SDK — TCU 認證用）
-- **date-fns**（日期格式化）
-- **vite-plugin-pwa**（PWA / Service Worker）
+- **Tailwind CSS v4**（設定在 `src/index.css` `@theme` 區塊，**非** `tailwind.config.js`）
+- **Zustand** + localStorage persist / **React Router v7**
+- **Lucide React**（圖示 — **禁止使用 emoji 作為 UI icon**）
+- **Leaflet** + OSRM（路線規劃，無需 API Key）
+- **Supabase** 自架（`db.criterium.tw`）
+- **FB SDK v21** / **Google GIS** / **LINE Login + LIFF** / **Strava → n8n webhook**
+- **date-fns** / **vite-plugin-pwa**
 
 ## 常用指令
 
@@ -35,349 +29,135 @@ npm run lint     # ESLint 檢查
 ## 程式碼慣例
 
 - **語言**：註解、變數名稱盡量使用繁體中文；React 元件名用英文（JSX 限制）
-- **Zustand store** 中的 state/action 使用繁體中文命名（如 `使用者`、`登入`、`活動列表`）
-- **Tailwind** 自訂色彩定義在 `src/index.css` 的 `@theme` 區塊（非 tailwind.config.js）
-- **路由保護**：需登入頁面透過 `RequireAuth` 元件包裹（在 `App.tsx`）
+- **回應語言**：一律使用繁體中文，包含 commit 訊息、程式碼註解；React 元件名與 JSX 仍用英文
+- **Zustand store**：state/action 使用繁體中文命名（如 `使用者`、`登入`、`活動列表`）
+- **路由保護**：需登入頁面透過 `RequireAuth` 元件包裹（`App.tsx`）
 - **頁面延遲載入**：所有頁面使用 `React.lazy()` + `Suspense`
-- **便利貼旋轉**：以 `hashCode(id) % 5 - 2` 度計算，class 為 `sticky-rotate-{n2|n1|0|1|2}`
-- **圖示**：一律使用 Lucide React SVG icon，禁止用 emoji（🚴❌ → `<Bike>` ✅）
+- **便利貼旋轉**：`hashCode(id) % 5 - 2` 度，class 為 `sticky-rotate-{n2|n1|0|1|2}`
 - **無障礙**：icon-only 按鈕必須加 `aria-label`；所有可點擊元素加 `cursor-pointer`
-- **動畫**：全域支援 `prefers-reduced-motion: reduce`；transition 使用 150-300ms
-- **安全性**：注意事項/備註欄位禁止輸入 http/https 連結，提交時自動過濾
+- **動畫**：全域支援 `prefers-reduced-motion: reduce`；transition 使用 150–300ms
+- **安全性**：備註欄位禁止輸入 http/https 連結，提交時自動過濾
+- **Supabase 查詢**：`select()` 必須列出明確欄位，禁止 `select('*')`
+- **Hooks 規則**：`useMemo` / `useCallback` 必須在所有 early return **之前**宣告
 
-## 專案結構
+## 非直覺技術決策（重要）
 
+### Supabase 建表必須 GRANT 權限
+自架 Supabase 建新表後，RLS 預設不足，**務必**執行：
+```sql
+GRANT ALL ON <table_name> TO anon, authenticated;
 ```
-src/
-├── types/index.ts          # TS 介面（County, CyclingEvent, User, AuthProvider, StravaProfile, PageIdentity, RideTemplate, SpotTemplate, RouteInfoTemplate, NotesTemplate, SavedRoute, MeetingSpot, FollowRelation, UserVerification 等）
-├── data/                   # 靜態 / mock 資料
-│   ├── counties.ts         # 22 縣市 + 區域對照 + 查找函式
-│   ├── classicRoutes.ts    # 7 條經典路線模板
-│   ├── mockEvents.ts       # 18 筆模擬活動
-│   └── mockUsers.ts        # 5 位模擬使用者 + 收藏路線 / 集合點 / 追蹤粉絲 mock 資料
-├── stores/                 # Zustand stores（均使用 persist middleware）
-│   ├── authStore.ts        # 登入狀態（FB / Google / LINE / Strava 登入 / 一般註冊 / 所有使用者列表 / 粉絲頁身份切換）
-│   ├── eventStore.ts       # 活動 CRUD（新增 / 更新 / 載入單一活動）+ 篩選排序 + 歷史活動
-│   ├── routeStore.ts       # 個人路線庫 CRUD（Supabase: saved_routes，不使用 persist）
-│   ├── templateStore.ts    # 約騎範本 CRUD（新增 / 刪除 / 更新）
-│   ├── spotTemplateStore.ts    # 集合點範本 CRUD（Supabase: spot_templates）
-│   ├── routeInfoTemplateStore.ts # 路線與騎乘資訊範本 CRUD（Supabase: route_info_templates）
-│   ├── notesTemplateStore.ts   # 注意事項範本 CRUD（Supabase: notes_templates）
-│   └── regionStore.ts      # 區域/縣市選擇
-├── hooks/                  # 自訂 hooks
-│   ├── useAds.ts           # 從 Supabase 抓取廣告（tcuad_internal_placements + tcuad_placements）
-│   └── useVerificationPolling.ts  # TCU 認證狀態輪詢（每 3 秒，10 分鐘自動停止）
-├── utils/
-│   ├── formatters.ts       # 格式化（日期、距離、產生 ID）
-│   ├── regionMapping.ts    # 區域色對照
-│   ├── facebook.ts         # Facebook SDK 載入、登入、取得使用者資訊、取得粉絲頁列表
-│   ├── google.ts           # Google GIS SDK 載入、登入、JWT 解碼
-│   ├── line.ts             # LINE Login PKCE（redirect + token 交換 + id_token 解碼）
-│   ├── strava.ts           # Strava OAuth redirect + n8n 後端換 token
-│   ├── pkce.ts             # PKCE 共用工具（SHA-256 + base64url + 隨機字串）
-│   ├── supabase.ts         # Supabase client 初始化
-│   ├── storageService.ts   # Supabase Storage 上傳（base64 圖章 → 公開 URL，bucket: stamps）
-│   ├── ogConstants.ts      # OG 圖片常數
-│   ├── gpxParser.ts        # GPX 解析（DOMParser + Haversine 距離 + 爬升計算 + 座標降采樣）
-│   ├── osrmService.ts      # OSRM 路線規劃（router.project-osrm.org，cycling profile）
-│   ├── verificationService.ts  # TCU 認證服務（建立請求 / 驗證碼比對 / 狀態查詢）
-│   └── liff.ts             # LINE LIFF SDK 封裝（初始化 / 取得使用者 / 關閉）
-├── components/
-│   ├── ui/                 # Button, Input, Card, Badge, Modal, Avatar（支援 URL 圖片）, SocialLoginButton, VerifiedBadge
-│   ├── layout/             # AppShell, BottomNavBar, RegionTabs
-│   ├── dashboard/          # VerificationSection（TCU 認證區塊）
-│   ├── wall/               # CorkBoard, StickyNoteCard, WallFilters, AdCard（廣告卡片）
-│   ├── event/              # CountyPicker, RouteTemplatePicker, ParticipantMap, MoakBadge
-│   └── route/              # RouteMap（Leaflet 地圖）, GpxUploader（拖放上傳）, RoutePlanner（互動規劃）, RouteCard（路線卡片）, RoutePickerModal（路線庫選取器）
-├── pages/                  # 頁面（均為 lazy-loaded）
-functions/
-└── event/[[id]].ts         # Cloudflare Pages Function（社群媒體爬蟲動態 OG meta）
-```
+否則前端會收到 403 或空資料。
 
-## 路由
+### 活動過期邏輯
+活動過期 = **約騎日期 + 時間 + 12 小時**（非隔天凌晨）。
+`eventStore.ts` 的 `已過期()` 函式解析 `date`（YYYY-MM-DD）與 `time`（HH:MM）後加 12 小時比對現在時間。
 
-| 路徑 | 頁面 | 需登入 |
-|------|------|--------|
-| `/` | SplashPage（2.5 秒後自動跳轉） | 否 |
-| `/login` | LoginPage（Facebook / Google / LINE / Strava 登入） | 否 |
-| `/privacy` | PrivacyPage（隱私政策） | 否 |
-| `/data-deletion` | DataDeletionPage（資料刪除指示） | 否 |
-| `/wall` | WallPage（約騎公布欄主頁面） | 是 |
-| `/routes` | RoutesPage（個人路線庫 / 規劃路線 / 上傳軌跡） | 是 |
-| `/create` | CreateEventPage（發起約騎） | 是 |
-| `/event/:id` | EventDetailPage | 是 |
-| `/event/:id/edit` | CreateEventPage（編輯模式） | 是 |
-| `/event/:id/share` | SharePage（活動資訊卡片 + 分享連結 / LINE） | 是 |
-| `/history` | HistoryPage（過期活動歷史紀錄） | 是 |
-| `/dashboard` | DashboardPage（單頁滾動式個人中心） | 是 |
-| `/auth/callback` | OAuthCallbackPage（LINE / Strava OAuth 回調） | 否 |
-| `/liff/verify` | LiffVerifyPage（LINE LIFF TCU 認證頁面） | 否 |
+### OAuth state 驗證（LINE / Strava）
+`預期State` 為 null（sessionStorage 過期）時**直接拒絕**，回傳「登入資料已過期」錯誤。
+禁止退回 prefix-only fallback（`state.startsWith('line-')`），以防 CSRF。
+
+### LINE 分享不用 URL scheme
+LINE URL scheme（`line://msg/text/...`）因內容過長導致 414 Request-URI Too Large。
+現行做法：優先 `navigator.share({ text })`，不支援時複製到剪貼簿並顯示 4 秒 toast。
+
+### Facebook 分享用 sharer.php
+`dialog/share` API 需用戶開啟平台功能，相容性差。改用 `facebook.com/sharer/sharer.php?u=`。
+
+### Google JWT UTF-8 解碼
+GIS 回傳的 id_token 中文欄位需用 `decodeURIComponent` + 逐位元組 `%XX` 方式處理，否則中文名稱亂碼。
+
+### 模擬活動無法參加
+`id` 以 `evt-` 開頭的活動為模擬種子資料，前端一律禁止加入。
+
+### 圖章上傳限制（storageService.ts）
+僅接受 `image/png` / `image/jpeg` / `image/webp`，且解碼後超過 2MB 一律回傳原始 dataUrl（不上傳）。
 
 ## 登入機制
 
-支援四種社群登入，各自獨立帳號（後續可合併）：
-
-| Provider | User ID 格式 | 登入方式 |
-|----------|-------------|---------|
-| Facebook | `fb-{fbId}` | 前端 JS SDK |
-| Google | `google-{sub}` | 前端 GIS library，JWT 直接解碼 |
-| LINE | `line-{userId}` | OAuth 2.0 + PKCE redirect |
-| Strava | `strava-{athleteId}` | OAuth 2.0 redirect → n8n 後端換 token |
-
-### Facebook Login
-- JavaScript SDK，版本 v21.0
-- 權限：`public_profile`、`user_hometown`、`user_location`
-- 首次 FB 登入自動建立使用者
-- 從 FB hometown/location 自動比對台灣縣市（含常見地名英中對照）
-
-### Google Login
-- Google Identity Services (GIS) One Tap 流程
-- 前端直接取得 JWT（id_token），解碼取 sub/name/picture/email
-- JWT 解碼需用 `decodeURIComponent` + 逐位元組 `%XX` 處理 UTF-8 中文
-
-### LINE Login
-- OAuth 2.0 + PKCE（code_challenge_method: S256）
-- redirect 到 LINE 授權 → 回調頁面用 code 換 token → 解碼 id_token
-- PKCE verifier/state 暫存於 sessionStorage
-
-### Strava Login
-- OAuth 2.0 redirect → 回調頁面帶 code → POST 到 n8n webhook 換 token
-- n8n 後端處理 client_secret + token 交換，回傳 athlete 資訊
-- state 暫存於 sessionStorage
-
-### 共用機制
-- Avatar 元件支援 emoji 字元與圖片 URL（FB / Google / LINE / Strava 大頭照）
-- `SocialLoginButton` 共用按鈕元件（各平台 SVG logo + 品牌色）
-- `OAuthCallbackPage` 依 sessionStorage 中的 state key 判斷回調來源（LINE / Strava）
-- 未設定 Client ID 的平台按鈕自動 disabled
+| Provider | User ID 格式 | 備註 |
+|----------|-------------|------|
+| Facebook | `fb-{fbId}` | 首次登入自動建立使用者；從 hometown/location 自動比對台灣縣市 |
+| Google | `google-{sub}` | GIS One Tap，前端直接解碼 JWT |
+| LINE | `line-{userId}` | OAuth 2.0 + PKCE（S256），verifier/state 暫存 sessionStorage |
+| Strava | `strava-{athleteId}` | redirect → n8n webhook 換 token，state 暫存 sessionStorage |
 
 ### 粉絲頁身份切換
-
-- 使用者可在個人中心切換為管理的 Facebook 粉絲頁身份發起活動
-- `PageIdentity` 介面：`{ pageId, name, pictureUrl }`
-- `User` 擴充欄位：`managedPages?: PageIdentity[]`、`activePageId?: string`
-- authStore 新增：`目前身份`（personal/page）、`使用中的粉絲頁`、`切換到粉絲頁()`、`切換回個人()`、`取得目前發文身份()`
 - `creatorId` 格式：個人 `fb-{fbId}`、粉絲頁 `page-{pageId}`
+- authStore：`目前身份`（personal/page）、`切換到粉絲頁()`、`切換回個人()`、`取得目前發文身份()`
 - 粉絲頁列表目前透過手動設定（FB Pages API 需 Business 類型 App + 審查）
-- StickyNoteCard / EventDetailPage 支援 `page-` 開頭的 creatorId 顯示粉絲頁身份
 
 ### TCU 認證（LINE LIFF）
+- 流程：個人中心申請 → 產生 6 位數認證碼（10 分鐘效期）→ LINE@ LIFF 頁面輸入認證碼
+- LIFF Endpoint：`https://siokiu.criterium.tw/liff/verify`
+- Supabase 表：`user_verifications`（token / status / user_id / line_user_id）
+- 輪詢：`useVerificationPolling` hook，每 3 秒，10 分鐘後自動停止
 
-透過 TCU LINE@ 官方帳號（`https://page.line.me/criterium`）進行身份認證：
-
-- **認證流程**：個人中心「申請 TCU 認證」→ 產生 6 位數認證碼（10 分鐘效期）→ 前往 LINE@ 開啟 LIFF 頁面 → 輸入認證碼 → 驗證成功
-- **LIFF URL**：`https://liff.line.me/{LIFF_ID}`，Endpoint: `https://siokiu.criterium.tw/liff/verify`
-- **Supabase 表**：`user_verifications`（token / status / user_id / line_user_id）
-- **User 擴充欄位**：`verifiedAt?: string`、`lineVerifiedUserId?: string`
-- **VerifiedBadge**：Lucide `ShieldCheck` 圖示（emerald-600），`sm`（14px）/ `md`（16px）
-- **Badge 顯示位置**：StickyNoteCard 發起人旁、EventDetailPage 發起人旁、DashboardPage 認證區塊
-- **輪詢機制**：`useVerificationPolling` hook，每 3 秒查詢，10 分鐘後自動停止
-- **服務**：`verificationService.ts`（建立認證請求 / 驗證認證碼 / 查詢認證狀態）
-- **LIFF 封裝**：`liff.ts`（初始化LIFF / 取得LINE使用者 / 關閉LIFF）
-
-## 發起約騎表單（CreateEventPage）
-
-表單區塊順序：
-1. **日期與時間** — 約騎日期（必填）+ 集合時間
-2. **發起人 + 活動圖章** — 左右排列，不可編輯；發起人顯示頭像+名稱，圖章自動使用個人中心設定的 `stampImage`
-3. **集合地點** — 地點名稱 + Google Maps 連結 + 縣市（從路線名/集合點自動推斷）+ 右上角集合點範本按鈕
-4. **路線與騎乘資訊** — 合併為一個區塊：路線名稱（必填）+ 路線描述（6 行）+ 路線連結 + 分隔線 + 距離/爬升/配速/人數上限 + 右上角路線範本按鈕
-5. **注意事項 / 備註** — 單一 textarea，Enter 斷行，支援 Markdown，禁止 http 連結 + 右上角備註範本按鈕
-
-### 全域約騎範本（Supabase: ride_templates）
-- 右上角書籤按鈕：從已儲存範本快速填入
-- 右上角書籤+按鈕：把當前表單儲存為範本
-- 範本儲存路線/集合點/騎乘資訊/注意事項，不含日期
-
-### 路線庫整合（routeStore + RoutePickerModal）
-- 路線區塊右上角「路線庫」按鈕（Map icon）開啟 RoutePickerModal
-- 選取路線後自動填入路線名稱、距離、爬升、縣市
-- 套用 GPX / 規劃路線的 `routeCoordinates` 存入活動供詳情頁地圖顯示
-
-### 區塊範本功能（各自獨立，存入 Supabase）
-各區塊右上角有範本按鈕，點擊展開/收合範本面板，支援新增、套用、inline 編輯、刪除：
-- **集合點範本**（`spot_templates`）— 儲存地點名稱 + Google Maps 連結 + 縣市
-- **路線與騎乘資訊範本**（`route_info_templates`）— 儲存路線名稱/描述/連結 + 距離/爬升/配速/人數
-- **注意事項範本**（`notes_templates`）— 儲存備註文字，名稱自動擷取前 20 字
-
-### 編輯模式
-- 路由 `/event/:id/edit` 進入編輯模式
-- 自動載入既有活動資料（含從 description 反解路線描述和注意事項）
-- 標題改為「編輯活動」，按鈕改為「儲存變更」
-- 只有發起人能在活動詳情頁看到「編輯活動」按鈕
-
-## 個人中心（DashboardPage）
-
-單頁滾動式，由上到下：
-1. **頂部** — 頭像 + 姓名 + 縣市 + 追蹤/粉絲數 + 登出 + 身份切換（有粉絲頁時顯示）
-2. **基本資訊** — 可編輯（姓名、頭像、縣市）；**會員等級**列顯示等級名稱（從 `user_roles` 取得）+ 活動上限說明（`活動上限 N 個`）；管理員（`role === 'admin'`）顯示齒輪按鈕連結 `/admin`
-3. **TCU 認證** — 未認證/認證中/已認證三種狀態（VerificationSection）
-4. **社群** — 追蹤中 / 粉絲切換（mock 資料）
-5. **發起紀錄** — 以 `creatorId` 篩選我建立的活動
-6. **個人路線** — 收藏路線列表（mock 資料）
-7. **常用集合點** — 點擊開啟 Google Maps
-
-### 會員等級顯示
-- `utils/roleService.ts` 中的 `取得所有角色()` — 從 Supabase `user_roles` 表取得所有角色定義
-- `UserRole` 介面：`{ id, name, maxActiveEvents, sortOrder }`
-- `個人資料區塊` 子元件內 `useEffect` 依 `使用者.role` 載入對應角色，顯示等級名稱 + 活動上限
-- 管理員不顯示活動上限，改顯示 Settings 圖示按鈕（連結後臺 `/admin`）
-
-## 路線管理（RoutesPage）
-
-三個分頁：
-1. **我的路線** — 顯示 `routeStore` 中的 `SavedRoute` 列表（RouteCard），支援刪除；每張卡有 Leaflet 迷你地圖預覽（高度 `h-32`，非互動）
-2. **規劃路線** — RoutePlanner：點擊 Leaflet 地圖新增航點，≥2 點自動呼叫 OSRM 沿道路規劃，顯示距離/時間，可刪除航點，儲存時命名後存入路線庫
-3. **上傳軌跡** — GpxUploader：拖放或選取 `.gpx` 檔案，DOMParser 解析後顯示名稱/距離/爬升/點數 + Leaflet 預覽，命名 + 選縣市後儲存
-
-### RouteMap 元件
-- 用 Leaflet 原生 API（`useRef` + `useEffect`），台灣中心 `[23.5, 121]` zoom `8`
-- `coordinates` prop → Polyline；`waypoints` prop → 帶編號 Marker
-- `interactive` prop 切換點擊功能（`onMapClick` 回調）
-- Vite Leaflet icon 路徑手動修復（`L.Icon.Default.mergeOptions`）
-
-### OSRM 路線規劃
-- 端點：`https://router.project-osrm.org/route/v1/cycling/`
-- 免費公開服務，無需 API Key；適合 Demo，生產建議自架
-- debounce 300ms 避免頻繁請求
-
-### Supabase `saved_routes` 資料表
-```sql
-CREATE TABLE saved_routes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  distance NUMERIC(8,2) NOT NULL DEFAULT 0,
-  elevation NUMERIC(8,1) NOT NULL DEFAULT 0,
-  county_id TEXT NOT NULL DEFAULT '',
-  coordinates JSONB NOT NULL DEFAULT '[]',
-  waypoints JSONB NOT NULL DEFAULT '[]',
-  source TEXT NOT NULL DEFAULT 'manual',  -- 'manual' | 'gpx' | 'planned'
-  gpx_file_name TEXT,
-  creator_id TEXT NOT NULL,
-  is_public BOOLEAN NOT NULL DEFAULT false,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-GRANT ALL ON saved_routes TO anon, authenticated;
-```
-
-## 約騎公布欄便利貼（StickyNoteCard）
-
-- 標題 + 活動圖章（右上角，固定 40×40px，與頭像同尺寸）
-- 日期時間 + 集合地點含縣市 + 距離/爬升（有值才顯示）
-- 參加者頭像（支援 FB 大頭照 URL）
-- 區域 Badge — 僅在「全部」區域時顯示於左下角，選擇特定區域時隱藏
-- 活動日期隔天凌晨後自動從公布欄消失，移入歷史頁面
-- 模擬活動（`evt-` 開頭）無法參加
-
-## 廣告系統
-
-- 資料來源：自架 Supabase（`db.criterium.tw`）的 `tcuad_internal_placements` + `tcuad_placements`
-- 只顯示 `is_active=true` 且 `image_url` 不為 null 的廣告
-- `useAds` hook 抓取後隨機洗牌
-- 公布欄每 5 個活動穿插 1 則廣告（循環使用），不足 5 個至少顯示 1 則
-- AdCard 右上角標示「AD」，點擊開新分頁到商品頁；左側產品圖片高度撐滿 100%
-
-## 設計系統色彩（定義在 src/index.css @theme）
-
-- `strava` (#FC4C02) — 主要強調色 / Strava 登入按鈕
-- `line` (#00B900) — LINE 分享 / 登入按鈕
-- `google` (#4285F4) — Google 登入按鈕
-- `facebook` (#1877F2) — Facebook 登入按鈕
-- `region-north/central/south/east` — 四區域色（藍/橘/紅/綠）
-- `cork` (#D4A574) — 佈告欄背景
-- `sticky-yellow/pink/blue/green` — 便利貼色
-
-## UI/UX 規範
-
-- 所有按鈕加 `cursor-pointer` + `transition-colors duration-200`
-- Button 元件內建 `focus-visible:ring` 聚焦狀態
-- icon-only 按鈕加 `aria-label`
-- 觸控區域最小 44×44px（BottomNavBar）
-- `<select>` 加 `name` 屬性
-- placeholder 結尾用 `…`（非 `...`）
-- `prefers-reduced-motion: reduce` 全域支援
-- BottomNavBar 加 `touch-action: manipulation`
-- 活動詳情頁返回鍵導向 `/wall`（非 history back）
+### 會員等級（user_roles 表）
+- Supabase 表 `user_roles`：`id` / `name` / `max_active_events` / `sort_order`
+- 內建角色：`unverified`（預設）、`verified`（TCU 認證）、`admin`
+- `max_active_events`：同時進行中活動上限；`roleService.ts` 的 `計算進行中活動數()` 含粉絲頁 creator_id
+- 內建角色不可刪除；可在 Dashboard 新增自訂等級
 
 ## 資料持久化
 
-使用 Zustand `persist` middleware → localStorage。Store key：
-- `約騎-auth` — 登入狀態 + 所有使用者列表（含 FB 登入建立的）
+**localStorage（Zustand persist）：**
+- `約騎-auth` — 登入狀態 + 所有使用者列表
 - `約騎-events` — 活動列表（coverImage 自動使用 stampImage）
 - `約騎-region` — 區域選擇
 - `約騎-templates` — 約騎範本列表
 
-Supabase 資料表（無 persist，每次 mount 載入）：
-- `ride_templates` — 全域約騎範本
-- `spot_templates` — 集合點範本
-- `route_info_templates` — 路線與騎乘資訊範本
-- `notes_templates` — 注意事項範本
-- `saved_routes` — 個人路線庫（GPX 軌跡 / 規劃路線，`creator_id` 隔離）
-- `user_verifications` — TCU 認證記錄（token / status / user_id / line_user_id）
-- `user_roles` — 會員等級定義（id / name / max_active_events / sort_order）；透過 `utils/roleService.ts` 的 `取得所有角色()` 讀取
-- `users` — 使用者表（含 `verified_at` / `line_verified_user_id` 欄位）
+**Supabase（每次 mount 載入，不 persist）：**
+`ride_templates` / `spot_templates` / `route_info_templates` / `notes_templates` / `saved_routes` / `user_verifications` / `user_roles` / `users`
 
-Supabase Storage：
-- `stamps`（Public bucket）— 活動圖章圖片，路徑 `events/{eventId}.{ext}`
-  - 新增/更新活動時，若 `coverImage` 為 base64 data URL，自動上傳並將公開 URL 存入 `cycling_events.cover_image`
-  - 本地 store 保留原始 base64 供 UI 顯示；公開 URL 供 Cloudflare Pages Function 當 OG image
-  - RLS Policy：INSERT / SELECT / UPDATE 開放 anon + authenticated
+**Supabase Storage：**
+- Bucket `stamps`（Public）— 圖章路徑 `events/{eventId}.{ext}`
+- 新增/更新活動時，base64 data URL 自動上傳取得公開 URL，存入 `cycling_events.cover_image`
+- 本地 store 保留原始 base64 供 UI 顯示；公開 URL 供 Cloudflare OG image 使用
 
-首次載入從 mockEvents/mockUsers 取得種子資料。
+## Cloudflare Pages Functions
 
-### 活動即時載入（分享連結支援）
+| 檔案 | 用途 |
+|------|------|
+| `functions/event/[[id]].ts` | OG 預覽：偵測爬蟲 UA → 動態 OG meta HTML；人類請求 `context.next()` |
+| `functions/api/route-info.ts` | 從 Strava / Ride with GPS 抓路線距離與爬升；CORS 限縮為 `https://siokiu.criterium.tw` |
 
-- `eventStore.載入單一活動(id)` — 先查 store，沒有就從 Supabase 即時載入並 merge 進 store
-- `EventDetailPage` / `SharePage` — 若 store 無資料會自動觸發即時載入，顯示 loading spinner
-- 分享連結（`/event/{id}`）在無 localStorage 的環境下也能正常顯示
-
-### Cloudflare Pages Function（社群媒體 OG 預覽）
-
-- 檔案：`functions/event/[[id]].ts`
-- 偵測社群爬蟲 User-Agent（LINE / Facebook / Twitter / Discord 等）
-- 爬蟲：從 Supabase REST API 抓活動 → 回傳含動態 OG meta 的 HTML
-- 人類：`context.next()` 正常回傳 SPA
-- 環境變數：Cloudflare Pages 需設定 `SUPABASE_ANON_KEY`（非 `VITE_` 前綴）
+環境變數 `SUPABASE_ANON_KEY`（無 `VITE_` 前綴）供 Cloudflare 伺服器端使用。
 
 ## 環境變數
 
 | 變數 | 說明 |
 |------|------|
-| `VITE_FB_APP_ID` | Facebook App ID（開發/正式共用） |
+| `VITE_FB_APP_ID` | Facebook App ID |
 | `VITE_GOOGLE_CLIENT_ID` | Google OAuth Client ID |
 | `VITE_LINE_CHANNEL_ID` | LINE Login Channel ID |
 | `VITE_STRAVA_CLIENT_ID` | Strava App Client ID |
 | `VITE_STRAVA_CALLBACK_URL` | Strava token 交換用的 n8n webhook URL |
 | `VITE_OAUTH_REDIRECT_URI` | LINE / Strava OAuth 回調 URI |
-| `VITE_SUPABASE_URL` | Supabase API URL（自架：`https://db.criterium.tw`） |
-| `VITE_SUPABASE_ANON_KEY` | Supabase anon key（前端用，搭配 RLS） |
-| `VITE_LIFF_ID` | LINE LIFF App ID（TCU 認證用） |
+| `VITE_SUPABASE_URL` | `https://db.criterium.tw` |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon key（前端，搭配 RLS） |
+| `VITE_LIFF_ID` | LINE LIFF App ID（TCU 認證） |
+| `SUPABASE_ANON_KEY` | 同上，供 Cloudflare Pages Function 使用（無 VITE_ 前綴） |
 
-`.env` 檔案不入版控（已加入 `.gitignore`）。
+`.env` 不入版控。
 
-### Cloudflare Pages 環境變數
+## UI/UX 規範
 
-| 變數 | 說明 |
-|------|------|
-| `SUPABASE_ANON_KEY` | Supabase anon key（供 Pages Function 伺服器端使用，與 `VITE_SUPABASE_ANON_KEY` 同值） |
+- 所有按鈕加 `cursor-pointer` + `transition-colors duration-200`
+- Button 元件內建 `focus-visible:ring` 聚焦狀態
+- 觸控區域最小 44×44px（BottomNavBar）
+- `<select>` 加 `name` 屬性；placeholder 結尾用 `…`（非 `...`）
+- BottomNavBar 加 `touch-action: manipulation`
+- 活動詳情頁返回鍵導向 `/wall`（非 history back）
 
-## 外部連結（不需 API Key）
+## 設計系統色彩（`src/index.css` `@theme`）
 
-- Google Maps：透過 URL scheme 開啟（`google.com/maps/search/?api=1&query=...`）
-- Facebook SDK：`connect.facebook.net/zh_TW/sdk.js`（動態載入）
-- Google GIS：`accounts.google.com/gsi/client`（動態載入）
-- LINE Login：`access.line.me`（OAuth redirect）+ `api.line.me`（token 交換）
-- LINE LIFF：`liff.line.me`（TCU 認證嵌入頁面）
-- LINE@：`page.line.me/criterium`（TCU 官方帳號）
-- Strava OAuth：`strava.com/oauth/authorize`（redirect）+ n8n webhook（token 交換）
-- Strava / Garmin Connect：路線連結（自動辨識類型顯示）
-- MOAK：連結活動頁面
-- LINE：優先使用 `navigator.share({ text })` Web Share API；不支援時（LINE IAB / 桌機）自動 fallback 複製內文到剪貼簿並顯示 4 秒提示 toast（URL scheme 因 414 Request-URI Too Large 已棄用）
-- Facebook 分享：使用 `facebook.com/sharer/sharer.php?u=` （`dialog/share` API 需用戶開啟平台功能，改用 sharer.php 相容性最佳）
-- OSRM：`router.project-osrm.org/route/v1/cycling/`（免費路線規劃，無需 API Key）
-
-## 回應語言
-
-- **一律使用繁體中文**回覆與說明，包含 commit 訊息、程式碼註解、終端輸出摘要等
-- React 元件名稱與 JSX 限制的部分仍用英文
+| Token | 色碼 | 用途 |
+|-------|------|------|
+| `strava` | #FC4C02 | 主要強調色 / Strava 按鈕 |
+| `line` | #00B900 | LINE 按鈕 |
+| `google` | #4285F4 | Google 按鈕 |
+| `facebook` | #1877F2 | Facebook 按鈕 |
+| `region-north/central/south/east` | — | 四區域色（藍/橘/紅/綠） |
+| `cork` | #D4A574 | 佈告欄背景 |
+| `sticky-yellow/pink/blue/green` | — | 便利貼色 |
