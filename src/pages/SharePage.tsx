@@ -83,16 +83,7 @@ export default function SharePage() {
     '',
     '【 #siokiu約騎資訊】',
   ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n')
-  const 分享到FB = async () => {
-    await navigator.clipboard.writeText(完整文字)
-    const fbAppId = import.meta.env.VITE_FB_APP_ID
-    const FB連結 = fbAppId
-      ? `https://www.facebook.com/dialog/feed?app_id=${fbAppId}&link=${encodeURIComponent(活動連結)}&display=popup`
-      : `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(活動連結)}`
-    window.open(FB連結, '_blank', 'noopener,noreferrer,width=600,height=600')
-  }
-
-  // LINE 分享
+  // LINE 分享（含完整活動文字）
   const LINE連結 = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(活動連結)}&text=${encodeURIComponent(完整文字)}`
 
   return (
@@ -163,20 +154,19 @@ export default function SharePage() {
 
         {/* 分享按鈕 */}
         <div className="space-y-3">
-          <Button fullWidth className="!bg-facebook !text-white hover:!bg-facebook/90" onClick={分享到FB}>
+          <Button fullWidth disabled className="!bg-gray-200 !text-gray-400 cursor-not-allowed opacity-60">
             <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-            分享到 Facebook
+            Facebook 分享（尚未開放）
           </Button>
-          <p className="text-xs text-center text-gray-600 -mt-1">點擊後活動資訊已複製，請在 FB 貼文中按「貼上」</p>
           <a href={LINE連結} target="_blank" rel="noopener noreferrer">
-            <Button fullWidth variant="line" className="mt-3">
+            <Button fullWidth variant="line">
               <MessageCircle size={18} /> 分享到 LINE
             </Button>
           </a>
           <Button
             fullWidth
             variant="outline"
-            className="mt-3 !bg-white !text-gray-800 !border-gray-200 hover:!bg-gray-50"
+            className="!bg-white !text-gray-800 !border-gray-200 hover:!bg-gray-50"
             onClick={async () => {
               await navigator.clipboard.writeText(完整文字)
               set已複製(true)
@@ -184,7 +174,7 @@ export default function SharePage() {
             }}
           >
             {已複製 ? <Check size={18} /> : <Copy size={18} />}
-            {已複製 ? '已複製' : '複製連結'}
+            {已複製 ? '已複製' : '複製內文'}
           </Button>
         </div>
       </div>
