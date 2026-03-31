@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Home, PlusCircle, User, Shield, Map } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
@@ -16,8 +17,31 @@ export default function BottomNavBar() {
   const 已登入 = useAuthStore(s => s.已登入)
   const 是管理員 = useAuthStore(s => s.使用者?.role) === 'admin'
 
+  const [隱藏導覽列, 設定隱藏導覽列] = useState(false)
+  const 上次ScrollY = useRef(0)
+
+  useEffect(() => {
+    const 處理滾動 = () => {
+      const 目前Y = window.scrollY
+      const 差值 = 目前Y - 上次ScrollY.current
+      if (目前Y < 50) {
+        設定隱藏導覽列(false)
+      } else if (差值 > 10) {
+        設定隱藏導覽列(true)
+      } else if (差值 < -5) {
+        設定隱藏導覽列(false)
+      }
+      上次ScrollY.current = 目前Y
+    }
+    window.addEventListener('scroll', 處理滾動, { passive: true })
+    return () => window.removeEventListener('scroll', 處理滾動)
+  }, [])
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur-sm safe-area-pb" style={{ touchAction: 'manipulation' }}>
+    <nav
+      className={`fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur-sm safe-area-pb transition-transform duration-300 ${隱藏導覽列 ? 'translate-y-full' : 'translate-y-0'}`}
+      style={{ touchAction: 'manipulation' }}
+    >
       <div className="mx-auto flex max-w-lg items-center justify-around py-2">
         {導航項目
           .filter(item => !item.需管理員 || 是管理員)
