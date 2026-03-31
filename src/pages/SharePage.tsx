@@ -87,7 +87,7 @@ export default function SharePage() {
     await navigator.clipboard.writeText(完整文字)
     const fbAppId = import.meta.env.VITE_FB_APP_ID
     const FB連結 = fbAppId
-      ? `https://www.facebook.com/dialog/share?app_id=${fbAppId}&href=${encodeURIComponent(活動連結)}&display=popup`
+      ? `https://www.facebook.com/dialog/feed?app_id=${fbAppId}&link=${encodeURIComponent(活動連結)}&display=popup`
       : `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(活動連結)}`
     window.open(FB連結, '_blank', 'noopener,noreferrer,width=600,height=600')
   }
