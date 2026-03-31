@@ -297,19 +297,19 @@ export default function EventDetailPage() {
             return lines
           })() : []),
           `【更多資訊請看】 ${活動連結}`,
+          '',
+          '#siokiu #相揪 #約騎資訊',
         ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n')
-        const FB連結 = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(活動連結)}`
         const LINE連結 = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(活動連結)}&text=${encodeURIComponent(完整文字)}`
         return (
           <div className="px-4 mt-6 space-y-3">
             <button
-              onClick={async () => { await navigator.clipboard.writeText(完整文字); window.open(FB連結, '_blank', 'noopener,noreferrer,width=600,height=500') }}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-facebook text-white py-3 text-sm font-semibold cursor-pointer hover:bg-facebook/90 transition-colors"
+              disabled
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-gray-200 text-gray-400 py-3 text-sm font-semibold cursor-not-allowed opacity-60"
             >
               <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-              分享到 Facebook
+              Facebook 分享（尚未開放）
             </button>
-            <p className="text-xs text-center text-gray-600 -mt-1">點擊後活動資訊已複製，請在 FB 貼文中按「貼上」</p>
             <a href={LINE連結} target="_blank" rel="noopener noreferrer" className="block">
               <button className="w-full flex items-center justify-center gap-2 rounded-xl bg-line text-white py-3 text-sm font-semibold cursor-pointer hover:bg-line/90 transition-colors">
                 <MessageCircle size={18} /> 分享到 LINE
@@ -320,7 +320,7 @@ export default function EventDetailPage() {
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-white border border-gray-200 text-gray-800 py-3 text-sm font-semibold cursor-pointer hover:bg-gray-50 transition-colors"
             >
               {已複製 ? <Check size={18} /> : <Copy size={18} />}
-              {已複製 ? '已複製' : '複製連結'}
+              {已複製 ? '已複製' : '複製內文'}
             </button>
           </div>
         )
