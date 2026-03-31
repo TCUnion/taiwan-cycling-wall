@@ -81,13 +81,14 @@ export async function 處理LINE回調(code: string, state: string): Promise<LIN
   const 預期State = oauth?.state ?? sessionStorage.getItem('line_state')
   const codeVerifier = oauth?.verifier ?? sessionStorage.getItem('line_code_verifier')
 
-  // 驗證 state
-  if (預期State && state !== 預期State) {
+  // 驗證 state（無 預期State 時直接拒絕，避免 prefix-only fallback CSRF 缺口）
+  if (!預期State) {
+    清除OAuth資料()
+    throw new Error('登入資料已過期，請返回重新登入')
+  }
+  if (state !== 預期State) {
     清除OAuth資料()
     throw new Error('LINE 登入驗證失敗（state 不符）')
-  }
-  if (!預期State && !state.startsWith('line-')) {
-    throw new Error('LINE 登入驗證失敗（state 來源不明）')
   }
 
   if (!codeVerifier) {

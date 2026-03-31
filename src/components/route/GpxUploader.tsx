@@ -33,6 +33,10 @@ export default function GpxUploader({ onSaved }: Props) {
       setError('請選擇 .gpx 格式的檔案')
       return
     }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('GPX 檔案大小不可超過 5MB')
+      return
+    }
     setError('')
     setSaved(false)
     setGpxFileName(file.name)

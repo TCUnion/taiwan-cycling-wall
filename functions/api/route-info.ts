@@ -10,6 +10,19 @@ interface RouteInfo {
   source: 'strava' | 'ridewithgps' | 'unknown'
 }
 
+const ALLOWED_ORIGIN = 'https://siokiu.criterium.tw'
+
+export const onRequestOptions: PagesFunction = async () => {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  })
+}
+
 export const onRequestGet: PagesFunction = async ({ request }) => {
   const { searchParams } = new URL(request.url)
   const url = searchParams.get('url')
@@ -19,7 +32,7 @@ export const onRequestGet: PagesFunction = async ({ request }) => {
   }
 
   const headers = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
     'Cache-Control': 'public, max-age=3600', // 快取 1 小時
   }
 
