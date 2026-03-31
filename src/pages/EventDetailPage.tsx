@@ -21,7 +21,8 @@ import { 安全渲染Markdown, 安全URL, 淨化純文字 } from '../utils/sanit
 export default function EventDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { 使用者, 所有使用者 } = useAuthStore()
+  const 使用者 = useAuthStore((s) => s.使用者)
+  const 所有使用者 = useAuthStore((s) => s.所有使用者)
   const { 活動列表, 載入單一活動 } = useEventStore()
   const { 廣告列表 } = useAds()
   const 廣告 = 廣告列表[0] // 顯示一則廣告
@@ -43,14 +44,15 @@ export default function EventDetailPage() {
       })
       .catch(() => set載入失敗(true))
       .finally(() => set載入中(false))
-  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [id, 載入單一活動])
 
   // 背景載入發起人資料（如果 store 中找不到）
   useEffect(() => {
     if (!活動) return
     const creatorId = 活動.creatorId
     if (creatorId.startsWith('page-')) return // 粉絲頁另行處理
-    const 已有 = 所有使用者.find(u => u.id === creatorId)
+    // 從 store 即時讀取，避免 所有使用者 陣列變化觸發不必要的 effect 重跑
+    const 已有 = useAuthStore.getState().所有使用者.find(u => u.id === creatorId)
     if (已有) return
     取得使用者(creatorId).then((遠端使用者) => {
       if (!遠端使用者 || !遠端使用者.id) return
@@ -60,7 +62,7 @@ export default function EventDetailPage() {
         return { 所有使用者: [...s.所有使用者, 遠端使用者 as import('../types').User] }
       })
     })
-  }, [活動, 所有使用者])
+  }, [活動])
 
   if (載入中) {
     return (

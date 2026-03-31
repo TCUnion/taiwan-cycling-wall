@@ -58,7 +58,7 @@ function fromDbRow(row: Record<string, unknown>): Partial<User> {
 export async function 取得使用者(id: string): Promise<Partial<User> | null> {
   const { data, error } = await supabase
     .from('users')
-    .select('*')
+    .select('id,name,avatar,county_id,auth_provider,email,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
     .eq('id', id)
     .single()
 
@@ -114,7 +114,7 @@ export async function 依Email查找帳號(email: string, 排除Id?: string): Pr
   if (!email) return []
   let query = supabase
     .from('users')
-    .select('*')
+    .select('id,name,avatar,county_id,auth_provider,email,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
     .eq('email', email.toLowerCase().trim())
     .is('merged_into', null)
 

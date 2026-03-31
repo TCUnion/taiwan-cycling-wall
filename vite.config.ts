@@ -14,8 +14,14 @@ export default defineConfig({
           if (id.includes('node_modules/@supabase')) {
             return 'vendor-supabase'
           }
-          if (id.includes('node_modules/lucide-react') || id.includes('node_modules/zustand') || id.includes('node_modules/date-fns')) {
-            return 'vendor-ui'
+          if (id.includes('node_modules/lucide-react')) {
+            return 'vendor-icons'
+          }
+          if (id.includes('node_modules/zustand')) {
+            return 'vendor-state'
+          }
+          if (id.includes('node_modules/date-fns')) {
+            return 'vendor-utils'
           }
         },
       },

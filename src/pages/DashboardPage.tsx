@@ -1,6 +1,6 @@
 // 個人中心頁面 — 單頁滾動式
 
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LogOut, Users, History, ChevronRight, Pencil, Check, X, ArrowLeftRight, ZoomIn, ZoomOut, Plus, Settings } from 'lucide-react'
 import { 取得所有角色 } from '../utils/roleService'
@@ -21,16 +21,25 @@ export default function DashboardPage() {
   const { 活動列表 } = useEventStore()
   const [顯示身份切換, set顯示身份切換] = useState(false)
 
+  // 包含個人與粉絲頁發起的活動（置於 early return 前，符合 hooks 規則）
+  const 我的粉絲頁Ids = useMemo(
+    () => (使用者?.managedPages ?? []).map(p => `page-${p.pageId}`),
+    [使用者?.managedPages]
+  )
+  const 我的活動 = useMemo(
+    () => {
+      if (!使用者) return []
+      return 活動列表.filter(e => e.creatorId === 使用者.id || 我的粉絲頁Ids.includes(e.creatorId))
+    },
+    [活動列表, 使用者, 我的粉絲頁Ids]
+  )
+
   if (!使用者) return null
 
   const 處理登出 = () => {
     登出()
     navigate('/', { replace: true })
   }
-
-  // 包含個人與粉絲頁發起的活動
-  const 我的粉絲頁Ids = (使用者.managedPages ?? []).map(p => `page-${p.pageId}`)
-  const 我的活動 = 活動列表.filter(e => e.creatorId === 使用者.id || 我的粉絲頁Ids.includes(e.creatorId))
 
   return (
     <div className="min-h-svh bg-cork pb-20">

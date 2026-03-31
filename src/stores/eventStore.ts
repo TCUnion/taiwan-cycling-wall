@@ -146,7 +146,7 @@ export const useEventStore = create<EventState>()((set, get) => ({
     // 從 Supabase 載入
     const { data, error } = await supabase
       .from('cycling_events')
-      .select('*')
+      .select('id,title,description,county_id,region,date,time,meeting_point,meeting_point_url,cover_image,distance,elevation,pace,max_participants,strava_route_url,route_coordinates,moak_event_id,sticky_color,tags,creator_id,created_at')
       .eq('id', id)
       .single()
     if (error || !data) return null
@@ -163,7 +163,7 @@ export const useEventStore = create<EventState>()((set, get) => ({
     set({ 載入中: true })
     const { data, error } = await supabase
       .from('cycling_events')
-      .select('*')
+      .select('id,title,description,county_id,region,date,time,meeting_point,meeting_point_url,cover_image,distance,elevation,pace,max_participants,strava_route_url,route_coordinates,moak_event_id,sticky_color,tags,creator_id,created_at')
       .order('created_at', { ascending: false })
     if (!error && data) {
       set({ 活動列表: data.map(轉換為活動) })

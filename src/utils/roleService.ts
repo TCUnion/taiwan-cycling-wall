@@ -15,7 +15,7 @@ function fromDbRow(row: Record<string, unknown>): UserRole {
 export async function 取得所有角色(): Promise<UserRole[]> {
   const { data, error } = await supabase
     .from('user_roles')
-    .select('*')
+    .select('id,name,max_active_events,sort_order')
     .order('sort_order', { ascending: true })
 
   if (error) {
@@ -45,35 +45,18 @@ export async function 計算進行中活動數(userId: string, managedPageIds?: 
   // 活動日期隔天凌晨後才算過期，所以用今天的日期比對
   const 今天 = new Date().toISOString().split('T')[0]
 
-  // 查詢個人活動
-  const { count: 個人數, error: 個人錯誤 } = await supabase
+  const allCreatorIds = [userId, ...(managedPageIds ?? []).map(id => `page-${id}`)]
+  const { count, error } = await supabase
     .from('cycling_events')
-    .select('*', { count: 'exact', head: true })
-    .eq('creator_id', userId)
+    .select('id', { count: 'exact', head: true })
+    .in('creator_id', allCreatorIds)
     .gte('date', 今天)
 
-  if (個人錯誤) {
-    console.warn('[Supabase] 計算活動數失敗:', 個人錯誤.message)
+  if (error) {
+    console.warn('[Supabase] 計算活動數失敗:', error.message)
   }
 
-  let 總數 = 個人數 ?? 0
-
-  // 查詢粉絲頁活動
-  if (managedPageIds && managedPageIds.length > 0) {
-    const pageCreatorIds = managedPageIds.map(id => `page-${id}`)
-    const { count: 頁面數, error: 頁面錯誤 } = await supabase
-      .from('cycling_events')
-      .select('*', { count: 'exact', head: true })
-      .in('creator_id', pageCreatorIds)
-      .gte('date', 今天)
-
-    if (頁面錯誤) {
-      console.warn('[Supabase] 計算粉絲頁活動數失敗:', 頁面錯誤.message)
-    }
-    總數 += 頁面數 ?? 0
-  }
-
-  return 總數
+  return count ?? 0
 }
 
 /** 更新角色設定 */
@@ -151,7 +134,7 @@ export async function 更新使用者角色(userId: string, role: string): Promi
 export async function 取得所有使用者(): Promise<Record<string, unknown>[]> {
   const { data, error } = await supabase
     .from('users')
-    .select('*')
+    .select('id,name,avatar,county_id,auth_provider,email,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
     .is('merged_into', null)
     .order('name', { ascending: true })
 
