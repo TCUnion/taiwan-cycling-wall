@@ -5,12 +5,13 @@ import { 上傳圖章到Storage } from '../utils/storageService'
 
 type 排序方式 = '最新' | '最熱門'
 
-// 判斷活動是否已過期（活動日期隔天凌晨後算過期）
+// 判斷活動是否已過期（約騎時間後 12 小時算過期）
 function 已過期(活動: CyclingEvent): boolean {
-  const 活動日 = new Date(活動.date)
-  活動日.setDate(活動日.getDate() + 1) // 隔天
-  活動日.setHours(0, 0, 0, 0)
-  return new Date() >= 活動日
+  const [時, 分] = (活動.time ?? '00:00').split(':').map(Number)
+  const 約騎時間 = new Date(活動.date)
+  約騎時間.setHours(時, 分, 0, 0)
+  約騎時間.setTime(約騎時間.getTime() + 12 * 60 * 60 * 1000)
+  return new Date() >= 約騎時間
 }
 
 interface EventState {
