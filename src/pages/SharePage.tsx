@@ -79,6 +79,7 @@ export default function SharePage() {
       }
       return lines
     })() : []),
+    '#siokiu #相揪 #明天騎哪 #約騎資訊',
     `【更多資訊請看】 ${活動連結}`,
   ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n')
   // LINE 分享（含完整活動文字）

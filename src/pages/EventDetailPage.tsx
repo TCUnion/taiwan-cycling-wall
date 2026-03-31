@@ -296,6 +296,7 @@ export default function EventDetailPage() {
             if (備註match) { lines.push('【注意事項】'); lines.push(備註match[1].replace(/^• /gm, '· ').trim(), '') }
             return lines
           })() : []),
+          '#siokiu #相揪 #明天騎哪 #約騎資訊',
           `【更多資訊請看】 ${活動連結}`,
         ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n')
         const LINE連結 = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(活動連結)}&text=${encodeURIComponent(完整文字)}`
