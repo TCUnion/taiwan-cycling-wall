@@ -210,12 +210,18 @@ functions/
 
 單頁滾動式，由上到下：
 1. **頂部** — 頭像 + 姓名 + 縣市 + 追蹤/粉絲數 + 登出 + 身份切換（有粉絲頁時顯示）
-2. **基本資訊** — 可編輯（姓名、頭像、縣市）
+2. **基本資訊** — 可編輯（姓名、頭像、縣市）；**會員等級**列顯示等級名稱（從 `user_roles` 取得）+ 活動上限說明（`活動上限 N 個`）；管理員（`role === 'admin'`）顯示齒輪按鈕連結 `/admin`
 3. **TCU 認證** — 未認證/認證中/已認證三種狀態（VerificationSection）
 4. **社群** — 追蹤中 / 粉絲切換（mock 資料）
 5. **發起紀錄** — 以 `creatorId` 篩選我建立的活動
 6. **個人路線** — 收藏路線列表（mock 資料）
 7. **常用集合點** — 點擊開啟 Google Maps
+
+### 會員等級顯示
+- `utils/roleService.ts` 中的 `取得所有角色()` — 從 Supabase `user_roles` 表取得所有角色定義
+- `UserRole` 介面：`{ id, name, maxActiveEvents, sortOrder }`
+- `個人資料區塊` 子元件內 `useEffect` 依 `使用者.role` 載入對應角色，顯示等級名稱 + 活動上限
+- 管理員不顯示活動上限，改顯示 Settings 圖示按鈕（連結後臺 `/admin`）
 
 ## 路線管理（RoutesPage）
 
@@ -309,6 +315,7 @@ Supabase 資料表（無 persist，每次 mount 載入）：
 - `notes_templates` — 注意事項範本
 - `saved_routes` — 個人路線庫（GPX 軌跡 / 規劃路線，`creator_id` 隔離）
 - `user_verifications` — TCU 認證記錄（token / status / user_id / line_user_id）
+- `user_roles` — 會員等級定義（id / name / max_active_events / sort_order）；透過 `utils/roleService.ts` 的 `取得所有角色()` 讀取
 - `users` — 使用者表（含 `verified_at` / `line_verified_user_id` 欄位）
 
 Supabase Storage：
@@ -366,7 +373,7 @@ Supabase Storage：
 - Strava OAuth：`strava.com/oauth/authorize`（redirect）+ n8n webhook（token 交換）
 - Strava / Garmin Connect：路線連結（自動辨識類型顯示）
 - MOAK：連結活動頁面
-- LINE：使用 `social-plugins.line.me/lineit/share` 分享
+- LINE：優先使用 `navigator.share({ text })` Web Share API；不支援時（LINE IAB / 桌機）自動 fallback 複製內文到剪貼簿並顯示 4 秒提示 toast（URL scheme 因 414 Request-URI Too Large 已棄用）
 - Facebook 分享：使用 `facebook.com/sharer/sharer.php?u=` （`dialog/share` API 需用戶開啟平台功能，改用 sharer.php 相容性最佳）
 - OSRM：`router.project-osrm.org/route/v1/cycling/`（免費路線規劃，無需 API Key）
 
