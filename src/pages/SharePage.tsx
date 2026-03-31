@@ -56,8 +56,6 @@ export default function SharePage() {
 
   // 完整分享文字（含路線資訊 + 注意事項）
   const 完整文字 = [
-    '【 #siokiu約騎資訊】',
-    '',
     活動.title,
     `【集合時間】 ${格式化完整日期(活動.date)} ${活動.time}`,
     `【集合地點】 ${活動.meetingPoint}${活動.meetingPointUrl ? `\n${活動.meetingPointUrl}` : ''}`,
@@ -82,11 +80,16 @@ export default function SharePage() {
       return lines
     })() : []),
     `【更多資訊請看】 ${活動連結}`,
+    '',
+    '【 #siokiu約騎資訊】',
   ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n')
-  const FB連結 = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(活動連結)}`
   const 分享到FB = async () => {
     await navigator.clipboard.writeText(完整文字)
-    window.open(FB連結, '_blank', 'noopener,noreferrer,width=600,height=500')
+    const fbAppId = import.meta.env.VITE_FB_APP_ID
+    const FB連結 = fbAppId
+      ? `https://www.facebook.com/dialog/share?app_id=${fbAppId}&href=${encodeURIComponent(活動連結)}&display=popup`
+      : `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(活動連結)}`
+    window.open(FB連結, '_blank', 'noopener,noreferrer,width=600,height=600')
   }
 
   // LINE 分享
