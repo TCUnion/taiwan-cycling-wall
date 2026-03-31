@@ -1,9 +1,12 @@
 // 個人中心頁面 — 單頁滾動式
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Users, History, ChevronRight, Pencil, Check, X, ArrowLeftRight, ZoomIn, ZoomOut, Plus } from 'lucide-react'
+import { LogOut, Users, History, ChevronRight, Pencil, Check, X, ArrowLeftRight, ZoomIn, ZoomOut, Plus, Settings } from 'lucide-react'
+import { 取得所有角色 } from '../utils/roleService'
+import type { UserRole } from '../types'
 import { useAuthStore } from '../stores/authStore'
+
 import { useEventStore } from '../stores/eventStore'
 import { 查找縣市, 縣市列表 } from '../data/counties'
 import Avatar from '../components/ui/Avatar'
@@ -184,8 +187,17 @@ function 空白提示({ children }: { children: React.ReactNode }) {
 
 /* ─── 個人資料區塊（可編輯） ─── */
 function 個人資料區塊() {
+  const navigate = useNavigate()
   const { 使用者, 更新使用者 } = useAuthStore()
   const [編輯中, set編輯中] = useState(false)
+  const [角色資訊, set角色資訊] = useState<UserRole | null>(null)
+
+  useEffect(() => {
+    取得所有角色().then(roles => {
+      const roleId = 使用者?.role ?? 'unverified'
+      set角色資訊(roles.find(r => r.id === roleId) ?? null)
+    })
+  }, [使用者?.role])
   const [編輯姓名, set編輯姓名] = useState('')
   const [編輯縣市, set編輯縣市] = useState('')
 
@@ -417,15 +429,31 @@ function 個人資料區塊() {
       {/* 會員等級 */}
       <div className="flex items-center justify-between py-2 border-t border-gray-100">
         <span className="text-sm text-gray-500">會員等級</span>
-        <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${
-          使用者.role === 'admin' ? 'text-strava' : 使用者.role === 'business' ? 'text-amber-600' : 使用者.role === 'verified_page' ? 'text-blue-600' : 使用者.verifiedAt ? 'text-emerald-600' : 'text-gray-500'
-        }`}>
-          {使用者.role === 'admin' ? '管理員'
-            : 使用者.role === 'business' ? '商家'
-            : 使用者.role === 'verified_page' ? '認證粉絲頁'
-            : 使用者.role === 'verified' || 使用者.verifiedAt ? '認證會員'
-            : '一般會員'}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <div className="text-right">
+            <span className={`block text-sm font-medium ${
+              使用者.role === 'admin' ? 'text-strava' : 使用者.role === 'business' ? 'text-amber-600' : 使用者.role === 'verified_page' ? 'text-blue-600' : 使用者.verifiedAt ? 'text-emerald-600' : 'text-gray-500'
+            }`}>
+              {角色資訊?.name ?? (使用者.role === 'admin' ? '管理員'
+                : 使用者.role === 'business' ? '商家'
+                : 使用者.role === 'verified_page' ? '認證粉絲頁'
+                : 使用者.role === 'verified' || 使用者.verifiedAt ? '認證會員'
+                : '未認證會員')}
+            </span>
+            {角色資訊 && 使用者.role !== 'admin' && (
+              <span className="block text-xs text-gray-400">活動上限 {角色資訊.maxActiveEvents} 個</span>
+            )}
+          </div>
+          {使用者.role === 'admin' && (
+            <button
+              onClick={() => navigate('/admin')}
+              className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-strava cursor-pointer transition-colors"
+              aria-label="前往後臺管理"
+            >
+              <Settings size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
       {使用者.authProvider && (
