@@ -19,9 +19,10 @@ User-agent: CCBot
 Disallow: /
 
 User-agent: Google-Extended
-Disallow: /
+Allow: /
 
 User-agent: Bytespider
 Disallow: /
 
 Sitemap: https://siokiu.criterium.tw/sitemap.xml
+Llms-txt: https://siokiu.criterium.tw/llms.txt
