@@ -24,6 +24,12 @@
     <changefreq>yearly</changefreq>
     <priority>0.6</priority>
   </url>
+  <url>
+    <loc>https://siokiu.criterium.tw/contact</loc>
+    <lastmod>2026-04-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
   <!-- 法規頁面 -->
   <url>
     <loc>https://siokiu.criterium.tw/privacy</loc>
