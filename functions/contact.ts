@@ -10,11 +10,13 @@ export async function onRequestGet(): Promise<Response> {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>聯絡我們 — 相揪約騎公布欄</title>
-  <meta name="description" content="聯絡相揪約騎公布欄（siokiu）—— TCU 台灣單車聯盟服務信箱：service@tsu.com.tw" />
+  <title>聯絡我們 — 相揪約騎公布欄｜TCU 台灣單車聯盟</title>
+  <meta name="description" content="聯絡相揪約騎公布欄（siokiu）。TCU 台灣單車聯盟服務信箱：service@tsu.com.tw，或透過 Facebook 粉絲頁留言。我們通常在 1–2 個工作天內回覆。" />
   <link rel="canonical" href="${SITE_URL}/contact" />
-  <meta property="og:title" content="聯絡我們 — 相揪約騎公布欄" />
-  <meta property="og:description" content="聯絡相揪約騎公布欄（siokiu）—— TCU 台灣單車聯盟" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta property="og:title" content="聯絡我們 — 相揪約騎公布欄｜TCU 台灣單車聯盟" />
+  <meta property="og:description" content="聯絡相揪約騎公布欄（siokiu）。服務信箱：service@tsu.com.tw，或透過 Facebook 粉絲頁留言。" />
+  <meta property="og:image" content="${SITE_URL}/og-image.png" />
   <meta property="og:url" content="${SITE_URL}/contact" />
   <meta property="og:type" content="website" />
   <script type="application/ld+json">
@@ -46,12 +48,12 @@ export async function onRequestGet(): Promise<Response> {
     main { max-width: 600px; width: 100%; margin: 0 auto; padding: 48px 24px; flex: 1; }
     h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 24px; }
     .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 16px; }
-    .label { font-size: 0.75rem; color: #888; margin-bottom: 4px; }
+    .label { font-size: 0.75rem; color: #595959; margin-bottom: 4px; }
     .value { font-size: 0.95rem; color: #111; }
     a.link { color: #FC4C02; text-decoration: none; }
     a.link:hover { text-decoration: underline; }
     .back { display: inline-block; margin-top: 32px; padding: 10px 20px; background: #FC4C02; color: #fff; border-radius: 8px; text-decoration: none; font-size: 0.875rem; font-weight: 600; }
-    footer { text-align: center; padding: 24px; font-size: 0.75rem; color: #aaa; border-top: 1px solid #f0f0f0; }
+    footer { text-align: center; padding: 24px; font-size: 0.75rem; color: #666; border-top: 1px solid #f0f0f0; }
   </style>
 </head>
 <body>

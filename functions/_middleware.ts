@@ -11,6 +11,8 @@ export async function onRequest(context: EventContext<unknown, string, unknown>)
     '/sitemaps.xml',
     '/sitemap1.xml',
     '/post-sitemap.xml',
+    '/page-sitemap.xml',
+    '/news-sitemap.xml',
   ]
 
   if (假Sitemap路徑.includes(url.pathname)) {
