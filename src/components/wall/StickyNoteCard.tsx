@@ -121,7 +121,7 @@ export default function StickyNoteCard({ 活動 }: Props) {
         <div className="flex items-center gap-1.5">
           <MapPin size={12} className="shrink-0" />
           <span className="truncate">
-            {活動.meetingPoint ? `${活動.meetingPoint}（${縣市?.name}）` : 縣市?.name}
+            {活動.meetingPoint ? `${活動.meetingPoint}${縣市 ? `（${縣市.name}）` : ''}` : 縣市?.name}
           </span>
         </div>
         {(活動.distance > 0 || 活動.elevation > 0) && (
