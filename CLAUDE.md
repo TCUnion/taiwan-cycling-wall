@@ -1,5 +1,15 @@
 # 約騎公布欄 — CLAUDE.md
 
+## 會話規則
+
+每次新對話開始時，必須依序讀取：
+1. Obsidian vault `brain/SESSION_HANDOFF.md`（全域）— 確認整體狀態
+2. Obsidian vault `brain/handoffs/約騎系統.md`（本專案）— 讀取詳細進度與待辦
+
+收工時更新 `brain/handoffs/約騎系統.md` 的進度。
+
+---
+
 ## 專案概述
 
 台灣單車約騎社群平台 PWA（siokiu），以軟木佈告欄 + 便利貼風格呈現約騎活動，支援台灣 22 縣市區域篩選。全繁體中文介面。
