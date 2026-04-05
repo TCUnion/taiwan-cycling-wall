@@ -6,7 +6,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 
 export default function DataDeletionPage() {
   const navigate = useNavigate()
-  usePageMeta('資料刪除 — 相揪約騎公布欄', '了解如何刪除您在相揪約騎公布欄上的帳號與個人資料。')
+  usePageMeta('資料刪除 — 相揪約騎公布欄', '了解如何刪除您在相揪約騎公布欄上的帳號與個人資料。', 'https://siokiu.criterium.tw/data-deletion')
 
   return (
     <main className="min-h-svh bg-white">

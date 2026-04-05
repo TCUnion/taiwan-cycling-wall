@@ -6,7 +6,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 
 export default function PrivacyPage() {
   const navigate = useNavigate()
-  usePageMeta('隱私政策 — 相揪約騎公布欄', '了解相揪約騎公布欄如何收集、使用及保護您的個人資料。')
+  usePageMeta('隱私政策 — 相揪約騎公布欄', '了解相揪約騎公布欄如何收集、使用及保護您的個人資料。', 'https://siokiu.criterium.tw/privacy')
 
   return (
     <main className="min-h-svh bg-white">

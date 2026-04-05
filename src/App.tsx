@@ -19,6 +19,7 @@ const OAuthCallbackPage = lazy(() => import('./pages/OAuthCallbackPage'))
 const LiffVerifyPage = lazy(() => import('./pages/LiffVerifyPage'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
 const RoutesPage = lazy(() => import('./pages/RoutesPage'))
+const AboutPage = lazy(() => import('./pages/AboutPage'))
 
 // 載入中畫面 — 與 SplashPage 風格一致
 function Loading() {
@@ -54,6 +55,7 @@ export default function App() {
         {/* 公開頁面 */}
         <Route path="/" element={<SplashPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/data-deletion" element={<DataDeletionPage />} />
         <Route path="/auth/callback" element={<OAuthCallbackPage />} />

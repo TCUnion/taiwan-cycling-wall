@@ -11,7 +11,7 @@ export default function WallPage() {
   const 歷史數量 = 取得歷史活動().length
   const { 廣告列表 } = useAds()
 
-  usePageMeta('相揪約騎公布欄 — 找人一起騎車', '瀏覽全台北中南東約騎活動，加入車友團騎，一起探索台灣最美自行車路線。')
+  usePageMeta('相揪約騎公布欄 — 找人一起騎車', '瀏覽全台北中南東約騎活動，加入車友團騎，一起探索台灣最美自行車路線。', 'https://siokiu.criterium.tw/wall')
 
   useEffect(() => {
     載入活動()

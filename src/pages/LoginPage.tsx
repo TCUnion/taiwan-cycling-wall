@@ -24,7 +24,7 @@ export default function LoginPage() {
   const [SDK就緒, setSDK就緒] = useState({ facebook: false, google: false })
   const [錯誤訊息, set錯誤訊息] = useState('')
 
-  usePageMeta('登入 — 相揪約騎公布欄', '使用 Facebook、Google、LINE 或 Strava 帳號登入相揪約騎公布欄。')
+  usePageMeta('登入 — 相揪約騎公布欄', '使用 Facebook、Google、LINE 或 Strava 帳號登入相揪約騎公布欄。', 'https://siokiu.criterium.tw/login')
 
   // 載入各 SDK
   useEffect(() => {
