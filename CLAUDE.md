@@ -160,6 +160,22 @@ GIS 回傳的 id_token 中文欄位需用 `decodeURIComponent` + 逐位元組 `%
 - BottomNavBar 加 `touch-action: manipulation`
 - 活動詳情頁返回鍵導向 `/wall`（非 history back）
 
+## Testing
+
+框架：**Vitest** + `@testing-library/react` + `@testing-library/jest-dom`
+
+```bash
+npx vitest run   # 單次執行（CI 用）
+npx vitest       # watch 模式（開發用）
+```
+
+測試檔案放在被測模組旁邊，命名為 `*.test.ts`。
+
+目前涵蓋：
+- `src/stores/eventStore.test.ts` — 活動過期邏輯（12 小時緩衝）、便利貼顏色 / 旋轉角度 hash 確定性
+
+**注意**：`time ?? '00:00'` 的防呆僅對 `null`/`undefined` 有效，**空字串** `''` 不會觸發預設值，會產生 NaN 日期（不過期），這是刻意行為（Supabase 欄位不會回傳空字串）。
+
 ## 設計系統色彩（`src/index.css` `@theme`）
 
 | Token | 色碼 | 用途 |
