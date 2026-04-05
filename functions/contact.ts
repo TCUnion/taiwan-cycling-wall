@@ -10,12 +10,12 @@ export async function onRequestGet(): Promise<Response> {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>聯絡我們 — 相揪約騎公布欄｜TCU 台灣單車聯盟</title>
-  <meta name="description" content="聯絡相揪約騎公布欄（siokiu）。TCU 台灣單車聯盟服務信箱：service@tsu.com.tw，或透過 Facebook 粉絲頁留言。我們通常在 1–2 個工作天內回覆。" />
+  <title>聯絡相揪約騎 — 台灣單車約騎社群平台｜TCU 台灣單車聯盟</title>
+  <meta name="description" content="聯絡相揪約騎公布欄（siokiu），台灣最活躍的單車約騎社群平台。TCU 台灣單車聯盟服務信箱：service@tsu.com.tw，或透過 Facebook 粉絲頁與我們聯繫。涵蓋北中南東 22 縣市，服務台灣所有自行車愛好者。通常在 1–2 個工作天內回覆。" />
   <link rel="canonical" href="${SITE_URL}/contact" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <meta property="og:title" content="聯絡我們 — 相揪約騎公布欄｜TCU 台灣單車聯盟" />
-  <meta property="og:description" content="聯絡相揪約騎公布欄（siokiu）。服務信箱：service@tsu.com.tw，或透過 Facebook 粉絲頁留言。" />
+  <meta property="og:title" content="聯絡相揪約騎 — 台灣單車約騎社群平台｜TCU 台灣單車聯盟" />
+  <meta property="og:description" content="TCU 台灣單車聯盟服務信箱：service@tsu.com.tw，或透過 Facebook 粉絲頁聯繫。涵蓋北中南東 22 縣市單車約騎社群平台。" />
   <meta property="og:image" content="${SITE_URL}/og-image.png" />
   <meta property="og:url" content="${SITE_URL}/contact" />
   <meta property="og:type" content="website" />
