@@ -19,7 +19,6 @@ function toDbRow(user: User) {
     verified_at: user.verifiedAt ?? null,
     line_verified_user_id: user.lineVerifiedUserId ?? null,
     merged_into: user.mergedInto ?? null,
-    role: user.role ?? 'unverified',
     updated_at: new Date().toISOString(),
   }
 }
