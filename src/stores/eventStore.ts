@@ -25,6 +25,7 @@ interface EventState {
   載入活動: () => Promise<void>
   載入單一活動: (id: string) => Promise<CyclingEvent | null>
   新增活動: (event: CyclingEvent) => Promise<void>
+  批次新增活動: (events: CyclingEvent[]) => Promise<{ 成功數: number; 失敗數: number }>
   更新活動: (eventId: string, 更新: Partial<CyclingEvent>) => Promise<void>
   取得篩選後活動: () => CyclingEvent[]
   取得歷史活動: () => CyclingEvent[]
@@ -76,6 +77,8 @@ function 轉換為活動(row: Record<string, unknown>): CyclingEvent {
     tags: (row.tags as string[]) || [],
     creatorId: row.creator_id as string,
     createdAt: row.created_at as string,
+    seriesId: (row.series_id as string) || null,
+    recurrenceType: (row.recurrence_type as 'weekly' | 'monthly') || null,
   }
 }
 
@@ -103,6 +106,8 @@ function 轉換為資料列(e: CyclingEvent) {
     tags: e.tags,
     creator_id: e.creatorId,
     created_at: e.createdAt,
+    series_id: e.seriesId || null,
+    recurrence_type: e.recurrenceType || null,
   }
 }
 
@@ -147,7 +152,7 @@ export const useEventStore = create<EventState>()((set, get) => ({
     // 從 Supabase 載入
     const { data, error } = await supabase
       .from('cycling_events')
-      .select('id,title,description,county_id,region,date,time,meeting_point,meeting_point_url,cover_image,distance,elevation,pace,max_participants,strava_route_url,route_coordinates,moak_event_id,sticky_color,tags,creator_id,created_at')
+      .select('id,title,description,county_id,region,date,time,meeting_point,meeting_point_url,cover_image,distance,elevation,pace,max_participants,strava_route_url,route_coordinates,moak_event_id,sticky_color,tags,creator_id,created_at,series_id,recurrence_type')
       .eq('id', id)
       .single()
     if (error || !data) return null
@@ -164,7 +169,7 @@ export const useEventStore = create<EventState>()((set, get) => ({
     set({ 載入中: true })
     const { data, error } = await supabase
       .from('cycling_events')
-      .select('id,title,description,county_id,region,date,time,meeting_point,meeting_point_url,cover_image,distance,elevation,pace,max_participants,strava_route_url,route_coordinates,moak_event_id,sticky_color,tags,creator_id,created_at')
+      .select('id,title,description,county_id,region,date,time,meeting_point,meeting_point_url,cover_image,distance,elevation,pace,max_participants,strava_route_url,route_coordinates,moak_event_id,sticky_color,tags,creator_id,created_at,series_id,recurrence_type')
       .order('created_at', { ascending: false })
     if (!error && data) {
       set({ 活動列表: data.map(轉換為活動) })
@@ -185,6 +190,35 @@ export const useEventStore = create<EventState>()((set, get) => ({
       // 本地 store 保留原始 base64，UI 顯示不需網路
       set((s) => ({ 活動列表: [event, ...s.活動列表] }))
     }
+  },
+
+  批次新增活動: async (events) => {
+    if (events.length === 0) return { 成功數: 0, 失敗數: 0 }
+
+    // 第一筆若有 base64 圖章，上傳一次，後續共用同一 URL
+    let sharedCoverImage = events[0].coverImage
+    if (sharedCoverImage?.startsWith('data:')) {
+      const publicUrl = await 上傳圖章到Storage(sharedCoverImage, events[0].id)
+      if (!publicUrl.startsWith('data:')) sharedCoverImage = publicUrl
+    }
+
+    const rows = events.map(e => 轉換為資料列({
+      ...e,
+      coverImage: sharedCoverImage,
+    }))
+
+    const { error } = await supabase.from('cycling_events').insert(rows)
+    if (error) {
+      return { 成功數: 0, 失敗數: events.length }
+    }
+
+    // 本地 store 保留原始 base64
+    const localEvents = events.map(e => ({
+      ...e,
+      coverImage: events[0].coverImage, // 保留原始 base64
+    }))
+    set((s) => ({ 活動列表: [...localEvents, ...s.活動列表] }))
+    return { 成功數: events.length, 失敗數: 0 }
   },
 
   更新活動: async (eventId, 更新) => {

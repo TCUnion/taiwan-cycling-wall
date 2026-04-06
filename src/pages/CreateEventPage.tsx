@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ExternalLink, Bike, MapPin, Link, BookmarkPlus, Bookmark, Trash2, Save, MapPinPlus, Pencil, Check, Route, StickyNote, Map, X } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Bike, MapPin, Link, BookmarkPlus, Bookmark, Trash2, Save, MapPinPlus, Pencil, Check, Route, StickyNote, Map, X, Repeat } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { useEventStore, 取得便利貼顏色 } from '../stores/eventStore'
 import { useTemplateStore } from '../stores/templateStore'
@@ -13,6 +13,7 @@ import { 查找縣市, 縣市列表 } from '../data/counties'
 import { 產生ID } from '../utils/formatters'
 import type { CyclingEvent, RideTemplate, SavedRoute } from '../types'
 import { 淨化純文字, 淨化輸入文字, 安全URL } from '../utils/sanitize'
+import { 產生定期日期, 取得星期顯示 } from '../utils/recurrenceUtils'
 import { 取得活動上限, 計算進行中活動數 } from '../utils/roleService'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
@@ -44,7 +45,7 @@ export default function CreateEventPage() {
   const 使用者 = useAuthStore(s => s.使用者)
   const 取得目前發文身份 = useAuthStore(s => s.取得目前發文身份)
   const 目前身份 = 取得目前發文身份()
-  const { 活動列表, 新增活動, 更新活動 } = useEventStore()
+  const { 活動列表, 新增活動, 更新活動, 批次新增活動 } = useEventStore()
   const { 範本列表, 載入中, 載入範本, 新增範本, 刪除範本 } = useTemplateStore()
   const { 集合點範本列表, 載入中: 集合點載入中, 載入集合點範本, 新增集合點範本, 更新集合點範本, 刪除集合點範本 } = useSpotTemplateStore()
   const { 路線範本列表, 載入中: 路線範本載入中, 載入路線範本, 新增路線範本, 更新路線範本, 刪除路線範本 } = useRouteInfoTemplateStore()
@@ -191,8 +192,14 @@ export default function CreateEventPage() {
   const [編輯備註內容, set編輯備註內容] = useState('')
   const 篩選後範本 = 範本列表.filter(t => !範本縣市 || t.countyId === 範本縣市)
 
+  // 定期約騎
+  const [定期模式, set定期模式] = useState(false)
+  const [定期頻率, set定期頻率] = useState<'weekly' | 'monthly'>('weekly')
+  const [定期期數, set定期期數] = useState(4)
+
   const 今天 = new Date().toISOString().split('T')[0]
-  const 可提交 = routeName.trim() && date && !已達上限 && !額度檢查中
+  const 定期達上限 = 定期模式 && 額度上限 !== null && (進行中數量 + 定期期數) > 額度上限
+  const 可提交 = routeName.trim() && date && !已達上限 && !額度檢查中 && !定期達上限
 
   // 套用範本
   const 套用範本 = (t: RideTemplate) => {
@@ -288,6 +295,40 @@ export default function CreateEventPage() {
     }
 
     // 新建模式
+    if (定期模式) {
+      // 定期約騎：批次建立 N 筆活動
+      const seriesId = 產生ID()
+      const 日期列表 = 產生定期日期(date, 定期頻率, 定期期數)
+      const 批次活動: CyclingEvent[] = 日期列表.map((d, i) => {
+        const id = 產生ID()
+        return {
+          id,
+          title: `${安全標題}（第 ${i + 1} 期）`,
+          description: 各段.join('\n\n'),
+          countyId: 有效縣市,
+          region: 縣市?.region || '北部',
+          date: d, time,
+          meetingPoint: 安全集合點,
+          meetingPointUrl: 安全集合點URL,
+          distance, elevation,
+          pace: 安全配速,
+          maxParticipants,
+          stravaRouteUrl: 安全路線URL,
+          routeCoordinates: 已套用路線庫座標.length > 0 ? 已套用路線庫座標 : undefined,
+          coverImage: 選中圖章 || undefined,
+          stickyColor: 取得便利貼顏色(id),
+          tags: [],
+          creatorId: 目前身份.id,
+          createdAt: new Date().toISOString(),
+          seriesId,
+          recurrenceType: 定期頻率,
+        }
+      })
+      await 批次新增活動(批次活動)
+      navigate('/wall', { replace: true })
+      return
+    }
+
     const id = 產生ID()
     const 新活動: CyclingEvent = {
       id,
@@ -413,6 +454,75 @@ export default function CreateEventPage() {
             <Input name="ride-time" label="集合時間" type="time" value={time} onChange={e => setTime(e.target.value)} />
           </div>
         </區塊>
+
+        {/* ① 定期約騎（僅新增模式） */}
+        {!是編輯模式 && (
+          <區塊 title="定期約騎">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={定期模式}
+                onChange={e => set定期模式(e.target.checked)}
+                className="w-4 h-4 accent-strava cursor-pointer"
+              />
+              <span className="text-sm font-medium text-gray-700">啟用定期約騎</span>
+            </label>
+
+            {定期模式 && (
+              <div className="mt-3 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">頻率</label>
+                    <select
+                      name="recurrence-type"
+                      value={定期頻率}
+                      onChange={e => set定期頻率(e.target.value as 'weekly' | 'monthly')}
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-strava/30 cursor-pointer"
+                    >
+                      <option value="weekly">每週</option>
+                      <option value="monthly">每月</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">期數</label>
+                    <select
+                      name="recurrence-count"
+                      value={定期期數}
+                      onChange={e => set定期期數(Number(e.target.value))}
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-strava/30 cursor-pointer"
+                    >
+                      {Array.from({ length: 11 }, (_, i) => i + 2).map(n => (
+                        <option key={n} value={n}>{n} 期</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {date && (
+                  <div className="rounded-lg bg-gray-50 p-3">
+                    <p className="text-xs font-medium text-gray-500 mb-2">預覽日期</p>
+                    <ul className="space-y-1">
+                      {產生定期日期(date, 定期頻率, 定期期數).map((d, i) => (
+                        <li key={d} className="flex items-center gap-1.5 text-sm">
+                          <span className="text-gray-400 w-14 shrink-0">第 {i + 1} 期</span>
+                          <span className="text-gray-700">{d}</span>
+                          <span className="text-gray-400">{取得星期顯示(d)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {定期達上限 && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <Repeat size={12} />
+                    定期 {定期期數} 期超過活動配額上限（目前進行中 {進行中數量} 筆，上限 {額度上限} 筆）
+                  </p>
+                )}
+              </div>
+            )}
+          </區塊>
+        )}
 
         {/* ② 發起人 + 活動圖章（左右排列，不可編輯） */}
         <div className="flex gap-3">

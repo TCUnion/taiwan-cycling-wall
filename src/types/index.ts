@@ -39,6 +39,8 @@ export interface CyclingEvent {
   tags: string[]
   creatorId: string
   createdAt: string
+  seriesId?: string | null        // 定期約騎系列 ID（同系列共用）
+  recurrenceType?: 'weekly' | 'monthly' | null  // 定期頻率
 }
 
 // 使用者
