@@ -119,11 +119,10 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   }
 
   // 爬蟲：注入動態 OG meta
-  const anonKey = context.env.SUPABASE_ANON_KEY
-  const supabaseUrl = context.env.SUPABASE_URL
+  const anonKey = context.env.SUPABASE_ANON_KEY?.trim()
+  const supabaseUrl = context.env.SUPABASE_URL?.trim()
   if (!anonKey || !supabaseUrl) {
-    // 暫時：回傳診斷資訊
-    return new Response(`missing env: anonKey=${!!anonKey} supabaseUrl=${!!supabaseUrl}`, { status: 200 })
+    return context.next()
   }
 
   // 從 URL 中提取活動 ID（/event/{id} 或 /event/{id}/share）
@@ -138,7 +137,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   try {
     const 活動 = await 取得活動(eventId, anonKey, supabaseUrl)
     if (!活動) {
-      return new Response(`no event found: id=${eventId} url=${supabaseUrl}`, { status: 200 })
+      return context.next()
     }
 
     const html = 產生OG_HTML(活動)
@@ -148,7 +147,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         'Cache-Control': 'public, max-age=300',
       },
     })
-  } catch (err) {
-    return new Response(`error: ${String(err)}`, { status: 200 })
+  } catch {
+    return context.next()
   }
 }
