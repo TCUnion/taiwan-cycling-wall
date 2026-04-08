@@ -60,7 +60,7 @@ export default defineConfig({
           },
           {
             // Supabase API（網路優先）
-            urlPattern: /^https:\/\/db\.criterium\.tw\/.*/i,
+            urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-api',

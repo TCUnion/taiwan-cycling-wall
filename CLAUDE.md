@@ -2,11 +2,9 @@
 
 ## 會話規則
 
-每次新對話開始時，必須依序讀取：
-1. Obsidian vault `brain/SESSION_HANDOFF.md`（全域）— 確認整體狀態
-2. Obsidian vault `brain/handoffs/約騎系統.md`（本專案）— 讀取詳細進度與待辦
+新對話開始時讀取 `/Volumes/OWC 2T/ClaudeCode/MyObsidian/brain/handoffs/約騎系統.md`（先看「立即上手」即可上工）。
 
-收工時更新 `brain/handoffs/約騎系統.md` 的進度。
+收工時更新同一份 handoff，使用 Read/Write 工具直接操作，不走 obsidian MCP。
 
 ---
 
@@ -23,7 +21,7 @@
 - **Zustand** + localStorage persist / **React Router v7**
 - **Lucide React**（圖示 — **禁止使用 emoji 作為 UI icon**）
 - **Leaflet** + OSRM（路線規劃，無需 API Key）
-- **Supabase** 自架（`db.criterium.tw`）
+- **Supabase** Cloud（`jxubndwcralkrbunxokf.supabase.co`，Seoul 區）
 - **FB SDK v21** / **Google GIS** / **LINE Login + LIFF** / **Strava → n8n webhook**
 - **date-fns** / **vite-plugin-pwa**
 
@@ -144,7 +142,7 @@ GIS 回傳的 id_token 中文欄位需用 `decodeURIComponent` + 逐位元組 `%
 | `VITE_STRAVA_CLIENT_ID` | Strava App Client ID |
 | `VITE_STRAVA_CALLBACK_URL` | Strava token 交換用的 n8n webhook URL |
 | `VITE_OAUTH_REDIRECT_URI` | LINE / Strava OAuth 回調 URI |
-| `VITE_SUPABASE_URL` | `https://db.criterium.tw` |
+| `VITE_SUPABASE_URL` | `https://jxubndwcralkrbunxokf.supabase.co` |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon key（前端，搭配 RLS） |
 | `VITE_LIFF_ID` | LINE LIFF App ID（TCU 認證） |
 | `SUPABASE_ANON_KEY` | 同上，供 Cloudflare Pages Function 使用（無 VITE_ 前綴） |

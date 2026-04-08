@@ -3,9 +3,9 @@
 
 interface Env {
   SUPABASE_ANON_KEY: string
+  SUPABASE_URL: string
 }
 
-const SUPABASE_URL = 'https://db.criterium.tw'
 const SITE_URL = 'https://siokiu.criterium.tw'
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`
 
@@ -40,8 +40,8 @@ function escapeHtml(text: string): string {
 }
 
 // 從 Supabase REST API 取得活動資料
-async function 取得活動(id: string, anonKey: string) {
-  const url = `${SUPABASE_URL}/rest/v1/cycling_events?id=eq.${encodeURIComponent(id)}&select=*&limit=1`
+async function 取得活動(id: string, anonKey: string, supabaseUrl: string) {
+  const url = `${supabaseUrl}/rest/v1/cycling_events?id=eq.${encodeURIComponent(id)}&select=*&limit=1`
   const res = await fetch(url, {
     headers: {
       'apikey': anonKey,
@@ -120,7 +120,8 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
   // 爬蟲：注入動態 OG meta
   const anonKey = context.env.SUPABASE_ANON_KEY
-  if (!anonKey) {
+  const supabaseUrl = context.env.SUPABASE_URL
+  if (!anonKey || !supabaseUrl) {
     return context.next()
   }
 
@@ -133,7 +134,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     return context.next()
   }
 
-  const 活動 = await 取得活動(eventId, anonKey)
+  const 活動 = await 取得活動(eventId, anonKey, supabaseUrl)
   if (!活動) {
     return context.next()
   }
