@@ -138,7 +138,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   try {
     const 活動 = await 取得活動(eventId, anonKey, supabaseUrl)
     if (!活動) {
-      return context.next()
+      return new Response(`no event found: id=${eventId} url=${supabaseUrl}`, { status: 200 })
     }
 
     const html = 產生OG_HTML(活動)
@@ -148,7 +148,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         'Cache-Control': 'public, max-age=300',
       },
     })
-  } catch {
-    return context.next()
+  } catch (err) {
+    return new Response(`error: ${String(err)}`, { status: 200 })
   }
 }
