@@ -134,16 +134,20 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     return context.next()
   }
 
-  const 活動 = await 取得活動(eventId, anonKey, supabaseUrl)
-  if (!活動) {
+  try {
+    const 活動 = await 取得活動(eventId, anonKey, supabaseUrl)
+    if (!活動) {
+      return context.next()
+    }
+
+    const html = 產生OG_HTML(活動)
+    return new Response(html, {
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'public, max-age=300',
+      },
+    })
+  } catch {
     return context.next()
   }
-
-  const html = 產生OG_HTML(活動)
-  return new Response(html, {
-    headers: {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'public, max-age=300',
-    },
-  })
 }
