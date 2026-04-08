@@ -122,7 +122,8 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   const anonKey = context.env.SUPABASE_ANON_KEY
   const supabaseUrl = context.env.SUPABASE_URL
   if (!anonKey || !supabaseUrl) {
-    return context.next()
+    // 暫時：回傳診斷資訊
+    return new Response(`missing env: anonKey=${!!anonKey} supabaseUrl=${!!supabaseUrl}`, { status: 200 })
   }
 
   // 從 URL 中提取活動 ID（/event/{id} 或 /event/{id}/share）
