@@ -150,10 +150,13 @@ export default function OAuthCallbackPage() {
         const 是StravaState = !!state?.startsWith('strava-')
 
         if (code && !是StravaState && !已交換Code) {
-          已交換Code = true
-          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
-          if (exchangeError) {
-            throw new Error(exchangeError.message || 'OAuth code 交換 session 失敗')
+          const { data: 現有Session資料 } = await supabase.auth.getSession()
+          if (!現有Session資料.session) {
+            已交換Code = true
+            const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+            if (exchangeError) {
+              throw new Error(exchangeError.message || 'OAuth code 交換 session 失敗')
+            }
           }
         }
 
