@@ -38,6 +38,7 @@ export interface CyclingEvent {
   stickyColor: StickyColor
   tags: string[]
   creatorId: string
+  creatorAuthUserId?: string
   createdAt: string
   seriesId?: string | null        // 定期約騎系列 ID（同系列共用）
   recurrenceType?: 'weekly' | 'monthly' | null  // 定期頻率
@@ -46,6 +47,7 @@ export interface CyclingEvent {
 // 使用者
 export interface User {
   id: string
+  authUserId?: string
   name: string
   avatar: string      // 表情符號或網址
   countyId: string
@@ -59,6 +61,8 @@ export interface User {
   socialAvatar?: string          // 社群登入預設頭像 URL（FB/Google/LINE/Strava）
   authProvider?: AuthProvider    // 登入來源
   email?: string                 // Google 登入時取得
+  googleSub?: string             // Supabase Google OAuth subject
+  lineUserId?: string            // Supabase LINE OAuth subject
   stravaProfile?: StravaProfile  // Strava 登入時取得
   verifiedAt?: string            // TCU 認證時間（ISO 字串）
   lineVerifiedUserId?: string    // 認證時使用的 LINE User ID
@@ -78,6 +82,7 @@ export interface UserRole {
 export interface UserVerification {
   id: string
   userId: string
+  authUserId?: string
   lineUserId?: string
   token: string
   status: 'pending' | 'verified' | 'expired'
@@ -136,6 +141,7 @@ export interface RideTemplate {
   maxParticipants: number
   notes: string[]        // 注意事項
   creatorId: string
+  creatorAuthUserId?: string
   creatorName?: string   // 建立者名稱（方便顯示）
 }
 
@@ -154,6 +160,7 @@ export interface SavedRoute {
   source: RouteSource
   gpxFileName?: string
   creatorId: string
+  creatorAuthUserId?: string
   isPublic: boolean
   createdAt: string
   updatedAt: string
@@ -211,6 +218,7 @@ export interface SpotTemplate {
   url: string         // Google Maps 連結
   countyId: string    // 縣市
   creatorId: string   // 建立者
+  creatorAuthUserId?: string
 }
 
 // 路線與騎乘資訊範本
@@ -225,6 +233,7 @@ export interface RouteInfoTemplate {
   pace: string           // 配速/難度
   maxParticipants: number
   creatorId: string
+  creatorAuthUserId?: string
 }
 
 // 注意事項範本
@@ -233,6 +242,7 @@ export interface NotesTemplate {
   name: string        // 範本名稱
   notes: string       // 注意事項內容（多行文字）
   creatorId: string
+  creatorAuthUserId?: string
 }
 
 // 經典路線模板
