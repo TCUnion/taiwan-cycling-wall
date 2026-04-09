@@ -1,9 +1,31 @@
+import { execSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+const packageJson = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf-8')
+) as { version?: string }
+
+const appVersion = packageJson.version ?? '0.0.0'
+
+const commitSha = process.env.CF_PAGES_COMMIT_SHA
+  ?? process.env.GITHUB_SHA
+  ?? (() => {
+    try {
+      return execSync('git rev-parse --short HEAD', { encoding: 'utf-8' }).trim()
+    } catch {
+      return 'dev'
+    }
+  })()
+
 export default defineConfig({
+  define: {
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion),
+    'import.meta.env.VITE_COMMIT_SHA': JSON.stringify(commitSha),
+  },
   build: {
     rollupOptions: {
       output: {
