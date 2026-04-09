@@ -81,6 +81,8 @@ export default function OAuthCallbackPage() {
   const Strava登入 = useAuthStore(s => s.Strava登入)
 
   useEffect(() => {
+    let 已交換Code = false
+
     const 處理GoogleSession登入 = async (authUser: {
       id: string
       email?: string | null
@@ -145,6 +147,16 @@ export default function OAuthCallbackPage() {
       }
 
       try {
+        const 是StravaState = !!state?.startsWith('strava-')
+
+        if (code && !是StravaState && !已交換Code) {
+          已交換Code = true
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+          if (exchangeError) {
+            throw new Error(exchangeError.message || 'OAuth code 交換 session 失敗')
+          }
+        }
+
         if (provider === 'google') {
           const [{ data: sessionData, error: sessionError }, { data: userData, error: userError }] = await Promise.all([
             supabase.auth.getSession(),
