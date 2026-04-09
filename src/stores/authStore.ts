@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { User, PageIdentity, StravaProfile } from '../types'
 import { 模擬使用者 } from '../data/mockUsers'
+import { supabase } from '../utils/supabase'
 import { 取得使用者, upsert使用者, 更新使用者欄位, 依Email查找帳號, 合併使用者 } from '../utils/userService'
 
 // 待合併帳號資訊（用於 Modal 顯示）
@@ -19,8 +20,8 @@ interface AuthState {
   待合併帳號: 待合併帳號資訊 | null
   登入: (userId: string) => void
   FB登入: (fbId: string, name: string, pictureUrl: string, countyId?: string, email?: string) => void
-  Google登入: (sub: string, name: string, pictureUrl: string, email: string) => void
-  LINE登入: (userId: string, name: string, pictureUrl: string) => void
+  Google登入: (sub: string, name: string, pictureUrl: string, email: string, authUserId?: string) => void
+  LINE登入: (userId: string, name: string, pictureUrl: string, authUserId?: string) => void
   Strava登入: (athleteId: number, name: string, pictureUrl: string, city: string, stravaProfile: StravaProfile) => void
   註冊: (name: string, avatar: string, countyId: string) => void
   登出: () => void
@@ -76,11 +77,16 @@ async function 嘗試合併遠端資料(本地使用者: User): Promise<User> {
     if (遠端) {
       return {
         ...本地使用者,
+        authUserId: 本地使用者.authUserId ?? 遠端.authUserId,
         // 遠端有值的欄位優先（跨裝置持久化的部分）
         // 頭像：本地（社群登入最新值）優先，遠端僅作備用
         avatar: 本地使用者.avatar || 遠端.avatar || '',
         socialAvatar: 本地使用者.socialAvatar || 遠端.socialAvatar,
         countyId: 本地使用者.countyId || 遠端.countyId || '',
+        authProvider: 本地使用者.authProvider ?? 遠端.authProvider,
+        email: 本地使用者.email ?? 遠端.email,
+        googleSub: 本地使用者.googleSub ?? 遠端.googleSub,
+        lineUserId: 本地使用者.lineUserId ?? 遠端.lineUserId,
         stats: 遠端.stats ?? 本地使用者.stats,
         managedPages: 遠端.managedPages ?? 本地使用者.managedPages,
         stampImage: 遠端.stampImage || 本地使用者.stampImage,
@@ -167,11 +173,11 @@ export const useAuthStore = create<AuthState>()(
           背景偵測合併(email, id, set)
         })
       },
-      Google登入: (sub: string, name: string, pictureUrl: string, email: string) => {
+      Google登入: (sub: string, name: string, pictureUrl: string, email: string, authUserId?: string) => {
         const id = `google-${sub}`
         const 既有使用者 = get().所有使用者.find(u => u.id === id)
         if (既有使用者) {
-          const 更新後 = { ...既有使用者, avatar: pictureUrl, socialAvatar: pictureUrl, email }
+          const 更新後 = { ...既有使用者, authUserId: authUserId ?? 既有使用者.authUserId, googleSub: sub, avatar: pictureUrl, socialAvatar: pictureUrl, email }
           set((state) => ({
             使用者: 更新後,
             已登入: true,
@@ -190,6 +196,7 @@ export const useAuthStore = create<AuthState>()(
         }
         const 新使用者: User = {
           id,
+          authUserId,
           name,
           avatar: pictureUrl,
           socialAvatar: pictureUrl,
@@ -199,6 +206,7 @@ export const useAuthStore = create<AuthState>()(
           rideHistory: [],
           authProvider: 'google',
           email,
+          googleSub: sub,
         }
         set((state) => ({
           所有使用者: [...state.所有使用者, 新使用者],
@@ -215,11 +223,11 @@ export const useAuthStore = create<AuthState>()(
           背景偵測合併(email, id, set)
         })
       },
-      LINE登入: (userId: string, name: string, pictureUrl: string) => {
+      LINE登入: (userId: string, name: string, pictureUrl: string, authUserId?: string) => {
         const id = `line-${userId}`
         const 既有使用者 = get().所有使用者.find(u => u.id === id)
         if (既有使用者) {
-          const 更新後 = { ...既有使用者, avatar: pictureUrl, socialAvatar: pictureUrl }
+          const 更新後 = { ...既有使用者, authUserId: authUserId ?? 既有使用者.authUserId, lineUserId: userId, avatar: pictureUrl, socialAvatar: pictureUrl }
           set((state) => ({
             使用者: 更新後,
             已登入: true,
@@ -236,6 +244,7 @@ export const useAuthStore = create<AuthState>()(
         }
         const 新使用者: User = {
           id,
+          authUserId,
           name,
           avatar: pictureUrl,
           socialAvatar: pictureUrl,
@@ -244,6 +253,7 @@ export const useAuthStore = create<AuthState>()(
           achievements: [],
           rideHistory: [],
           authProvider: 'line',
+          lineUserId: userId,
         }
         set((state) => ({
           所有使用者: [...state.所有使用者, 新使用者],
@@ -320,7 +330,10 @@ export const useAuthStore = create<AuthState>()(
         }))
         背景同步(新使用者)
       },
-      登出: () => set({ 使用者: null, 已登入: false, 目前身份: 'personal', 使用中的粉絲頁: null, 待合併帳號: null }),
+      登出: () => {
+        supabase.auth.signOut().catch(() => {})
+        set({ 使用者: null, 已登入: false, 目前身份: 'personal', 使用中的粉絲頁: null, 待合併帳號: null })
+      },
       更新使用者: (更新) => set((state) => {
         if (!state.使用者) return {}
         const 更新後使用者 = { ...state.使用者, ...更新 }

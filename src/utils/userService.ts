@@ -5,11 +5,15 @@ import type { User } from '../types'
 function toDbRow(user: User) {
   return {
     id: user.id,
+    auth_user_id: user.authUserId ?? null,
+    legacy_user_id: user.id,
     name: user.name,
     avatar: user.avatar,
     county_id: user.countyId,
     auth_provider: user.authProvider ?? null,
     email: user.email ?? null,
+    google_sub: user.googleSub ?? null,
+    line_user_id: user.lineUserId ?? null,
     strava_profile: user.stravaProfile ?? null,
     managed_pages: user.managedPages ?? [],
     stamp_image: user.stampImage ?? null,
@@ -27,11 +31,14 @@ function toDbRow(user: User) {
 function fromDbRow(row: Record<string, unknown>): Partial<User> {
   return {
     id: row.id as string,
+    authUserId: row.auth_user_id as string | undefined,
     name: row.name as string,
     avatar: (row.avatar as string) ?? '',
     countyId: (row.county_id as string) ?? '',
     authProvider: row.auth_provider as User['authProvider'],
     email: row.email as string | undefined,
+    googleSub: row.google_sub as string | undefined,
+    lineUserId: row.line_user_id as string | undefined,
     stravaProfile: row.strava_profile as User['stravaProfile'],
     managedPages: (row.managed_pages as User['managedPages']) ?? [],
     stampImage: row.stamp_image as string | undefined,
@@ -40,7 +47,9 @@ function fromDbRow(row: Record<string, unknown>): Partial<User> {
       try {
         const arr = JSON.parse((row.stamp_images as string) || '[]')
         if (Array.isArray(arr) && arr.length > 0) return arr as string[]
-      } catch {}
+      } catch {
+        // ignore invalid legacy JSON payloads
+      }
       const single = row.stamp_image as string | undefined
       return single ? [single] : []
     })(),
@@ -57,7 +66,7 @@ function fromDbRow(row: Record<string, unknown>): Partial<User> {
 export async function 取得使用者(id: string): Promise<Partial<User> | null> {
   const { data, error } = await supabase
     .from('users')
-    .select('id,name,avatar,county_id,auth_provider,email,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
+    .select('id,auth_user_id,name,avatar,county_id,auth_provider,email,google_sub,line_user_id,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
     .eq('id', id)
     .single()
 
@@ -76,6 +85,157 @@ export async function upsert使用者(user: User): Promise<void> {
   }
 }
 
+/** Google Supabase Auth 登入後，將 auth.users.id 綁回既有 public.users */
+export async function 綁定GoogleAuth使用者(params: {
+  authUserId: string
+  googleSub: string
+  email?: string
+  name: string
+  avatar?: string
+}): Promise<Partial<User> | null> {
+  const email = params.email?.toLowerCase().trim()
+
+  let row: Record<string, unknown> | null = null
+
+  const { data: byGoogleSub } = await supabase
+    .from('users')
+    .select('id,auth_user_id,name,avatar,county_id,auth_provider,email,google_sub,line_user_id,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
+    .eq('google_sub', params.googleSub)
+    .maybeSingle()
+
+  row = (byGoogleSub as Record<string, unknown> | null) ?? null
+
+  if (!row && email) {
+    const { data: byEmail } = await supabase
+      .from('users')
+      .select('id,auth_user_id,name,avatar,county_id,auth_provider,email,google_sub,line_user_id,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
+      .eq('email', email)
+      .maybeSingle()
+    row = (byEmail as Record<string, unknown> | null) ?? null
+  }
+
+  if (!row) {
+    const newRow = {
+      id: `google-${params.googleSub}`,
+      auth_user_id: params.authUserId,
+      legacy_user_id: `google-${params.googleSub}`,
+      name: params.name,
+      avatar: params.avatar ?? '',
+      social_avatar: params.avatar ?? null,
+      auth_provider: 'google',
+      email: email ?? null,
+      google_sub: params.googleSub,
+      updated_at: new Date().toISOString(),
+    }
+
+    const { data, error } = await supabase
+      .from('users')
+      .upsert(newRow, { onConflict: 'id' })
+      .select('id,auth_user_id,name,avatar,county_id,auth_provider,email,google_sub,line_user_id,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
+      .single()
+
+    if (error || !data) {
+      console.warn('[Supabase] 綁定 Google Auth 使用者失敗:', error?.message)
+      return null
+    }
+
+    return fromDbRow(data)
+  }
+
+  const updates = {
+    auth_user_id: params.authUserId,
+    auth_provider: 'google',
+    email: email ?? ((row.email as string | undefined) ?? null),
+    google_sub: params.googleSub,
+    name: params.name || (row.name as string) || '',
+    avatar: params.avatar ?? ((row.avatar as string | undefined) ?? ''),
+    social_avatar: params.avatar ?? ((row.social_avatar as string | undefined) ?? null),
+    updated_at: new Date().toISOString(),
+  }
+
+  const { data, error } = await supabase
+    .from('users')
+    .update(updates)
+    .eq('id', row.id as string)
+    .select('id,auth_user_id,name,avatar,county_id,auth_provider,email,google_sub,line_user_id,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
+    .single()
+
+  if (error || !data) {
+    console.warn('[Supabase] 更新 Google Auth 綁定失敗:', error?.message)
+    return row ? fromDbRow(row) : null
+  }
+
+  return fromDbRow(data)
+}
+
+export async function 綁定LINEAuth使用者(params: {
+  authUserId: string
+  lineUserId: string
+  name: string
+  avatar?: string
+}): Promise<Partial<User> | null> {
+  let row: Record<string, unknown> | null = null
+
+  const { data: byLineUserId } = await supabase
+    .from('users')
+    .select('id,auth_user_id,name,avatar,county_id,auth_provider,email,google_sub,line_user_id,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
+    .eq('line_user_id', params.lineUserId)
+    .maybeSingle()
+
+  row = (byLineUserId as Record<string, unknown> | null) ?? null
+
+  if (!row) {
+    const newRow = {
+      id: `line-${params.lineUserId}`,
+      auth_user_id: params.authUserId,
+      legacy_user_id: `line-${params.lineUserId}`,
+      name: params.name,
+      avatar: params.avatar ?? '',
+      social_avatar: params.avatar ?? null,
+      auth_provider: 'line',
+      line_user_id: params.lineUserId,
+      updated_at: new Date().toISOString(),
+    }
+
+    const { data, error } = await supabase
+      .from('users')
+      .upsert(newRow, { onConflict: 'id' })
+      .select('id,auth_user_id,name,avatar,county_id,auth_provider,email,google_sub,line_user_id,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
+      .single()
+
+    if (error || !data) {
+      console.warn('[Supabase] 綁定 LINE Auth 使用者失敗:', error?.message)
+      return null
+    }
+
+    return fromDbRow(data)
+  }
+
+  const updates = {
+    auth_user_id: params.authUserId,
+    auth_provider: 'line',
+    line_user_id: params.lineUserId,
+    name: params.name || (row.name as string) || '',
+    avatar: params.avatar ?? ((row.avatar as string | undefined) ?? ''),
+    social_avatar: params.avatar ?? ((row.social_avatar as string | undefined) ?? null),
+    updated_at: new Date().toISOString(),
+  }
+
+  const { data, error } = await supabase
+    .from('users')
+    .update(updates)
+    .eq('id', row.id as string)
+    .select('id,auth_user_id,name,avatar,county_id,auth_provider,email,google_sub,line_user_id,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
+    .single()
+
+  if (error || !data) {
+    console.warn('[Supabase] 更新 LINE Auth 綁定失敗:', error?.message)
+    return row ? fromDbRow(row) : null
+  }
+
+  return fromDbRow(data)
+}
+
 /** 更新使用者部分欄位 */
 export async function 更新使用者欄位(
   id: string,
@@ -87,6 +247,8 @@ export async function 更新使用者欄位(
   if (fields.avatar !== undefined) dbFields.avatar = fields.avatar
   if (fields.countyId !== undefined) dbFields.county_id = fields.countyId
   if (fields.email !== undefined) dbFields.email = fields.email
+  if (fields.googleSub !== undefined) dbFields.google_sub = fields.googleSub
+  if (fields.lineUserId !== undefined) dbFields.line_user_id = fields.lineUserId
   if (fields.stravaProfile !== undefined) dbFields.strava_profile = fields.stravaProfile
   if (fields.managedPages !== undefined) dbFields.managed_pages = fields.managedPages
   if (fields.stampImage !== undefined) dbFields.stamp_image = fields.stampImage
@@ -97,6 +259,7 @@ export async function 更新使用者欄位(
   if (fields.lineVerifiedUserId !== undefined) dbFields.line_verified_user_id = fields.lineVerifiedUserId
   if (fields.mergedInto !== undefined) dbFields.merged_into = fields.mergedInto
   if (fields.role !== undefined) dbFields.role = fields.role
+  if (fields.authUserId !== undefined) dbFields.auth_user_id = fields.authUserId
 
   const { error } = await supabase
     .from('users')
@@ -113,7 +276,7 @@ export async function 依Email查找帳號(email: string, 排除Id?: string): Pr
   if (!email) return []
   let query = supabase
     .from('users')
-    .select('id,name,avatar,county_id,auth_provider,email,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
+    .select('id,auth_user_id,name,avatar,county_id,auth_provider,email,google_sub,line_user_id,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
     .eq('email', email.toLowerCase().trim())
     .is('merged_into', null)
 
