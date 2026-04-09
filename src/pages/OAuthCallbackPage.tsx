@@ -10,6 +10,37 @@ import { 處理Strava回調 } from '../utils/strava'
 import { 淨化純文字 } from '../utils/sanitize'
 import { 綁定GoogleAuth使用者, 綁定LINEAuth使用者 } from '../utils/userService'
 
+function 取得Google登入資料(authUser: {
+  id: string
+  email?: string | null
+  user_metadata?: Record<string, unknown>
+  identities?: Array<{ provider?: string; identity_data?: Record<string, unknown> }>
+}) {
+  const metadata = authUser.user_metadata as Record<string, unknown> | undefined
+  const identities = authUser.identities ?? []
+  const googleIdentity = identities.find(identity => identity.provider === 'google')
+
+  if (!googleIdentity && !metadata?.sub && !metadata?.provider_id && !authUser.email) {
+    return null
+  }
+
+  return {
+    googleSub: (
+      googleIdentity?.identity_data?.sub
+      ?? metadata?.sub
+      ?? metadata?.provider_id
+      ?? authUser.id
+    ) as string,
+    name: (
+      metadata?.full_name
+      ?? metadata?.name
+      ?? (authUser.email ? authUser.email.split('@')[0] : 'Google 使用者')
+    ) as string,
+    picture: (metadata?.avatar_url ?? metadata?.picture ?? '') as string,
+    email: authUser.email ?? (metadata?.email as string | undefined) ?? '',
+  }
+}
+
 function 取得LINE登入資料(authUser: {
   id: string
   email?: string | null
@@ -50,6 +81,58 @@ export default function OAuthCallbackPage() {
   const Strava登入 = useAuthStore(s => s.Strava登入)
 
   useEffect(() => {
+    const 處理GoogleSession登入 = async (authUser: {
+      id: string
+      email?: string | null
+      user_metadata?: Record<string, unknown>
+      identities?: Array<{ provider?: string; identity_data?: Record<string, unknown> }>
+    }) => {
+      const google資料 = 取得Google登入資料(authUser)
+
+      if (!google資料) {
+        throw new Error('找不到 Google 身分資料，請重新登入')
+      }
+
+      await 綁定GoogleAuth使用者({
+        authUserId: authUser.id,
+        googleSub: google資料.googleSub,
+        email: google資料.email,
+        name: google資料.name,
+        avatar: google資料.picture,
+      })
+
+      Google登入(google資料.googleSub, google資料.name, google資料.picture, google資料.email, authUser.id)
+      navigate('/wall', { replace: true })
+    }
+
+    const 處理LINESession登入 = async (authUser: {
+      id: string
+      email?: string | null
+      user_metadata?: Record<string, unknown>
+      app_metadata?: Record<string, unknown>
+      identities?: Array<{ provider?: string; identity_data?: Record<string, unknown> }>
+    }) => {
+      const line資料 = 取得LINE登入資料(authUser)
+
+      if (!line資料) {
+        throw new Error('找不到 LINE 身分資料，請重新登入')
+      }
+
+      const 綁定結果 = await 綁定LINEAuth使用者({
+        authUserId: authUser.id,
+        lineUserId: line資料.lineUserId,
+        name: line資料.name,
+        avatar: line資料.picture,
+      })
+
+      if (!綁定結果?.authUserId) {
+        throw new Error(`LINE 帳號綁定失敗：public.users 未寫入 auth_user_id（line_user_id=${line資料.lineUserId}）`)
+      }
+
+      LINE登入(line資料.lineUserId, line資料.name, line資料.picture, authUser.id)
+      navigate('/wall', { replace: true })
+    }
+
     const 處理回調 = async () => {
       const code = searchParams.get('code')
       const state = searchParams.get('state')
@@ -76,34 +159,9 @@ export default function OAuthCallbackPage() {
             throw new Error('找不到 Google 登入 session，請重新登入')
           }
 
-          const authUser = userData.user
-          const metadata = authUser.user_metadata as Record<string, unknown> | undefined
-          const identities = ((authUser as unknown as { identities?: Array<{ provider?: string; identity_data?: Record<string, unknown> }> }).identities) ?? []
-          const googleIdentity = identities.find(identity => identity.provider === 'google')
-          const googleSub = (
-            googleIdentity?.identity_data?.sub
-            ?? metadata?.sub
-            ?? metadata?.provider_id
-            ?? authUser.id
-          ) as string
-          const name = (
-            metadata?.full_name
-            ?? metadata?.name
-            ?? (authUser.email ? authUser.email.split('@')[0] : 'Google 使用者')
-          ) as string
-          const picture = (metadata?.avatar_url ?? metadata?.picture ?? '') as string
-          const email = authUser.email ?? (metadata?.email as string | undefined) ?? ''
-
-          await 綁定GoogleAuth使用者({
-            authUserId: authUser.id,
-            googleSub,
-            email,
-            name,
-            avatar: picture,
+          await 處理GoogleSession登入(userData.user as typeof userData.user & {
+            identities?: Array<{ provider?: string; identity_data?: Record<string, unknown> }>
           })
-
-          Google登入(googleSub, name, picture, email, authUser.id)
-          navigate('/wall', { replace: true })
           return
         }
 
@@ -121,30 +179,35 @@ export default function OAuthCallbackPage() {
             throw new Error('找不到 LINE 登入 session，請重新登入')
           }
 
-          const authUser = userData.user
-          const line資料 = 取得LINE登入資料(authUser as typeof authUser & {
+          await 處理LINESession登入(userData.user as typeof userData.user & {
             app_metadata?: Record<string, unknown>
             identities?: Array<{ provider?: string; identity_data?: Record<string, unknown> }>
           })
-
-          if (!line資料) {
-            throw new Error('找不到 LINE 身分資料，請重新登入')
-          }
-
-          const 綁定結果 = await 綁定LINEAuth使用者({
-            authUserId: authUser.id,
-            lineUserId: line資料.lineUserId,
-            name: line資料.name,
-            avatar: line資料.picture,
-          })
-
-          if (!綁定結果?.authUserId) {
-            throw new Error(`LINE 帳號綁定失敗：public.users 未寫入 auth_user_id（line_user_id=${line資料.lineUserId}）`)
-          }
-
-          LINE登入(line資料.lineUserId, line資料.name, line資料.picture, authUser.id)
-          navigate('/wall', { replace: true })
           return
+        }
+
+        const [{ data: sessionData }, { data: userData }] = await Promise.all([
+          supabase.auth.getSession(),
+          supabase.auth.getUser(),
+        ])
+
+        if (sessionData.session && userData.user) {
+          const authUser = userData.user as typeof userData.user & {
+            app_metadata?: Record<string, unknown>
+            identities?: Array<{ provider?: string; identity_data?: Record<string, unknown> }>
+          }
+
+          const line資料 = 取得LINE登入資料(authUser)
+          if (line資料) {
+            await 處理LINESession登入(authUser)
+            return
+          }
+
+          const google資料 = 取得Google登入資料(authUser)
+          if (google資料) {
+            await 處理GoogleSession登入(authUser)
+            return
+          }
         }
 
         if (!code || !state) {
