@@ -5,14 +5,47 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
-import { 處理LINE回調 } from '../utils/line'
+import { supabase } from '../utils/supabase'
 import { 處理Strava回調 } from '../utils/strava'
 import { 淨化純文字 } from '../utils/sanitize'
+import { 綁定GoogleAuth使用者, 綁定LINEAuth使用者 } from '../utils/userService'
+
+function 取得LINE登入資料(authUser: {
+  id: string
+  email?: string | null
+  user_metadata?: Record<string, unknown>
+  app_metadata?: Record<string, unknown>
+  identities?: Array<{ provider?: string; identity_data?: Record<string, unknown> }>
+}) {
+  const metadata = authUser.user_metadata as Record<string, unknown> | undefined
+  const appMetadata = authUser.app_metadata as Record<string, unknown> | undefined
+  const identities = authUser.identities ?? []
+  const lineIdentity = identities.find(identity => identity.provider?.includes('line'))
+  const 是LINEProvider = lineIdentity || String(appMetadata?.provider ?? '').includes('line')
+
+  if (!是LINEProvider) return null
+
+  return {
+    lineUserId: (
+      lineIdentity?.identity_data?.sub
+      ?? metadata?.sub
+      ?? metadata?.provider_id
+      ?? authUser.id
+    ) as string,
+    name: (
+      metadata?.full_name
+      ?? metadata?.name
+      ?? 'LINE 使用者'
+    ) as string,
+    picture: (metadata?.avatar_url ?? metadata?.picture ?? '') as string,
+  }
+}
 
 export default function OAuthCallbackPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [錯誤訊息, set錯誤訊息] = useState('')
+  const Google登入 = useAuthStore(s => s.Google登入)
   const LINE登入 = useAuthStore(s => s.LINE登入)
   const Strava登入 = useAuthStore(s => s.Strava登入)
 
@@ -21,27 +54,108 @@ export default function OAuthCallbackPage() {
       const code = searchParams.get('code')
       const state = searchParams.get('state')
       const error = searchParams.get('error')
+      const provider = searchParams.get('provider')
 
       if (error) {
         set錯誤訊息(`登入取消或失敗：${淨化純文字(error)}`)
         return
       }
 
-      if (!code || !state) {
-        set錯誤訊息('缺少必要的登入參數')
-        return
-      }
-
       try {
+        if (provider === 'google') {
+          const [{ data: sessionData, error: sessionError }, { data: userData, error: userError }] = await Promise.all([
+            supabase.auth.getSession(),
+            supabase.auth.getUser(),
+          ])
+
+          if (sessionError || userError) {
+            throw new Error(sessionError?.message || userError?.message || 'Google 登入處理失敗')
+          }
+
+          if (!sessionData.session || !userData.user) {
+            throw new Error('找不到 Google 登入 session，請重新登入')
+          }
+
+          const authUser = userData.user
+          const metadata = authUser.user_metadata as Record<string, unknown> | undefined
+          const identities = ((authUser as unknown as { identities?: Array<{ provider?: string; identity_data?: Record<string, unknown> }> }).identities) ?? []
+          const googleIdentity = identities.find(identity => identity.provider === 'google')
+          const googleSub = (
+            googleIdentity?.identity_data?.sub
+            ?? metadata?.sub
+            ?? metadata?.provider_id
+            ?? authUser.id
+          ) as string
+          const name = (
+            metadata?.full_name
+            ?? metadata?.name
+            ?? (authUser.email ? authUser.email.split('@')[0] : 'Google 使用者')
+          ) as string
+          const picture = (metadata?.avatar_url ?? metadata?.picture ?? '') as string
+          const email = authUser.email ?? (metadata?.email as string | undefined) ?? ''
+
+          await 綁定GoogleAuth使用者({
+            authUserId: authUser.id,
+            googleSub,
+            email,
+            name,
+            avatar: picture,
+          })
+
+          Google登入(googleSub, name, picture, email, authUser.id)
+          navigate('/wall', { replace: true })
+          return
+        }
+
+        if (provider === 'line') {
+          const [{ data: sessionData, error: sessionError }, { data: userData, error: userError }] = await Promise.all([
+            supabase.auth.getSession(),
+            supabase.auth.getUser(),
+          ])
+
+          if (sessionError || userError) {
+            throw new Error(sessionError?.message || userError?.message || 'LINE 登入處理失敗')
+          }
+
+          if (!sessionData.session || !userData.user) {
+            throw new Error('找不到 LINE 登入 session，請重新登入')
+          }
+
+          const authUser = userData.user
+          const line資料 = 取得LINE登入資料(authUser as typeof authUser & {
+            app_metadata?: Record<string, unknown>
+            identities?: Array<{ provider?: string; identity_data?: Record<string, unknown> }>
+          })
+
+          if (!line資料) {
+            throw new Error('找不到 LINE 身分資料，請重新登入')
+          }
+
+          const 綁定結果 = await 綁定LINEAuth使用者({
+            authUserId: authUser.id,
+            lineUserId: line資料.lineUserId,
+            name: line資料.name,
+            avatar: line資料.picture,
+          })
+
+          if (!綁定結果?.authUserId) {
+            throw new Error(`LINE 帳號綁定失敗：public.users 未寫入 auth_user_id（line_user_id=${line資料.lineUserId}）`)
+          }
+
+          LINE登入(line資料.lineUserId, line資料.name, line資料.picture, authUser.id)
+          navigate('/wall', { replace: true })
+          return
+        }
+
+        if (!code || !state) {
+          set錯誤訊息('缺少必要的登入參數')
+          return
+        }
+
         // 判斷來源：優先用 state 前綴（跨瀏覽器可靠），備援用 localStorage / sessionStorage
-        const 是LINE = state.startsWith('line-') || localStorage.getItem('line_oauth_state') !== null || sessionStorage.getItem('line_state') !== null
         const 是Strava = state.startsWith('strava-') || localStorage.getItem('strava_oauth_state') !== null || sessionStorage.getItem('strava_state') !== null
 
-        if (是LINE) {
-          const 使用者 = await 處理LINE回調(code, state)
-          LINE登入(使用者.sub, 使用者.name, 使用者.picture)
-          navigate('/wall', { replace: true })
-        } else if (是Strava) {
+        if (是Strava) {
           const 使用者 = await 處理Strava回調(code, state)
           Strava登入(
             使用者.athleteId,
@@ -67,7 +181,7 @@ export default function OAuthCallbackPage() {
     }
 
     處理回調()
-  }, [searchParams, navigate, LINE登入, Strava登入])
+  }, [searchParams, navigate, Google登入, LINE登入, Strava登入])
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center bg-cork px-6">
