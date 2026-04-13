@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Calendar, MapPin, Mountain, Route, ExternalLink, Zap, Link, AlertCircle, Pencil, Loader2, MessageCircle, Copy, Check } from 'lucide-react'
-import { useEventStore } from '../stores/eventStore'
+import { ArrowLeft, Calendar, MapPin, Mountain, Route, ExternalLink, Zap, Link, AlertCircle, Pencil, Loader2, MessageCircle, Copy, Check, Trash2 } from 'lucide-react'
+import { useEventStore, 活動已過期 } from '../stores/eventStore'
 import { useAuthStore } from '../stores/authStore'
 import { 取得使用者 } from '../utils/userService'
 import { useAds } from '../hooks/useAds'
@@ -23,28 +23,25 @@ export default function EventDetailPage() {
   const navigate = useNavigate()
   const 使用者 = useAuthStore((s) => s.使用者)
   const 所有使用者 = useAuthStore((s) => s.所有使用者)
-  const { 活動列表, 載入單一活動 } = useEventStore()
+  const { 活動列表, 載入單一活動, 刪除活動 } = useEventStore()
   const { 廣告列表 } = useAds()
   const 廣告 = 廣告列表[0] // 顯示一則廣告
 
   const [載入失敗, set載入失敗] = useState(false)
   const [已複製, set已複製] = useState(false)
+  const [刪除中, set刪除中] = useState(false)
+  const [操作錯誤, set操作錯誤] = useState('')
 
   const 活動 = 活動列表.find(e => e.id === id)
-  // 有活動就不需要載入；沒活動就視為載入中
-  const [載入中, set載入中] = useState(!活動)
 
   useEffect(() => {
-    if (!id || 活動) { set載入中(false); return }
-    set載入中(true)
-    set載入失敗(false)
+    if (!id || 活動) return
     載入單一活動(id)
       .then((result) => {
         if (!result) set載入失敗(true)
       })
       .catch(() => set載入失敗(true))
-      .finally(() => set載入中(false))
-  }, [id, 載入單一活動])
+  }, [id, 活動, 載入單一活動])
 
   // 背景載入發起人資料（如果 store 中找不到）
   useEffect(() => {
@@ -64,7 +61,7 @@ export default function EventDetailPage() {
     })
   }, [活動])
 
-  if (載入中) {
+  if (!活動 && !載入失敗) {
     return (
       <div className="flex min-h-svh items-center justify-center bg-cork">
         <Loader2 size={32} className="animate-spin text-strava" />
@@ -92,6 +89,7 @@ export default function EventDetailPage() {
     活動.creatorId === 使用者.id ||
     (是粉絲頁活動 && 使用者.managedPages?.some(p => p.pageId === 粉絲頁Id))
   ) : false
+  const 活動過期 = 活動已過期(活動)
   // 粉絲頁活動：顯示粉絲頁名稱/頭像；個人活動：從所有使用者查找
   const 粉絲頁資訊 = 是粉絲頁活動 ? 所有使用者.flatMap(u => u.managedPages ?? []).find(p => p.pageId === 粉絲頁Id) : undefined
   const 發起人 = 是粉絲頁活動
@@ -108,6 +106,21 @@ export default function EventDetailPage() {
     if (url.includes('garmin.com')) return 'Garmin Connect'
     if (url.includes('ridewithgps.com')) return 'Ride with GPS'
     return '路線連結'
+  }
+
+  const 處理刪除活動 = async () => {
+    if (活動過期 || 刪除中) return
+    const 確認刪除 = window.confirm('確定要刪除這筆約騎嗎？此操作無法復原。')
+    if (!確認刪除) return
+    set操作錯誤('')
+    set刪除中(true)
+    try {
+      await 刪除活動(活動.id)
+      navigate('/wall', { replace: true })
+    } catch (err) {
+      set操作錯誤(err instanceof Error ? err.message : '刪除活動失敗')
+      set刪除中(false)
+    }
   }
 
   return (
@@ -160,7 +173,7 @@ export default function EventDetailPage() {
             })()}
             {/* 日期 + 集合地點 */}
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <InfoCard icon={<Calendar size={18} />} label="約騎日期" value={`${格式化完整日期(活動.date)}　${活動.time} 集合`} />
+              <InfoCard icon={<Calendar size={18} />} label="約騎日期" value={`${格式化完整日期(活動.date)} ${活動.time} 集合`} />
               {活動.meetingPoint && (
                 <div className="flex items-start gap-2.5 rounded-xl bg-white p-3 shadow-sm">
                   <div className="text-strava mt-0.5"><MapPin size={18} /></div>
@@ -247,15 +260,32 @@ export default function EventDetailPage() {
                dangerouslySetInnerHTML={{ __html: 安全渲染Markdown(活動.description) }} />
         )}
 
+        {操作錯誤 && (
+          <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+            {操作錯誤}
+          </div>
+        )}
+
         {/* MOAK 認證 */}
         {活動.moakEventId && <MoakBadge moakEventId={活動.moakEventId} />}
 
         {/* 操作按鈕 */}
         {是發起人 && (
-          <div className="pt-2">
-            <Button fullWidth variant="primary" onClick={() => navigate(`/event/${活動.id}/edit`)}>
-              <Pencil size={16} /> 編輯活動
-            </Button>
+          <div className="pt-2 space-y-2">
+            {活動過期 ? (
+              <div className="rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-700">
+                這個約騎已過期，不能修改也不能刪除。
+              </div>
+            ) : (
+              <>
+                <Button fullWidth variant="primary" onClick={() => navigate(`/event/${活動.id}/edit`)}>
+                  <Pencil size={16} /> 編輯活動
+                </Button>
+                <Button fullWidth variant="outline" onClick={() => { void 處理刪除活動() }} disabled={刪除中}>
+                  <Trash2 size={16} /> {刪除中 ? '刪除中…' : '刪除活動'}
+                </Button>
+              </>
+            )}
           </div>
         )}
 

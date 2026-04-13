@@ -6,7 +6,7 @@ import { 上傳圖章到Storage } from '../utils/storageService'
 type 排序方式 = '最新' | '最熱門'
 
 // 判斷活動是否已過期（約騎時間後 12 小時算過期）
-function 已過期(活動: CyclingEvent): boolean {
+export function 活動已過期(活動: Pick<CyclingEvent, 'date' | 'time'>): boolean {
   const [時, 分] = (活動.time ?? '00:00').split(':').map(Number)
   const 約騎時間 = new Date(活動.date)
   約騎時間.setHours(時, 分, 0, 0)
@@ -27,6 +27,7 @@ interface EventState {
   新增活動: (event: CyclingEvent) => Promise<void>
   批次新增活動: (events: CyclingEvent[]) => Promise<{ 成功數: number; 失敗數: number }>
   更新活動: (eventId: string, 更新: Partial<CyclingEvent>) => Promise<void>
+  刪除活動: (eventId: string) => Promise<void>
   取得篩選後活動: () => CyclingEvent[]
   取得歷史活動: () => CyclingEvent[]
 }
@@ -244,6 +245,13 @@ export const useEventStore = create<EventState>()((set, get) => ({
   },
 
   更新活動: async (eventId, 更新) => {
+    const 既有活動 = get().活動列表.find(e => e.id === eventId)
+    if (!既有活動) {
+      throw new Error('找不到活動資料，請重新整理後再試')
+    }
+    if (活動已過期(既有活動)) {
+      throw new Error('已過期的約騎不可修改')
+    }
     // 若圖章為 base64，先上傳到 Storage 取得公開 URL（供 OG 圖片使用）
     let supabase更新 = 更新
     if (更新.coverImage?.startsWith('data:')) {
@@ -262,10 +270,28 @@ export const useEventStore = create<EventState>()((set, get) => ({
     }))
   },
 
+  刪除活動: async (eventId) => {
+    const 既有活動 = get().活動列表.find(e => e.id === eventId)
+    if (!既有活動) {
+      throw new Error('找不到活動資料，請重新整理後再試')
+    }
+    if (活動已過期(既有活動)) {
+      throw new Error('已過期的約騎不可刪除')
+    }
+    await 取得必要AuthUserId()
+    const { error } = await supabase.from('cycling_events').delete().eq('id', eventId)
+    if (error) {
+      throw new Error(error.message || '刪除活動失敗')
+    }
+    set((s) => ({
+      活動列表: s.活動列表.filter(e => e.id !== eventId),
+    }))
+  },
+
   取得篩選後活動: () => {
     const { 活動列表, 篩選區域, 排序 } = get()
     // 排除過期活動（活動日期隔天後不顯示）
-    let 結果 = 活動列表.filter(e => !已過期(e))
+    let 結果 = 活動列表.filter(e => !活動已過期(e))
     if (篩選區域) {
       結果 = 結果.filter(e => e.region === 篩選區域)
     }
@@ -278,7 +304,7 @@ export const useEventStore = create<EventState>()((set, get) => ({
   取得歷史活動: () => {
     const { 活動列表 } = get()
     return 活動列表
-      .filter(e => 已過期(e))
+      .filter(e => 活動已過期(e))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   },
 }))

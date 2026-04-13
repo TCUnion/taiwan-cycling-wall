@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ExternalLink, Bike, MapPin, Link, BookmarkPlus, Bookmark, Trash2, Save, MapPinPlus, Pencil, Check, Route, StickyNote, Map, X, Repeat } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
-import { useEventStore, 取得便利貼顏色 } from '../stores/eventStore'
+import { useEventStore, 活動已過期, 取得便利貼顏色 } from '../stores/eventStore'
 import { useTemplateStore } from '../stores/templateStore'
 import { useSpotTemplateStore } from '../stores/spotTemplateStore'
 import { useRouteInfoTemplateStore } from '../stores/routeInfoTemplateStore'
@@ -94,6 +94,7 @@ export default function CreateEventPage() {
   // 編輯模式：從 URL 取得既有活動
   const 編輯中活動 = editId ? 活動列表.find(e => e.id === editId) : undefined
   const 是編輯模式 = !!編輯中活動
+  const 編輯活動已過期 = 編輯中活動 ? 活動已過期(編輯中活動) : false
 
   // 從 description 反解備註文字
   const 解析備註文字 = (desc: string): string => {
@@ -228,7 +229,7 @@ export default function CreateEventPage() {
 
   const 今天 = new Date().toISOString().split('T')[0]
   const 定期達上限 = 定期模式 && 額度上限 !== null && (進行中數量 + 定期期數) > 額度上限
-  const 可提交 = routeName.trim() && date && !已達上限 && !額度檢查中 && !定期達上限
+  const 可提交 = routeName.trim() && date && !已達上限 && !額度檢查中 && !定期達上限 && !編輯活動已過期
 
   // 套用範本
   const 套用範本 = (t: RideTemplate) => {
@@ -566,6 +567,12 @@ export default function CreateEventPage() {
             <Button size="sm" onClick={儲存為範本} disabled={!儲存範本名.trim()}>
               <BookmarkPlus size={14} /> 儲存
             </Button>
+          </div>
+        )}
+
+        {是編輯模式 && 編輯活動已過期 && (
+          <div className="rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-700">
+            這個約騎已過期，不能修改。
           </div>
         )}
 
