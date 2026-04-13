@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { RouteInfoTemplate } from '../types'
-import { supabase } from '../utils/supabase'
+import { 取得目前AuthUserId, supabase } from '../utils/supabase'
 
 interface RouteInfoTemplateState {
   路線範本列表: RouteInfoTemplate[]
@@ -9,6 +9,14 @@ interface RouteInfoTemplateState {
   新增路線範本: (template: RouteInfoTemplate) => Promise<void>
   更新路線範本: (template: RouteInfoTemplate) => Promise<void>
   刪除路線範本: (id: string) => Promise<void>
+}
+
+async function 取得必要AuthUserId(): Promise<string> {
+  const authUserId = await 取得目前AuthUserId()
+  if (!authUserId) {
+    throw new Error('登入狀態已失效，請重新登入後再試')
+  }
+  return authUserId
 }
 
 function 轉換為路線範本(row: Record<string, unknown>): RouteInfoTemplate {
@@ -23,6 +31,7 @@ function 轉換為路線範本(row: Record<string, unknown>): RouteInfoTemplate 
     pace: (row.pace as string) || '',
     maxParticipants: (row.max_participants as number) || 0,
     creatorId: row.creator_id as string,
+    creatorAuthUserId: (row.creator_auth_user_id as string) || undefined,
   }
 }
 
@@ -38,6 +47,7 @@ function 轉換為資料列(t: RouteInfoTemplate) {
     pace: t.pace,
     max_participants: t.maxParticipants,
     creator_id: t.creatorId,
+    creator_auth_user_id: t.creatorAuthUserId ?? null,
   }
 }
 
@@ -58,27 +68,36 @@ export const useRouteInfoTemplateStore = create<RouteInfoTemplateState>()((set) 
   },
 
   新增路線範本: async (template) => {
-    const row = 轉換為資料列(template)
-    const { error } = await supabase.from('route_info_templates').insert(row)
-    if (!error) {
-      set((s) => ({ 路線範本列表: [template, ...s.路線範本列表] }))
+    const authUserId = await 取得必要AuthUserId()
+    const row = {
+      ...轉換為資料列({ ...template, creatorAuthUserId: authUserId }),
+      creator_auth_user_id: authUserId,
     }
+    const { error } = await supabase.from('route_info_templates').insert(row)
+    if (error) {
+      throw new Error(error.message || '新增路線範本失敗')
+    }
+    set((s) => ({ 路線範本列表: [{ ...template, creatorAuthUserId: authUserId }, ...s.路線範本列表] }))
   },
 
   更新路線範本: async (template) => {
+    await 取得必要AuthUserId()
     const row = 轉換為資料列(template)
     const { error } = await supabase.from('route_info_templates').update(row).eq('id', template.id)
-    if (!error) {
-      set((s) => ({
-        路線範本列表: s.路線範本列表.map(t => t.id === template.id ? template : t),
-      }))
+    if (error) {
+      throw new Error(error.message || '更新路線範本失敗')
     }
+    set((s) => ({
+      路線範本列表: s.路線範本列表.map(t => t.id === template.id ? template : t),
+    }))
   },
 
   刪除路線範本: async (id) => {
+    await 取得必要AuthUserId()
     const { error } = await supabase.from('route_info_templates').delete().eq('id', id)
-    if (!error) {
-      set((s) => ({ 路線範本列表: s.路線範本列表.filter(t => t.id !== id) }))
+    if (error) {
+      throw new Error(error.message || '刪除路線範本失敗')
     }
+    set((s) => ({ 路線範本列表: s.路線範本列表.filter(t => t.id !== id) }))
   },
 }))

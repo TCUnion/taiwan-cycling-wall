@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { SpotTemplate } from '../types'
-import { supabase } from '../utils/supabase'
+import { 取得目前AuthUserId, supabase } from '../utils/supabase'
 
 interface SpotTemplateState {
   集合點範本列表: SpotTemplate[]
@@ -11,6 +11,14 @@ interface SpotTemplateState {
   刪除集合點範本: (id: string) => Promise<void>
 }
 
+async function 取得必要AuthUserId(): Promise<string> {
+  const authUserId = await 取得目前AuthUserId()
+  if (!authUserId) {
+    throw new Error('登入狀態已失效，請重新登入後再試')
+  }
+  return authUserId
+}
+
 // Supabase snake_case → 前端 camelCase
 function 轉換為集合點範本(row: Record<string, unknown>): SpotTemplate {
   return {
@@ -19,6 +27,7 @@ function 轉換為集合點範本(row: Record<string, unknown>): SpotTemplate {
     url: (row.url as string) || '',
     countyId: (row.county_id as string) || '',
     creatorId: row.creator_id as string,
+    creatorAuthUserId: (row.creator_auth_user_id as string) || undefined,
   }
 }
 
@@ -30,6 +39,7 @@ function 轉換為資料列(t: SpotTemplate) {
     url: t.url,
     county_id: t.countyId,
     creator_id: t.creatorId,
+    creator_auth_user_id: t.creatorAuthUserId ?? null,
   }
 }
 
@@ -50,27 +60,36 @@ export const useSpotTemplateStore = create<SpotTemplateState>()((set) => ({
   },
 
   新增集合點範本: async (template) => {
-    const row = 轉換為資料列(template)
-    const { error } = await supabase.from('spot_templates').insert(row)
-    if (!error) {
-      set((s) => ({ 集合點範本列表: [template, ...s.集合點範本列表] }))
+    const authUserId = await 取得必要AuthUserId()
+    const row = {
+      ...轉換為資料列({ ...template, creatorAuthUserId: authUserId }),
+      creator_auth_user_id: authUserId,
     }
+    const { error } = await supabase.from('spot_templates').insert(row)
+    if (error) {
+      throw new Error(error.message || '新增集合點範本失敗')
+    }
+    set((s) => ({ 集合點範本列表: [{ ...template, creatorAuthUserId: authUserId }, ...s.集合點範本列表] }))
   },
 
   更新集合點範本: async (template) => {
+    await 取得必要AuthUserId()
     const row = 轉換為資料列(template)
     const { error } = await supabase.from('spot_templates').update(row).eq('id', template.id)
-    if (!error) {
-      set((s) => ({
-        集合點範本列表: s.集合點範本列表.map(t => t.id === template.id ? template : t),
-      }))
+    if (error) {
+      throw new Error(error.message || '更新集合點範本失敗')
     }
+    set((s) => ({
+      集合點範本列表: s.集合點範本列表.map(t => t.id === template.id ? template : t),
+    }))
   },
 
   刪除集合點範本: async (id) => {
+    await 取得必要AuthUserId()
     const { error } = await supabase.from('spot_templates').delete().eq('id', id)
-    if (!error) {
-      set((s) => ({ 集合點範本列表: s.集合點範本列表.filter(t => t.id !== id) }))
+    if (error) {
+      throw new Error(error.message || '刪除集合點範本失敗')
     }
+    set((s) => ({ 集合點範本列表: s.集合點範本列表.filter(t => t.id !== id) }))
   },
 }))

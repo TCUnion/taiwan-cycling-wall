@@ -222,28 +222,39 @@ export default function CreateEventPage() {
   }
 
   // 儲存為範本
-  const 儲存為範本 = () => {
+  const 執行範本操作 = async (action: () => Promise<void>) => {
+    set提交錯誤('')
+    try {
+      await action()
+    } catch (err) {
+      set提交錯誤(err instanceof Error ? err.message : '範本存取失敗，請稍後再試')
+    }
+  }
+
+  const 儲存為範本 = async () => {
     if (!儲存範本名.trim()) return
-    新增範本({
-      id: `tpl-${Date.now()}`,
-      name: 淨化純文字(儲存範本名.trim()),
-      routeName: 淨化純文字(routeName),
-      routeDetail: 淨化輸入文字(routeDetail),
-      routeUrl: 安全URL(routeUrl) ?? '',
-      spotName: 淨化純文字(spotName),
-      spotUrl: 安全URL(spotUrl) ?? '',
-      countyId,
-      time,
-      distance,
-      elevation,
-      pace: 淨化純文字(pace),
-      maxParticipants,
-      notes: notes.split('\n').filter(s => s.trim()).map(s => 淨化輸入文字(s)),
-      creatorId: 當前使用者.id,
-      creatorName: 當前使用者.name,
+    await 執行範本操作(async () => {
+      await 新增範本({
+        id: `tpl-${Date.now()}`,
+        name: 淨化純文字(儲存範本名.trim()),
+        routeName: 淨化純文字(routeName),
+        routeDetail: 淨化輸入文字(routeDetail),
+        routeUrl: 安全URL(routeUrl) ?? '',
+        spotName: 淨化純文字(spotName),
+        spotUrl: 安全URL(spotUrl) ?? '',
+        countyId,
+        time,
+        distance,
+        elevation,
+        pace: 淨化純文字(pace),
+        maxParticipants,
+        notes: notes.split('\n').filter(s => s.trim()).map(s => 淨化輸入文字(s)),
+        creatorId: 當前使用者.id,
+        creatorName: 當前使用者.name,
+      })
+      set儲存範本名('')
+      set顯示儲存(false)
     })
-    set儲存範本名('')
-    set顯示儲存(false)
   }
 
   // 推斷縣市
@@ -430,7 +441,7 @@ export default function CreateEventPage() {
                       )}
                     </button>
                     {t.creatorId === 當前使用者.id && (
-                      <button onClick={() => 刪除範本(t.id)} aria-label="刪除範本"
+                      <button onClick={() => { void 執行範本操作(() => 刪除範本(t.id)) }} aria-label="刪除範本"
                         className="p-2 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 cursor-pointer transition-colors">
                         <Trash2 size={16} />
                       </button>
@@ -607,8 +618,10 @@ export default function CreateEventPage() {
                           </select>
                           <div className="flex gap-2">
                             <button onClick={() => {
-                              更新集合點範本({ ...t, name: 編輯集合點名, url: 編輯集合點URL, countyId: 編輯集合點縣市 })
-                              set編輯中集合點(null)
+                              void 執行範本操作(async () => {
+                                await 更新集合點範本({ ...t, name: 編輯集合點名, url: 編輯集合點URL, countyId: 編輯集合點縣市 })
+                                set編輯中集合點(null)
+                              })
                             }} aria-label="確認編輯"
                               className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium text-white bg-strava cursor-pointer hover:bg-strava/90 transition-colors">
                               <Check size={14} /> 確認
@@ -647,7 +660,7 @@ export default function CreateEventPage() {
                             className="p-1.5 rounded-full text-gray-400 hover:text-strava hover:bg-strava/10 cursor-pointer transition-colors">
                             <Pencil size={14} />
                           </button>
-                          <button onClick={() => 刪除集合點範本(t.id)} aria-label="刪除集合點"
+                          <button onClick={() => { void 執行範本操作(() => 刪除集合點範本(t.id)) }} aria-label="刪除集合點"
                             className="p-1.5 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 cursor-pointer transition-colors">
                             <Trash2 size={14} />
                           </button>
@@ -661,13 +674,13 @@ export default function CreateEventPage() {
               {spotName.trim() && (
                 <button
                   onClick={() => {
-                    新增集合點範本({
+                    void 執行範本操作(() => 新增集合點範本({
                       id: `spot-${Date.now()}`,
                       name: 淨化純文字(spotName.trim()),
                       url: 安全URL(spotUrl.trim()) ?? '',
                       countyId,
                       creatorId: 當前使用者.id,
-                    })
+                    }))
                   }}
                   className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-gray-300 text-sm text-gray-600 cursor-pointer hover:border-strava hover:text-strava transition-colors"
                 >
@@ -752,8 +765,10 @@ export default function CreateEventPage() {
                           </div>
                           <div className="flex gap-2">
                             <button onClick={() => {
-                              更新路線範本({ ...t, routeName: 編輯路線名, routeDetail: 編輯路線描述, routeUrl: 編輯路線URL, distance: 編輯路線距離, elevation: 編輯路線爬升, pace: 編輯路線配速, maxParticipants: 編輯路線人數 })
-                              set編輯中路線(null)
+                              void 執行範本操作(async () => {
+                                await 更新路線範本({ ...t, routeName: 編輯路線名, routeDetail: 編輯路線描述, routeUrl: 編輯路線URL, distance: 編輯路線距離, elevation: 編輯路線爬升, pace: 編輯路線配速, maxParticipants: 編輯路線人數 })
+                                set編輯中路線(null)
+                              })
                             }} aria-label="確認編輯"
                               className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium text-white bg-strava cursor-pointer hover:bg-strava/90 transition-colors">
                               <Check size={14} /> 確認
@@ -798,7 +813,7 @@ export default function CreateEventPage() {
                             className="p-1.5 rounded-full text-gray-400 hover:text-strava hover:bg-strava/10 cursor-pointer transition-colors">
                             <Pencil size={14} />
                           </button>
-                          <button onClick={() => 刪除路線範本(t.id)} aria-label="刪除路線範本"
+                          <button onClick={() => { void 執行範本操作(() => 刪除路線範本(t.id)) }} aria-label="刪除路線範本"
                             className="p-1.5 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 cursor-pointer transition-colors">
                             <Trash2 size={14} />
                           </button>
@@ -812,7 +827,7 @@ export default function CreateEventPage() {
               {routeName.trim() && (
                 <button
                   onClick={() => {
-                    新增路線範本({
+                    void 執行範本操作(() => 新增路線範本({
                       id: `ri-${Date.now()}`,
                       name: 淨化純文字(routeName.trim()),
                       routeName: 淨化純文字(routeName.trim()),
@@ -823,7 +838,7 @@ export default function CreateEventPage() {
                       pace: 淨化純文字(pace),
                       maxParticipants,
                       creatorId: 當前使用者.id,
-                    })
+                    }))
                   }}
                   className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-gray-300 text-sm text-gray-600 cursor-pointer hover:border-strava hover:text-strava transition-colors"
                 >
@@ -976,8 +991,10 @@ export default function CreateEventPage() {
                             className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none focus-visible:ring-2 focus-visible:ring-strava/40" />
                           <div className="flex gap-2">
                             <button onClick={() => {
-                              更新備註範本({ ...t, name: 編輯備註名, notes: 編輯備註內容 })
-                              set編輯中備註(null)
+                              void 執行範本操作(async () => {
+                                await 更新備註範本({ ...t, name: 編輯備註名, notes: 編輯備註內容 })
+                                set編輯中備註(null)
+                              })
                             }} aria-label="確認編輯"
                               className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium text-white bg-strava cursor-pointer hover:bg-strava/90 transition-colors">
                               <Check size={14} /> 確認
@@ -1008,7 +1025,7 @@ export default function CreateEventPage() {
                             className="p-1.5 rounded-full text-gray-400 hover:text-strava hover:bg-strava/10 cursor-pointer transition-colors">
                             <Pencil size={14} />
                           </button>
-                          <button onClick={() => 刪除備註範本(t.id)} aria-label="刪除備註範本"
+                          <button onClick={() => { void 執行範本操作(() => 刪除備註範本(t.id)) }} aria-label="刪除備註範本"
                             className="p-1.5 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 cursor-pointer transition-colors">
                             <Trash2 size={14} />
                           </button>
@@ -1023,12 +1040,12 @@ export default function CreateEventPage() {
                   onClick={() => {
                     const 安全備註 = 淨化輸入文字(notes.trim())
                     const 預設名 = 安全備註.slice(0, 20) + (安全備註.length > 20 ? '…' : '')
-                    新增備註範本({
+                    void 執行範本操作(() => 新增備註範本({
                       id: `note-${Date.now()}`,
                       name: 預設名,
                       notes: 安全備註,
                       creatorId: 當前使用者.id,
-                    })
+                    }))
                   }}
                   className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-gray-300 text-sm text-gray-600 cursor-pointer hover:border-strava hover:text-strava transition-colors"
                 >
