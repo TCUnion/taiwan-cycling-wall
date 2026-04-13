@@ -39,6 +39,20 @@ function 從文字推斷縣市(text: string): string {
   return ''
 }
 
+function 解析集合點範本名稱(rawName: string): { topic: string; placeName: string } {
+  const [topic, ...rest] = rawName.split('｜')
+  if (rest.length === 0) {
+    return { topic: '', placeName: rawName }
+  }
+  return { topic: topic.trim(), placeName: rest.join('｜').trim() }
+}
+
+function 組合集合點範本名稱(topic: string, placeName: string): string {
+  const 安全主題 = topic.trim()
+  const 安全地點 = placeName.trim()
+  return 安全主題 ? `${安全主題}｜${安全地點}` : 安全地點
+}
+
 export default function CreateEventPage() {
   const navigate = useNavigate()
   const { id: editId } = useParams()
@@ -154,7 +168,9 @@ export default function CreateEventPage() {
   // 集合點範本 UI
   const [顯示集合點範本, set顯示集合點範本] = useState(false)
   const [選中集合點範本, set選中集合點範本] = useState('')
+  const [新集合點主題, set新集合點主題] = useState('')
   const [編輯中集合點, set編輯中集合點] = useState<string | null>(null)
+  const [編輯集合點主題, set編輯集合點主題] = useState('')
   const [編輯集合點名, set編輯集合點名] = useState('')
   const [編輯集合點URL, set編輯集合點URL] = useState('')
   const [編輯集合點縣市, set編輯集合點縣市] = useState('')
@@ -190,6 +206,7 @@ export default function CreateEventPage() {
   // 備註範本 UI
   const [顯示備註範本, set顯示備註範本] = useState(false)
   const [選中備註範本, set選中備註範本] = useState('')
+  const [新備註主題, set新備註主題] = useState('')
   const [編輯中備註, set編輯中備註] = useState<string | null>(null)
   const [編輯備註名, set編輯備註名] = useState('')
   const [編輯備註內容, set編輯備註內容] = useState('')
@@ -283,7 +300,8 @@ export default function CreateEventPage() {
     if (!templateId) return
     const template = 我的集合點範本列表.find(t => t.id === templateId)
     if (!template) return
-    setSpotName(template.name)
+    const { placeName } = 解析集合點範本名稱(template.name)
+    setSpotName(placeName)
     setSpotUrl(template.url)
     if (template.countyId) {
       setCountyId(template.countyId)
@@ -293,9 +311,11 @@ export default function CreateEventPage() {
   const 開始編輯集合點範本 = (templateId: string) => {
     const template = 我的集合點範本列表.find(t => t.id === templateId)
     if (!template) return
+    const { topic, placeName } = 解析集合點範本名稱(template.name)
     set顯示集合點範本(true)
     set編輯中集合點(template.id)
-    set編輯集合點名(template.name)
+    set編輯集合點主題(topic)
+    set編輯集合點名(placeName)
     set編輯集合點URL(template.url)
     set編輯集合點縣市(template.countyId)
   }
@@ -691,11 +711,14 @@ export default function CreateEventPage() {
               className="rounded-lg border border-gray-300 px-3 py-2 text-base bg-white cursor-pointer focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20 focus-visible:ring-2 focus-visible:ring-strava/40"
             >
               <option value="">手動輸入或選擇已儲存地點</option>
-              {我的集合點範本列表.map(t => (
-                <option key={t.id} value={t.id}>
-                  {t.name}{t.countyId ? `｜${查找縣市(t.countyId)?.name ?? ''}` : ''}
-                </option>
-              ))}
+              {我的集合點範本列表.map(t => {
+                const { topic, placeName } = 解析集合點範本名稱(t.name)
+                return (
+                  <option key={t.id} value={t.id}>
+                    {topic || placeName}{topic && placeName ? `｜${placeName}` : ''}{t.countyId ? `｜${查找縣市(t.countyId)?.name ?? ''}` : ''}
+                  </option>
+                )
+              })}
             </select>
           </div>
 
@@ -713,6 +736,9 @@ export default function CreateEventPage() {
                       {編輯中集合點 === t.id ? (
                         /* 編輯模式 */
                         <div className="rounded-lg border border-strava/30 bg-white p-2.5 space-y-2">
+                          <input name="edit-spot-topic" autoComplete="off" value={編輯集合點主題} onChange={e => set編輯集合點主題(e.target.value)}
+                            placeholder="主題（例：台中晨騎、北屯團練）…" maxLength={30}
+                            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none focus-visible:ring-2 focus-visible:ring-strava/40" />
                           <input name="edit-spot-name" autoComplete="off" value={編輯集合點名} onChange={e => set編輯集合點名(e.target.value)}
                             placeholder="地點名稱…" maxLength={50}
                             className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none focus-visible:ring-2 focus-visible:ring-strava/40" />
@@ -725,9 +751,14 @@ export default function CreateEventPage() {
                             {縣市列表.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                           </select>
                           <div className="flex gap-2">
-                            <button onClick={() => {
-                              void 執行範本操作(async () => {
-                                await 更新集合點範本({ ...t, name: 編輯集合點名, url: 編輯集合點URL, countyId: 編輯集合點縣市 })
+                          <button onClick={() => {
+                            void 執行範本操作(async () => {
+                              await 更新集合點範本({
+                                  ...t,
+                                  name: 組合集合點範本名稱(編輯集合點主題, 編輯集合點名),
+                                  url: 編輯集合點URL,
+                                  countyId: 編輯集合點縣市,
+                                })
                                 if (選中集合點範本 === t.id) {
                                   setSpotName(編輯集合點名)
                                   setSpotUrl(編輯集合點URL)
@@ -735,6 +766,7 @@ export default function CreateEventPage() {
                                     setCountyId(編輯集合點縣市)
                                   }
                                 }
+                                set編輯集合點主題('')
                                 set編輯中集合點(null)
                               })
                             }} aria-label="確認編輯"
@@ -757,7 +789,15 @@ export default function CreateEventPage() {
                             }}
                             className="flex-1 text-left rounded-lg border border-gray-200 px-3 py-2 cursor-pointer hover:bg-strava/5 hover:border-strava/30 transition-colors"
                           >
-                            <p className="text-sm font-medium">{t.name}</p>
+                            {(() => {
+                              const { topic, placeName } = 解析集合點範本名稱(t.name)
+                              return (
+                                <>
+                                  <p className="text-sm font-medium">{topic || placeName}</p>
+                                  {topic && <p className="text-xs text-gray-500 mt-0.5 truncate">{placeName}</p>}
+                                </>
+                              )
+                            })()}
                             {(t.countyId || t.url) && (
                               <p className="text-xs text-gray-500 mt-0.5 truncate">
                                 {查找縣市(t.countyId)?.name ?? ''}{t.countyId && t.url ? ' · ' : ''}{t.url ? '有地圖連結' : ''}
@@ -787,20 +827,34 @@ export default function CreateEventPage() {
               )}
               {/* 儲存目前集合點 */}
               {spotName.trim() && (
-                <button
-                  onClick={() => {
-                    void 執行範本操作(() => 新增集合點範本({
-                      id: `spot-${Date.now()}`,
-                      name: 淨化純文字(spotName.trim()),
-                      url: 安全URL(spotUrl.trim()) ?? '',
-                      countyId,
-                      creatorId: 當前使用者.id,
-                    }))
-                  }}
-                  className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-gray-300 text-sm text-gray-600 cursor-pointer hover:border-strava hover:text-strava transition-colors"
-                >
-                  <MapPinPlus size={14} /> 儲存目前集合點為範本
-                </button>
+                <div className="space-y-2">
+                  <input
+                    name="new-spot-topic"
+                    autoComplete="off"
+                    value={新集合點主題}
+                    onChange={e => set新集合點主題(e.target.value)}
+                    placeholder="主題（例：台中早鳥集合點）…"
+                    maxLength={30}
+                    className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none focus-visible:ring-2 focus-visible:ring-strava/40"
+                  />
+                  <button
+                    onClick={() => {
+                      void 執行範本操作(async () => {
+                        await 新增集合點範本({
+                          id: `spot-${Date.now()}`,
+                          name: 組合集合點範本名稱(淨化純文字(新集合點主題), 淨化純文字(spotName.trim())),
+                          url: 安全URL(spotUrl.trim()) ?? '',
+                          countyId,
+                          creatorId: 當前使用者.id,
+                        })
+                        set新集合點主題('')
+                      })
+                    }}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-gray-300 text-sm text-gray-600 cursor-pointer hover:border-strava hover:text-strava transition-colors"
+                  >
+                    <MapPinPlus size={14} /> 儲存目前集合點為範本
+                  </button>
+                </div>
               )}
             </div>
           )}
@@ -1138,7 +1192,7 @@ export default function CreateEventPage() {
               <option value="">手動輸入或選擇已儲存備註</option>
               {我的備註範本列表.map(t => (
                 <option key={t.id} value={t.id}>
-                  {t.name}
+                  {t.name}{t.notes ? `｜${t.notes.slice(0, 18)}${t.notes.length > 18 ? '…' : ''}` : ''}
                 </option>
               ))}
             </select>
@@ -1158,7 +1212,7 @@ export default function CreateEventPage() {
                       {編輯中備註 === t.id ? (
                         <div className="rounded-lg border border-strava/30 bg-white p-2.5 space-y-2">
                           <input name="edit-notes-name" autoComplete="off" value={編輯備註名} onChange={e => set編輯備註名(e.target.value)}
-                            placeholder="範本名稱…" maxLength={30}
+                            placeholder="主題…" maxLength={30}
                             className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none focus-visible:ring-2 focus-visible:ring-strava/40" />
                           <textarea name="edit-notes-content" value={編輯備註內容} onChange={e => set編輯備註內容(e.target.value)}
                             placeholder="注意事項內容…" rows={4}
@@ -1216,21 +1270,35 @@ export default function CreateEventPage() {
                 </div>
               )}
               {notes.trim() && (
-                <button
-                  onClick={() => {
-                    const 安全備註 = 淨化輸入文字(notes.trim())
-                    const 預設名 = 安全備註.slice(0, 20) + (安全備註.length > 20 ? '…' : '')
-                    void 執行範本操作(() => 新增備註範本({
-                      id: `note-${Date.now()}`,
-                      name: 預設名,
-                      notes: 安全備註,
-                      creatorId: 當前使用者.id,
-                    }))
-                  }}
-                  className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-gray-300 text-sm text-gray-600 cursor-pointer hover:border-strava hover:text-strava transition-colors"
-                >
-                  <StickyNote size={14} /> 儲存目前備註為範本
-                </button>
+                <div className="space-y-2">
+                  <input
+                    name="new-notes-topic"
+                    autoComplete="off"
+                    value={新備註主題}
+                    onChange={e => set新備註主題(e.target.value)}
+                    placeholder="主題（例：平安回家、雨天備案）…"
+                    maxLength={30}
+                    className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white focus:border-strava focus:outline-none focus-visible:ring-2 focus-visible:ring-strava/40"
+                  />
+                  <button
+                    onClick={() => {
+                      const 安全備註 = 淨化輸入文字(notes.trim())
+                      const 預設名 = 安全備註.slice(0, 20) + (安全備註.length > 20 ? '…' : '')
+                      void 執行範本操作(async () => {
+                        await 新增備註範本({
+                          id: `note-${Date.now()}`,
+                          name: 淨化純文字(新備註主題.trim()) || 預設名,
+                          notes: 安全備註,
+                          creatorId: 當前使用者.id,
+                        })
+                        set新備註主題('')
+                      })
+                    }}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-gray-300 text-sm text-gray-600 cursor-pointer hover:border-strava hover:text-strava transition-colors"
+                  >
+                    <StickyNote size={14} /> 儲存目前備註為範本
+                  </button>
+                </div>
               )}
             </div>
           )}
