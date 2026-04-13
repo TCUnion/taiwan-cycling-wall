@@ -153,6 +153,7 @@ export default function CreateEventPage() {
   const [顯示儲存, set顯示儲存] = useState(false)
   // 集合點範本 UI
   const [顯示集合點範本, set顯示集合點範本] = useState(false)
+  const [選中集合點範本, set選中集合點範本] = useState('')
   const [編輯中集合點, set編輯中集合點] = useState<string | null>(null)
   const [編輯集合點名, set編輯集合點名] = useState('')
   const [編輯集合點URL, set編輯集合點URL] = useState('')
@@ -177,6 +178,7 @@ export default function CreateEventPage() {
 
   // 路線範本 UI
   const [顯示路線範本, set顯示路線範本] = useState(false)
+  const [選中路線範本, set選中路線範本] = useState('')
   const [編輯中路線, set編輯中路線] = useState<string | null>(null)
   const [編輯路線名, set編輯路線名] = useState('')
   const [編輯路線描述, set編輯路線描述] = useState('')
@@ -187,6 +189,7 @@ export default function CreateEventPage() {
   const [編輯路線人數, set編輯路線人數] = useState(0)
   // 備註範本 UI
   const [顯示備註範本, set顯示備註範本] = useState(false)
+  const [選中備註範本, set選中備註範本] = useState('')
   const [編輯中備註, set編輯中備註] = useState<string | null>(null)
   const [編輯備註名, set編輯備註名] = useState('')
   const [編輯備註內容, set編輯備註內容] = useState('')
@@ -199,6 +202,12 @@ export default function CreateEventPage() {
 
   if (!使用者) return null
   const 當前使用者 = 使用者
+  const 我的集合點範本列表 = 集合點範本列表.filter(t => t.creatorId === 當前使用者.id)
+  const 已選集合點範本 = 我的集合點範本列表.find(t => t.id === 選中集合點範本) ?? null
+  const 我的路線範本列表 = 路線範本列表.filter(t => t.creatorId === 當前使用者.id)
+  const 已選路線範本 = 我的路線範本列表.find(t => t.id === 選中路線範本) ?? null
+  const 我的備註範本列表 = 備註範本列表.filter(t => t.creatorId === 當前使用者.id)
+  const 已選備註範本 = 我的備註範本列表.find(t => t.id === 選中備註範本) ?? null
 
   const 今天 = new Date().toISOString().split('T')[0]
   const 定期達上限 = 定期模式 && 額度上限 !== null && (進行中數量 + 定期期數) > 額度上限
@@ -260,11 +269,81 @@ export default function CreateEventPage() {
   // 推斷縣市
   const 處理路線名稱 = (v: string) => {
     setRouteName(v)
+    set選中路線範本('')
     if (!countyId) { const r = 從文字推斷縣市(v); if (r) setCountyId(r) }
   }
   const 處理集合點 = (name: string, url: string) => {
     setSpotName(name); setSpotUrl(url)
+    set選中集合點範本('')
     if (!countyId) { const r = 從文字推斷縣市(name) || 從文字推斷縣市(url); if (r) setCountyId(r) }
+  }
+
+  const 套用集合點範本 = (templateId: string) => {
+    set選中集合點範本(templateId)
+    if (!templateId) return
+    const template = 我的集合點範本列表.find(t => t.id === templateId)
+    if (!template) return
+    setSpotName(template.name)
+    setSpotUrl(template.url)
+    if (template.countyId) {
+      setCountyId(template.countyId)
+    }
+  }
+
+  const 開始編輯集合點範本 = (templateId: string) => {
+    const template = 我的集合點範本列表.find(t => t.id === templateId)
+    if (!template) return
+    set顯示集合點範本(true)
+    set編輯中集合點(template.id)
+    set編輯集合點名(template.name)
+    set編輯集合點URL(template.url)
+    set編輯集合點縣市(template.countyId)
+  }
+
+  const 套用路線範本 = (templateId: string) => {
+    set選中路線範本(templateId)
+    if (!templateId) return
+    const template = 我的路線範本列表.find(t => t.id === templateId)
+    if (!template) return
+    setRouteName(template.routeName)
+    setRouteDetail(template.routeDetail)
+    setRouteUrl(template.routeUrl)
+    setDistance(template.distance)
+    setElevation(template.elevation)
+    setPace(template.pace)
+    setMaxParticipants(template.maxParticipants)
+    set自訂配速模式(!預設配速.includes(template.pace))
+  }
+
+  const 開始編輯路線範本 = (templateId: string) => {
+    const template = 我的路線範本列表.find(t => t.id === templateId)
+    if (!template) return
+    set顯示路線範本(true)
+    set編輯中路線(template.id)
+    set編輯路線名(template.routeName)
+    set編輯路線描述(template.routeDetail)
+    set編輯路線URL(template.routeUrl)
+    set編輯路線距離(template.distance)
+    set編輯路線爬升(template.elevation)
+    set編輯路線配速(template.pace)
+    set編輯路線人數(template.maxParticipants)
+  }
+
+  const 套用備註範本 = (templateId: string) => {
+    set選中備註範本(templateId)
+    if (!templateId) return
+    const template = 我的備註範本列表.find(t => t.id === templateId)
+    if (!template) return
+    setNotes(template.notes)
+  }
+
+  const 開始編輯備註範本 = (templateId: string) => {
+    const template = 我的備註範本列表.find(t => t.id === templateId)
+    if (!template) return
+    set顯示備註範本(true)
+    set編輯中備註(template.id)
+    set編輯備註名(template.name)
+    set編輯備註內容(template.notes)
   }
 
   // 過濾連結（使用共用淨化工具）
@@ -585,10 +664,39 @@ export default function CreateEventPage() {
         <div className="rounded-xl bg-white p-4 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-gray-700">集合地點</h3>
-            <button onClick={() => set顯示集合點範本(!顯示集合點範本)} aria-label="集合點範本"
-              className={`p-1.5 rounded-full cursor-pointer hover:bg-black/5 transition-colors ${顯示集合點範本 ? 'text-strava' : 'text-gray-500'}`}>
-              <MapPinPlus size={18} />
-            </button>
+            <div className="flex items-center gap-1">
+              {已選集合點範本 && (
+                <button
+                  type="button"
+                  onClick={() => 開始編輯集合點範本(已選集合點範本.id)}
+                  aria-label="編輯已選集合點"
+                  className="p-1.5 rounded-full text-gray-500 cursor-pointer hover:text-strava hover:bg-black/5 transition-colors"
+                >
+                  <Pencil size={16} />
+                </button>
+              )}
+              <button onClick={() => set顯示集合點範本(!顯示集合點範本)} aria-label="集合點範本"
+                className={`p-1.5 rounded-full cursor-pointer hover:bg-black/5 transition-colors ${顯示集合點範本 ? 'text-strava' : 'text-gray-500'}`}>
+                <MapPinPlus size={18} />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">已儲存地點</label>
+            <select
+              name="spot-template-select"
+              value={選中集合點範本}
+              onChange={e => 套用集合點範本(e.target.value)}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-base bg-white cursor-pointer focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20 focus-visible:ring-2 focus-visible:ring-strava/40"
+            >
+              <option value="">手動輸入或選擇已儲存地點</option>
+              {我的集合點範本列表.map(t => (
+                <option key={t.id} value={t.id}>
+                  {t.name}{t.countyId ? `｜${查找縣市(t.countyId)?.name ?? ''}` : ''}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* 集合點範本面板 */}
@@ -596,11 +704,11 @@ export default function CreateEventPage() {
             <div className="rounded-lg bg-gray-50 p-3 space-y-2 border border-gray-200">
               {集合點載入中 ? (
                 <p className="text-sm text-gray-500 py-2 text-center">載入中…</p>
-              ) : 集合點範本列表.filter(t => t.creatorId === 當前使用者.id).length === 0 ? (
+              ) : 我的集合點範本列表.length === 0 ? (
                 <p className="text-sm text-gray-500 py-2">尚無集合點範本，填寫集合地點後可儲存</p>
               ) : (
                 <div className="space-y-1.5 max-h-56 overflow-y-auto">
-                  {集合點範本列表.filter(t => t.creatorId === 當前使用者.id).map(t => (
+                  {我的集合點範本列表.map(t => (
                     <div key={t.id}>
                       {編輯中集合點 === t.id ? (
                         /* 編輯模式 */
@@ -620,6 +728,13 @@ export default function CreateEventPage() {
                             <button onClick={() => {
                               void 執行範本操作(async () => {
                                 await 更新集合點範本({ ...t, name: 編輯集合點名, url: 編輯集合點URL, countyId: 編輯集合點縣市 })
+                                if (選中集合點範本 === t.id) {
+                                  setSpotName(編輯集合點名)
+                                  setSpotUrl(編輯集合點URL)
+                                  if (編輯集合點縣市) {
+                                    setCountyId(編輯集合點縣市)
+                                  }
+                                }
                                 set編輯中集合點(null)
                               })
                             }} aria-label="確認編輯"
@@ -637,9 +752,7 @@ export default function CreateEventPage() {
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => {
-                              setSpotName(t.name)
-                              setSpotUrl(t.url)
-                              if (t.countyId) setCountyId(t.countyId)
+                              套用集合點範本(t.id)
                               set顯示集合點範本(false)
                             }}
                             className="flex-1 text-left rounded-lg border border-gray-200 px-3 py-2 cursor-pointer hover:bg-strava/5 hover:border-strava/30 transition-colors"
@@ -651,16 +764,18 @@ export default function CreateEventPage() {
                               </p>
                             )}
                           </button>
-                          <button onClick={() => {
-                            set編輯中集合點(t.id)
-                            set編輯集合點名(t.name)
-                            set編輯集合點URL(t.url)
-                            set編輯集合點縣市(t.countyId)
-                          }} aria-label="編輯集合點"
+                          <button onClick={() => 開始編輯集合點範本(t.id)} aria-label="編輯集合點"
                             className="p-1.5 rounded-full text-gray-400 hover:text-strava hover:bg-strava/10 cursor-pointer transition-colors">
                             <Pencil size={14} />
                           </button>
-                          <button onClick={() => { void 執行範本操作(() => 刪除集合點範本(t.id)) }} aria-label="刪除集合點"
+                          <button onClick={() => {
+                            void 執行範本操作(async () => {
+                              await 刪除集合點範本(t.id)
+                              if (選中集合點範本 === t.id) {
+                                set選中集合點範本('')
+                              }
+                            })
+                          }} aria-label="刪除集合點"
                             className="p-1.5 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 cursor-pointer transition-colors">
                             <Trash2 size={14} />
                           </button>
@@ -717,6 +832,16 @@ export default function CreateEventPage() {
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-gray-700">路線與騎乘資訊</h3>
             <div className="flex items-center gap-1">
+              {已選路線範本 && (
+                <button
+                  type="button"
+                  onClick={() => 開始編輯路線範本(已選路線範本.id)}
+                  aria-label="編輯已選路線範本"
+                  className="p-1.5 rounded-full text-gray-500 cursor-pointer hover:text-strava hover:bg-black/5 transition-colors"
+                >
+                  <Pencil size={16} />
+                </button>
+              )}
               <button onClick={() => set顯示路線範本(!顯示路線範本)} aria-label="路線範本"
                 className={`p-1.5 rounded-full cursor-pointer hover:bg-black/5 transition-colors ${顯示路線範本 ? 'text-strava' : 'text-gray-500'}`}>
                 <Route size={18} />
@@ -724,16 +849,33 @@ export default function CreateEventPage() {
             </div>
           </div>
 
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">已儲存路線</label>
+            <select
+              name="route-template-select"
+              value={選中路線範本}
+              onChange={e => 套用路線範本(e.target.value)}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-base bg-white cursor-pointer focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20 focus-visible:ring-2 focus-visible:ring-strava/40"
+            >
+              <option value="">手動輸入或選擇已儲存路線</option>
+              {我的路線範本列表.map(t => (
+                <option key={t.id} value={t.id}>
+                  {t.name || t.routeName}{t.distance ? `｜${t.distance}km` : ''}{t.elevation ? `｜${t.elevation}m` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* 路線範本面板 */}
           {顯示路線範本 && (
             <div className="rounded-lg bg-gray-50 p-3 space-y-2 border border-gray-200">
               {路線範本載入中 ? (
                 <p className="text-sm text-gray-500 py-2 text-center">載入中…</p>
-              ) : 路線範本列表.filter(t => t.creatorId === 當前使用者.id).length === 0 ? (
+              ) : 我的路線範本列表.length === 0 ? (
                 <p className="text-sm text-gray-500 py-2">尚無路線範本，填寫路線資訊後可儲存</p>
               ) : (
                 <div className="space-y-1.5 max-h-56 overflow-y-auto">
-                  {路線範本列表.filter(t => t.creatorId === 當前使用者.id).map(t => (
+                  {我的路線範本列表.map(t => (
                     <div key={t.id}>
                       {編輯中路線 === t.id ? (
                         /* 編輯模式 */
@@ -767,6 +909,16 @@ export default function CreateEventPage() {
                             <button onClick={() => {
                               void 執行範本操作(async () => {
                                 await 更新路線範本({ ...t, routeName: 編輯路線名, routeDetail: 編輯路線描述, routeUrl: 編輯路線URL, distance: 編輯路線距離, elevation: 編輯路線爬升, pace: 編輯路線配速, maxParticipants: 編輯路線人數 })
+                                if (選中路線範本 === t.id) {
+                                  setRouteName(編輯路線名)
+                                  setRouteDetail(編輯路線描述)
+                                  setRouteUrl(編輯路線URL)
+                                  setDistance(編輯路線距離)
+                                  setElevation(編輯路線爬升)
+                                  setPace(編輯路線配速)
+                                  setMaxParticipants(編輯路線人數)
+                                  set自訂配速模式(!預設配速.includes(編輯路線配速))
+                                }
                                 set編輯中路線(null)
                               })
                             }} aria-label="確認編輯"
@@ -784,13 +936,7 @@ export default function CreateEventPage() {
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => {
-                              setRouteName(t.routeName)
-                              setRouteDetail(t.routeDetail)
-                              setRouteUrl(t.routeUrl)
-                              setDistance(t.distance)
-                              setElevation(t.elevation)
-                              setPace(t.pace)
-                              setMaxParticipants(t.maxParticipants)
+                              套用路線範本(t.id)
                               set顯示路線範本(false)
                             }}
                             className="flex-1 text-left rounded-lg border border-gray-200 px-3 py-2 cursor-pointer hover:bg-strava/5 hover:border-strava/30 transition-colors"
@@ -800,20 +946,18 @@ export default function CreateEventPage() {
                               {t.routeName}{t.distance ? ` · ${t.distance}km` : ''}{t.elevation ? ` · ${t.elevation}m` : ''}
                             </p>
                           </button>
-                          <button onClick={() => {
-                            set編輯中路線(t.id)
-                            set編輯路線名(t.routeName)
-                            set編輯路線描述(t.routeDetail)
-                            set編輯路線URL(t.routeUrl)
-                            set編輯路線距離(t.distance)
-                            set編輯路線爬升(t.elevation)
-                            set編輯路線配速(t.pace)
-                            set編輯路線人數(t.maxParticipants)
-                          }} aria-label="編輯路線範本"
+                          <button onClick={() => 開始編輯路線範本(t.id)} aria-label="編輯路線範本"
                             className="p-1.5 rounded-full text-gray-400 hover:text-strava hover:bg-strava/10 cursor-pointer transition-colors">
                             <Pencil size={14} />
                           </button>
-                          <button onClick={() => { void 執行範本操作(() => 刪除路線範本(t.id)) }} aria-label="刪除路線範本"
+                          <button onClick={() => {
+                            void 執行範本操作(async () => {
+                              await 刪除路線範本(t.id)
+                              if (選中路線範本 === t.id) {
+                                set選中路線範本('')
+                              }
+                            })
+                          }} aria-label="刪除路線範本"
                             className="p-1.5 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 cursor-pointer transition-colors">
                             <Trash2 size={14} />
                           </button>
@@ -852,7 +996,7 @@ export default function CreateEventPage() {
             placeholder="例：埔里虎頭山、鳥嘴潭繞繞…" maxLength={50} />
           <div className="mt-3">
             <label className="text-sm font-medium text-gray-700 block mb-1">路線描述</label>
-            <textarea name="route-description" value={routeDetail} onChange={e => setRouteDetail(e.target.value)}
+            <textarea name="route-description" value={routeDetail} onChange={e => { setRouteDetail(e.target.value); set選中路線範本('') }}
               placeholder="例：樹王 7-11 → 中投公路 → 草屯 → 鳥嘴潭 BCD×4 圈…" rows={6}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20 focus-visible:ring-2 focus-visible:ring-strava/40 placeholder:text-gray-400" />
           </div>
@@ -870,13 +1014,13 @@ export default function CreateEventPage() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => set顯示路線庫(true)}
+                  onClick={() => { set選中路線範本(''); set顯示路線庫(true) }}
                   className="mb-2 w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-gray-300 text-sm text-gray-600 cursor-pointer hover:border-strava hover:text-strava transition-colors"
                 >
                   <Map size={14} /> 從路線庫選取
                 </button>
               )}
-              <Input name="route-url" autoComplete="url" label="路線連結（Strava / Ride with GPS / Garmin）" value={routeUrl} onChange={e => setRouteUrl(e.target.value)}
+              <Input name="route-url" autoComplete="url" label="路線連結（Strava / Ride with GPS / Garmin）" value={routeUrl} onChange={e => { setRouteUrl(e.target.value); set選中路線範本('') }}
                 placeholder="貼上路線分享連結…" disabled={!!已套用路線庫路線名} />
               {!已套用路線庫路線名 && routeUrl && (() => {
                 const isStrava = /strava\.com\/routes\/\d+/.test(routeUrl)
@@ -923,8 +1067,8 @@ export default function CreateEventPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
-                <Input name="distance" label="距離 (km)" type="number" inputMode="decimal" min="0" value={distance || ''} onChange={e => setDistance(Math.max(0, Number(e.target.value)))} placeholder="例：55…" />
-                <Input name="elevation" label="爬升 (m)" type="number" inputMode="numeric" min="0" value={elevation || ''} onChange={e => setElevation(Math.max(0, Number(e.target.value)))} placeholder="例：400…" />
+                <Input name="distance" label="距離 (km)" type="number" inputMode="decimal" min="0" value={distance || ''} onChange={e => { setDistance(Math.max(0, Number(e.target.value))); set選中路線範本('') }} placeholder="例：55…" />
+                <Input name="elevation" label="爬升 (m)" type="number" inputMode="numeric" min="0" value={elevation || ''} onChange={e => { setElevation(Math.max(0, Number(e.target.value))); set選中路線範本('') }} placeholder="例：400…" />
               </div>
             )
           })()}
@@ -935,6 +1079,7 @@ export default function CreateEventPage() {
               name="pace"
               value={自訂配速模式 ? '__custom__' : pace}
               onChange={e => {
+                set選中路線範本('')
                 if (e.target.value === '__custom__') { set自訂配速模式(true); setPace('') }
                 else { set自訂配速模式(false); setPace(e.target.value) }
               }}
@@ -953,7 +1098,7 @@ export default function CreateEventPage() {
                 name="pace-custom"
                 autoComplete="off"
                 value={pace}
-                onChange={e => setPace(e.target.value)}
+                onChange={e => { setPace(e.target.value); set選中路線範本('') }}
                 placeholder="請輸入配速 / 難度…"
                 className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20 placeholder:text-gray-400"
               />
@@ -964,10 +1109,39 @@ export default function CreateEventPage() {
         <div className="rounded-xl bg-white p-4 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-gray-700">注意事項 / 備註</h3>
-            <button onClick={() => set顯示備註範本(!顯示備註範本)} aria-label="備註範本"
-              className={`p-1.5 rounded-full cursor-pointer hover:bg-black/5 transition-colors ${顯示備註範本 ? 'text-strava' : 'text-gray-500'}`}>
-              <StickyNote size={18} />
-            </button>
+            <div className="flex items-center gap-1">
+              {已選備註範本 && (
+                <button
+                  type="button"
+                  onClick={() => 開始編輯備註範本(已選備註範本.id)}
+                  aria-label="編輯已選備註範本"
+                  className="p-1.5 rounded-full text-gray-500 cursor-pointer hover:text-strava hover:bg-black/5 transition-colors"
+                >
+                  <Pencil size={16} />
+                </button>
+              )}
+              <button onClick={() => set顯示備註範本(!顯示備註範本)} aria-label="備註範本"
+                className={`p-1.5 rounded-full cursor-pointer hover:bg-black/5 transition-colors ${顯示備註範本 ? 'text-strava' : 'text-gray-500'}`}>
+                <StickyNote size={18} />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">已儲存備註</label>
+            <select
+              name="notes-template-select"
+              value={選中備註範本}
+              onChange={e => 套用備註範本(e.target.value)}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-base bg-white cursor-pointer focus:border-strava focus:outline-none focus:ring-2 focus:ring-strava/20 focus-visible:ring-2 focus-visible:ring-strava/40"
+            >
+              <option value="">手動輸入或選擇已儲存備註</option>
+              {我的備註範本列表.map(t => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* 備註範本面板 */}
@@ -975,11 +1149,11 @@ export default function CreateEventPage() {
             <div className="rounded-lg bg-gray-50 p-3 space-y-2 border border-gray-200">
               {備註範本載入中 ? (
                 <p className="text-sm text-gray-500 py-2 text-center">載入中…</p>
-              ) : 備註範本列表.filter(t => t.creatorId === 當前使用者.id).length === 0 ? (
+              ) : 我的備註範本列表.length === 0 ? (
                 <p className="text-sm text-gray-500 py-2">尚無備註範本，填寫備註後可儲存</p>
               ) : (
                 <div className="space-y-1.5 max-h-56 overflow-y-auto">
-                  {備註範本列表.filter(t => t.creatorId === 當前使用者.id).map(t => (
+                  {我的備註範本列表.map(t => (
                     <div key={t.id}>
                       {編輯中備註 === t.id ? (
                         <div className="rounded-lg border border-strava/30 bg-white p-2.5 space-y-2">
@@ -993,6 +1167,9 @@ export default function CreateEventPage() {
                             <button onClick={() => {
                               void 執行範本操作(async () => {
                                 await 更新備註範本({ ...t, name: 編輯備註名, notes: 編輯備註內容 })
+                                if (選中備註範本 === t.id) {
+                                  setNotes(編輯備註內容)
+                                }
                                 set編輯中備註(null)
                               })
                             }} aria-label="確認編輯"
@@ -1009,7 +1186,7 @@ export default function CreateEventPage() {
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => {
-                              setNotes(t.notes)
+                              套用備註範本(t.id)
                               set顯示備註範本(false)
                             }}
                             className="flex-1 text-left rounded-lg border border-gray-200 px-3 py-2 cursor-pointer hover:bg-strava/5 hover:border-strava/30 transition-colors"
@@ -1017,15 +1194,18 @@ export default function CreateEventPage() {
                             <p className="text-sm font-medium">{t.name}</p>
                             <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{t.notes}</p>
                           </button>
-                          <button onClick={() => {
-                            set編輯中備註(t.id)
-                            set編輯備註名(t.name)
-                            set編輯備註內容(t.notes)
-                          }} aria-label="編輯備註範本"
+                          <button onClick={() => 開始編輯備註範本(t.id)} aria-label="編輯備註範本"
                             className="p-1.5 rounded-full text-gray-400 hover:text-strava hover:bg-strava/10 cursor-pointer transition-colors">
                             <Pencil size={14} />
                           </button>
-                          <button onClick={() => { void 執行範本操作(() => 刪除備註範本(t.id)) }} aria-label="刪除備註範本"
+                          <button onClick={() => {
+                            void 執行範本操作(async () => {
+                              await 刪除備註範本(t.id)
+                              if (選中備註範本 === t.id) {
+                                set選中備註範本('')
+                              }
+                            })
+                          }} aria-label="刪除備註範本"
                             className="p-1.5 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 cursor-pointer transition-colors">
                             <Trash2 size={14} />
                           </button>
@@ -1058,7 +1238,7 @@ export default function CreateEventPage() {
           <textarea
             name="notes"
             value={notes}
-            onChange={e => { setNotes(e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }}
+            onChange={e => { set選中備註範本(''); setNotes(e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }}
             onFocus={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }}
             placeholder="Enter 斷行，支援 Markdown 格式（**粗體**、*斜體*、- 列表）&#10;請勿輸入網址連結…"
             rows={5}
