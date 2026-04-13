@@ -61,20 +61,19 @@ export default function CreateEventPage() {
 
   useEffect(() => {
     if (!使用者) return
+    const authUser = 使用者
     async function 檢查額度() {
-      const 角色 = 使用者!.role ?? 'unverified'
+      const 角色 = authUser.role ?? 'unverified'
       const [上限, 數量] = await Promise.all([
         取得活動上限(角色),
-        計算進行中活動數(使用者!.id, (使用者!.managedPages ?? []).map(p => p.pageId)),
+        計算進行中活動數(authUser.id, (authUser.managedPages ?? []).map(p => p.pageId)),
       ])
       set額度上限(上限)
       set進行中數量(數量)
       set額度檢查中(false)
     }
     檢查額度()
-  }, [使用者?.id, 使用者?.role, 使用者?.managedPages])
-
-  if (!使用者) return null
+  }, [使用者])
 
   const 已達上限 = 額度上限 !== null && 進行中數量 >= 額度上限
 
@@ -101,8 +100,8 @@ export default function CreateEventPage() {
   const [routeUrl, setRouteUrl] = useState(編輯中活動?.stravaRouteUrl ?? '')
   const [spotName, setSpotName] = useState(編輯中活動?.meetingPoint ?? '')
   const [spotUrl, setSpotUrl] = useState(編輯中活動?.meetingPointUrl ?? '')
-  const [countyId, setCountyId] = useState(編輯中活動?.countyId ?? 使用者.countyId ?? '')
-  const 使用者圖章 = 使用者.stampImages ?? (使用者.stampImage ? [使用者.stampImage] : [])
+  const [countyId, setCountyId] = useState(編輯中活動?.countyId ?? 使用者?.countyId ?? '')
+  const 使用者圖章 = 使用者?.stampImages ?? (使用者?.stampImage ? [使用者.stampImage] : [])
   // 編輯模式：若活動圖章是 Supabase URL（非 base64），加入選項以便正確比對
   const 編輯中圖章 = 編輯中活動?.coverImage && !使用者圖章.includes(編輯中活動.coverImage) ? [編輯中活動.coverImage] : []
   const 所有圖章 = [...編輯中圖章, ...使用者圖章]
@@ -113,6 +112,7 @@ export default function CreateEventPage() {
   const [pace, setPace] = useState(編輯中活動?.pace === '自由配速' ? '' : (編輯中活動?.pace ?? ''))
   const [maxParticipants, setMaxParticipants] = useState(編輯中活動?.maxParticipants ?? 0)
   const [抓取路線中, set抓取路線中] = useState(false)
+  const [提交錯誤, set提交錯誤] = useState('')
   const 預設配速 = ['', '輕鬆騎', '休閒騎', '中等強度', '進階挑戰', '比賽強度']
   const [自訂配速模式, set自訂配速模式] = useState(!預設配速.includes(pace))
 
@@ -197,6 +197,9 @@ export default function CreateEventPage() {
   const [定期頻率, set定期頻率] = useState<'weekly' | 'monthly'>('weekly')
   const [定期期數, set定期期數] = useState(4)
 
+  if (!使用者) return null
+  const 當前使用者 = 使用者
+
   const 今天 = new Date().toISOString().split('T')[0]
   const 定期達上限 = 定期模式 && 額度上限 !== null && (進行中數量 + 定期期數) > 額度上限
   const 可提交 = routeName.trim() && date && !已達上限 && !額度檢查中 && !定期達上限
@@ -236,8 +239,8 @@ export default function CreateEventPage() {
       pace: 淨化純文字(pace),
       maxParticipants,
       notes: notes.split('\n').filter(s => s.trim()).map(s => 淨化輸入文字(s)),
-      creatorId: 使用者.id,
-      creatorName: 使用者.name,
+      creatorId: 當前使用者.id,
+      creatorName: 當前使用者.name,
     })
     set儲存範本名('')
     set顯示儲存(false)
@@ -257,8 +260,9 @@ export default function CreateEventPage() {
   const 過濾連結 = (text: string) => 淨化輸入文字(text)
 
   const 提交 = async () => {
-    if (!使用者 || !可提交) return
-    const 有效縣市 = countyId || 使用者.countyId || 'taipei'
+    if (!可提交) return
+    set提交錯誤('')
+    const 有效縣市 = countyId || 當前使用者.countyId || 'taipei'
     const 縣市 = 查找縣市(有效縣市)
 
     // 淨化所有使用者輸入欄位
@@ -273,9 +277,63 @@ export default function CreateEventPage() {
     const 安全備註 = 過濾連結(notes.trim())
     if (安全備註) 各段.push(`⚠️ 注意事項：\n${安全備註}`)
 
-    if (是編輯模式 && editId) {
-      // 編輯模式：更新既有活動
-      await 更新活動(editId, {
+    try {
+      if (是編輯模式 && editId) {
+        await 更新活動(editId, {
+          title: 安全標題,
+          description: 各段.join('\n\n'),
+          countyId: 有效縣市,
+          region: 縣市?.region || '北部',
+          date, time,
+          meetingPoint: 安全集合點,
+          meetingPointUrl: 安全集合點URL,
+          distance, elevation,
+          pace: 安全配速,
+          maxParticipants,
+          stravaRouteUrl: 安全路線URL,
+          routeCoordinates: 已套用路線庫座標.length > 0 ? 已套用路線庫座標 : undefined,
+          coverImage: 選中圖章 || undefined,
+        })
+        navigate(`/event/${editId}`, { replace: true })
+        return
+      }
+
+      if (定期模式) {
+        const seriesId = 產生ID()
+        const 日期列表 = 產生定期日期(date, 定期頻率, 定期期數)
+        const 批次活動: CyclingEvent[] = 日期列表.map((d, i) => {
+          const id = 產生ID()
+          return {
+            id,
+            title: `${安全標題}（第 ${i + 1} 期）`,
+            description: 各段.join('\n\n'),
+            countyId: 有效縣市,
+            region: 縣市?.region || '北部',
+            date: d, time,
+            meetingPoint: 安全集合點,
+            meetingPointUrl: 安全集合點URL,
+            distance, elevation,
+            pace: 安全配速,
+            maxParticipants,
+            stravaRouteUrl: 安全路線URL,
+            routeCoordinates: 已套用路線庫座標.length > 0 ? 已套用路線庫座標 : undefined,
+            coverImage: 選中圖章 || undefined,
+            stickyColor: 取得便利貼顏色(id),
+            tags: [],
+            creatorId: 目前身份.id,
+            createdAt: new Date().toISOString(),
+            seriesId,
+            recurrenceType: 定期頻率,
+          }
+        })
+        await 批次新增活動(批次活動)
+        navigate('/wall', { replace: true })
+        return
+      }
+
+      const id = 產生ID()
+      const 新活動: CyclingEvent = {
+        id,
         title: 安全標題,
         description: 各段.join('\n\n'),
         countyId: 有效縣市,
@@ -289,69 +347,16 @@ export default function CreateEventPage() {
         stravaRouteUrl: 安全路線URL,
         routeCoordinates: 已套用路線庫座標.length > 0 ? 已套用路線庫座標 : undefined,
         coverImage: 選中圖章 || undefined,
-      })
-      navigate(`/event/${editId}`, { replace: true })
-      return
-    }
-
-    // 新建模式
-    if (定期模式) {
-      // 定期約騎：批次建立 N 筆活動
-      const seriesId = 產生ID()
-      const 日期列表 = 產生定期日期(date, 定期頻率, 定期期數)
-      const 批次活動: CyclingEvent[] = 日期列表.map((d, i) => {
-        const id = 產生ID()
-        return {
-          id,
-          title: `${安全標題}（第 ${i + 1} 期）`,
-          description: 各段.join('\n\n'),
-          countyId: 有效縣市,
-          region: 縣市?.region || '北部',
-          date: d, time,
-          meetingPoint: 安全集合點,
-          meetingPointUrl: 安全集合點URL,
-          distance, elevation,
-          pace: 安全配速,
-          maxParticipants,
-          stravaRouteUrl: 安全路線URL,
-          routeCoordinates: 已套用路線庫座標.length > 0 ? 已套用路線庫座標 : undefined,
-          coverImage: 選中圖章 || undefined,
-          stickyColor: 取得便利貼顏色(id),
-          tags: [],
-          creatorId: 目前身份.id,
-          createdAt: new Date().toISOString(),
-          seriesId,
-          recurrenceType: 定期頻率,
-        }
-      })
-      await 批次新增活動(批次活動)
+        stickyColor: 取得便利貼顏色(id),
+        tags: [],
+        creatorId: 目前身份.id,
+        createdAt: new Date().toISOString(),
+      }
+      await 新增活動(新活動)
       navigate('/wall', { replace: true })
-      return
+    } catch (err) {
+      set提交錯誤(err instanceof Error ? err.message : '存檔失敗，請稍後再試')
     }
-
-    const id = 產生ID()
-    const 新活動: CyclingEvent = {
-      id,
-      title: 安全標題,
-      description: 各段.join('\n\n'),
-      countyId: 有效縣市,
-      region: 縣市?.region || '北部',
-      date, time,
-      meetingPoint: 安全集合點,
-      meetingPointUrl: 安全集合點URL,
-      distance, elevation,
-      pace: 安全配速,
-      maxParticipants,
-      stravaRouteUrl: 安全路線URL,
-      routeCoordinates: 已套用路線庫座標.length > 0 ? 已套用路線庫座標 : undefined,
-      coverImage: 選中圖章 || undefined,
-      stickyColor: 取得便利貼顏色(id),
-      tags: [],
-      creatorId: 目前身份.id,
-      createdAt: new Date().toISOString(),
-    }
-    await 新增活動(新活動)
-    navigate('/wall', { replace: true })
   }
 
   return (
@@ -382,6 +387,13 @@ export default function CreateEventPage() {
           <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">
             <p className="font-bold mb-1">已達活動上限</p>
             <p>你目前有 {進行中數量} 個進行中的活動，已達角色上限（{額度上限}）。請等待既有活動結束後再發起新約騎。</p>
+          </div>
+        )}
+
+        {提交錯誤 && (
+          <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">
+            <p className="font-bold mb-1">存檔失敗</p>
+            <p>{提交錯誤}</p>
           </div>
         )}
 
@@ -417,7 +429,7 @@ export default function CreateEventPage() {
                         <p className="text-xs text-gray-400 mt-0.5">by {t.creatorName}</p>
                       )}
                     </button>
-                    {t.creatorId === 使用者.id && (
+                    {t.creatorId === 當前使用者.id && (
                       <button onClick={() => 刪除範本(t.id)} aria-label="刪除範本"
                         className="p-2 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 cursor-pointer transition-colors">
                         <Trash2 size={16} />
@@ -573,11 +585,11 @@ export default function CreateEventPage() {
             <div className="rounded-lg bg-gray-50 p-3 space-y-2 border border-gray-200">
               {集合點載入中 ? (
                 <p className="text-sm text-gray-500 py-2 text-center">載入中…</p>
-              ) : 集合點範本列表.filter(t => t.creatorId === 使用者.id).length === 0 ? (
+              ) : 集合點範本列表.filter(t => t.creatorId === 當前使用者.id).length === 0 ? (
                 <p className="text-sm text-gray-500 py-2">尚無集合點範本，填寫集合地點後可儲存</p>
               ) : (
                 <div className="space-y-1.5 max-h-56 overflow-y-auto">
-                  {集合點範本列表.filter(t => t.creatorId === 使用者.id).map(t => (
+                  {集合點範本列表.filter(t => t.creatorId === 當前使用者.id).map(t => (
                     <div key={t.id}>
                       {編輯中集合點 === t.id ? (
                         /* 編輯模式 */
@@ -654,7 +666,7 @@ export default function CreateEventPage() {
                       name: 淨化純文字(spotName.trim()),
                       url: 安全URL(spotUrl.trim()) ?? '',
                       countyId,
-                      creatorId: 使用者.id,
+                      creatorId: 當前使用者.id,
                     })
                   }}
                   className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-gray-300 text-sm text-gray-600 cursor-pointer hover:border-strava hover:text-strava transition-colors"
@@ -704,11 +716,11 @@ export default function CreateEventPage() {
             <div className="rounded-lg bg-gray-50 p-3 space-y-2 border border-gray-200">
               {路線範本載入中 ? (
                 <p className="text-sm text-gray-500 py-2 text-center">載入中…</p>
-              ) : 路線範本列表.filter(t => t.creatorId === 使用者.id).length === 0 ? (
+              ) : 路線範本列表.filter(t => t.creatorId === 當前使用者.id).length === 0 ? (
                 <p className="text-sm text-gray-500 py-2">尚無路線範本，填寫路線資訊後可儲存</p>
               ) : (
                 <div className="space-y-1.5 max-h-56 overflow-y-auto">
-                  {路線範本列表.filter(t => t.creatorId === 使用者.id).map(t => (
+                  {路線範本列表.filter(t => t.creatorId === 當前使用者.id).map(t => (
                     <div key={t.id}>
                       {編輯中路線 === t.id ? (
                         /* 編輯模式 */
@@ -810,7 +822,7 @@ export default function CreateEventPage() {
                       elevation,
                       pace: 淨化純文字(pace),
                       maxParticipants,
-                      creatorId: 使用者.id,
+                      creatorId: 當前使用者.id,
                     })
                   }}
                   className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-gray-300 text-sm text-gray-600 cursor-pointer hover:border-strava hover:text-strava transition-colors"
@@ -948,11 +960,11 @@ export default function CreateEventPage() {
             <div className="rounded-lg bg-gray-50 p-3 space-y-2 border border-gray-200">
               {備註範本載入中 ? (
                 <p className="text-sm text-gray-500 py-2 text-center">載入中…</p>
-              ) : 備註範本列表.filter(t => t.creatorId === 使用者.id).length === 0 ? (
+              ) : 備註範本列表.filter(t => t.creatorId === 當前使用者.id).length === 0 ? (
                 <p className="text-sm text-gray-500 py-2">尚無備註範本，填寫備註後可儲存</p>
               ) : (
                 <div className="space-y-1.5 max-h-56 overflow-y-auto">
-                  {備註範本列表.filter(t => t.creatorId === 使用者.id).map(t => (
+                  {備註範本列表.filter(t => t.creatorId === 當前使用者.id).map(t => (
                     <div key={t.id}>
                       {編輯中備註 === t.id ? (
                         <div className="rounded-lg border border-strava/30 bg-white p-2.5 space-y-2">
@@ -1015,7 +1027,7 @@ export default function CreateEventPage() {
                       id: `note-${Date.now()}`,
                       name: 預設名,
                       notes: 安全備註,
-                      creatorId: 使用者.id,
+                      creatorId: 當前使用者.id,
                     })
                   }}
                   className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-gray-300 text-sm text-gray-600 cursor-pointer hover:border-strava hover:text-strava transition-colors"

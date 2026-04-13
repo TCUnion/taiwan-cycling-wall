@@ -83,13 +83,24 @@ function RequireAdmin({ children }: { children: React.ReactNode }) {
 export default function App() {
   const Google登入 = useAuthStore(s => s.Google登入)
   const LINE登入 = useAuthStore(s => s.LINE登入)
+  const 已登入 = useAuthStore(s => s.已登入)
+  const 使用者 = useAuthStore(s => s.使用者)
+  const 登出 = useAuthStore(s => s.登出)
 
   useEffect(() => {
     let active = true
 
     const 同步社群Session = async () => {
       const { data: userData, error } = await supabase.auth.getUser()
-      if (error || !userData.user || !active) return
+      if (error || !active) return
+
+      if (!userData.user) {
+        const 需要SupabaseSession = 已登入 && (使用者?.authProvider === 'google' || 使用者?.authProvider === 'line')
+        if (需要SupabaseSession) {
+          登出()
+        }
+        return
+      }
 
       const authUser = userData.user
       const metadata = authUser.user_metadata as Record<string, unknown> | undefined
@@ -148,7 +159,7 @@ export default function App() {
     return () => {
       active = false
     }
-  }, [Google登入, LINE登入])
+  }, [Google登入, LINE登入, 已登入, 使用者?.authProvider, 登出])
 
   return (
     <Suspense fallback={<Loading />}>

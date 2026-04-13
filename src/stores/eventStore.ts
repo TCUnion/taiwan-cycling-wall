@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { CyclingEvent, Region, StickyColor } from '../types'
-import { supabase } from '../utils/supabase'
+import { 取得目前AuthUserId, supabase } from '../utils/supabase'
 import { 上傳圖章到Storage } from '../utils/storageService'
 
 type 排序方式 = '最新' | '最熱門'
@@ -29,6 +29,14 @@ interface EventState {
   更新活動: (eventId: string, 更新: Partial<CyclingEvent>) => Promise<void>
   取得篩選後活動: () => CyclingEvent[]
   取得歷史活動: () => CyclingEvent[]
+}
+
+async function 取得必要AuthUserId(): Promise<string> {
+  const authUserId = await 取得目前AuthUserId()
+  if (!authUserId) {
+    throw new Error('登入狀態已失效，請重新登入後再試')
+  }
+  return authUserId
 }
 
 // 根據ID產生固定的便利貼顏色
@@ -76,6 +84,7 @@ function 轉換為活動(row: Record<string, unknown>): CyclingEvent {
     stickyColor: (row.sticky_color as StickyColor) || 'yellow',
     tags: (row.tags as string[]) || [],
     creatorId: row.creator_id as string,
+    creatorAuthUserId: (row.creator_auth_user_id as string) || undefined,
     createdAt: row.created_at as string,
     seriesId: (row.series_id as string) || null,
     recurrenceType: (row.recurrence_type as 'weekly' | 'monthly') || null,
@@ -105,6 +114,7 @@ function 轉換為資料列(e: CyclingEvent) {
     sticky_color: e.stickyColor,
     tags: e.tags,
     creator_id: e.creatorId,
+    creator_auth_user_id: e.creatorAuthUserId ?? null,
     created_at: e.createdAt,
     series_id: e.seriesId || null,
     recurrence_type: e.recurrenceType || null,
@@ -152,7 +162,7 @@ export const useEventStore = create<EventState>()((set, get) => ({
     // 從 Supabase 載入
     const { data, error } = await supabase
       .from('cycling_events')
-      .select('id,title,description,county_id,region,date,time,meeting_point,meeting_point_url,cover_image,distance,elevation,pace,max_participants,strava_route_url,route_coordinates,moak_event_id,sticky_color,tags,creator_id,created_at,series_id,recurrence_type')
+      .select('id,title,description,county_id,region,date,time,meeting_point,meeting_point_url,cover_image,distance,elevation,pace,max_participants,strava_route_url,route_coordinates,moak_event_id,sticky_color,tags,creator_id,creator_auth_user_id,created_at,series_id,recurrence_type')
       .eq('id', id)
       .single()
     if (error || !data) return null
@@ -169,7 +179,7 @@ export const useEventStore = create<EventState>()((set, get) => ({
     set({ 載入中: true })
     const { data, error } = await supabase
       .from('cycling_events')
-      .select('id,title,description,county_id,region,date,time,meeting_point,meeting_point_url,cover_image,distance,elevation,pace,max_participants,strava_route_url,route_coordinates,moak_event_id,sticky_color,tags,creator_id,created_at,series_id,recurrence_type')
+      .select('id,title,description,county_id,region,date,time,meeting_point,meeting_point_url,cover_image,distance,elevation,pace,max_participants,strava_route_url,route_coordinates,moak_event_id,sticky_color,tags,creator_id,creator_auth_user_id,created_at,series_id,recurrence_type')
       .order('created_at', { ascending: false })
     if (!error && data) {
       set({ 活動列表: data.map(轉換為活動) })
@@ -184,12 +194,18 @@ export const useEventStore = create<EventState>()((set, get) => ({
       const publicUrl = await 上傳圖章到Storage(event.coverImage, event.id)
       if (!publicUrl.startsWith('data:')) supabaseCoverImage = publicUrl
     }
-    const row = 轉換為資料列({ ...event, coverImage: supabaseCoverImage })
-    const { error } = await supabase.from('cycling_events').insert(row)
-    if (!error) {
-      // 本地 store 保留原始 base64，UI 顯示不需網路
-      set((s) => ({ 活動列表: [event, ...s.活動列表] }))
+    const authUserId = await 取得必要AuthUserId()
+    const localEvent = { ...event, creatorAuthUserId: authUserId }
+    const row = {
+      ...轉換為資料列({ ...event, coverImage: supabaseCoverImage, creatorAuthUserId: authUserId }),
+      creator_auth_user_id: authUserId,
     }
+    const { error } = await supabase.from('cycling_events').insert(row)
+    if (error) {
+      throw new Error(error.message || '新增活動失敗')
+    }
+    // 本地 store 保留原始 base64，UI 顯示不需網路
+    set((s) => ({ 活動列表: [localEvent, ...s.活動列表] }))
   },
 
   批次新增活動: async (events) => {
@@ -202,19 +218,25 @@ export const useEventStore = create<EventState>()((set, get) => ({
       if (!publicUrl.startsWith('data:')) sharedCoverImage = publicUrl
     }
 
-    const rows = events.map(e => 轉換為資料列({
-      ...e,
-      coverImage: sharedCoverImage,
+    const authUserId = await 取得必要AuthUserId()
+    const rows = events.map(e => ({
+      ...轉換為資料列({
+        ...e,
+        coverImage: sharedCoverImage,
+        creatorAuthUserId: authUserId,
+      }),
+      creator_auth_user_id: authUserId,
     }))
 
     const { error } = await supabase.from('cycling_events').insert(rows)
     if (error) {
-      return { 成功數: 0, 失敗數: events.length }
+      throw new Error(error.message || '批次新增活動失敗')
     }
 
     // 本地 store 保留原始 base64
     const localEvents = events.map(e => ({
       ...e,
+      creatorAuthUserId: authUserId,
       coverImage: events[0].coverImage, // 保留原始 base64
     }))
     set((s) => ({ 活動列表: [...localEvents, ...s.活動列表] }))
@@ -228,14 +250,16 @@ export const useEventStore = create<EventState>()((set, get) => ({
       const publicUrl = await 上傳圖章到Storage(更新.coverImage, eventId)
       if (!publicUrl.startsWith('data:')) supabase更新 = { ...更新, coverImage: publicUrl }
     }
+    await 取得必要AuthUserId()
     const row = 轉換部分更新(supabase更新)
     const { error } = await supabase.from('cycling_events').update(row).eq('id', eventId)
-    if (!error) {
-      // 本地 store 保留原始 base64，UI 顯示不需網路
-      set((s) => ({
-        活動列表: s.活動列表.map(e => e.id === eventId ? { ...e, ...更新 } : e),
-      }))
+    if (error) {
+      throw new Error(error.message || '更新活動失敗')
     }
+    // 本地 store 保留原始 base64，UI 顯示不需網路
+    set((s) => ({
+      活動列表: s.活動列表.map(e => e.id === eventId ? { ...e, ...更新 } : e),
+    }))
   },
 
   取得篩選後活動: () => {
