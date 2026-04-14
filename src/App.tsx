@@ -67,7 +67,7 @@ function 取得LINE登入資料(authUser: {
 // 需要登入的路由保護（預渲染時放行）
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const 已登入 = useAuthStore(s => s.已登入)
-  if (!已登入) return <Navigate to="/login" replace />
+  if (!已登入) return <Navigate to="/" replace />
   return <>{children}</>
 }
 
@@ -75,7 +75,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 function RequireAdmin({ children }: { children: React.ReactNode }) {
   const 已登入 = useAuthStore(s => s.已登入)
   const 角色 = useAuthStore(s => s.使用者?.role)
-  if (!已登入) return <Navigate to="/login" replace />
+  if (!已登入) return <Navigate to="/" replace />
   if (角色 !== 'admin') return <Navigate to="/wall" replace />
   return <>{children}</>
 }

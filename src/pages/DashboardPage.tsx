@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Users, History, ChevronRight, Pencil, Check, X, ArrowLeftRight, ZoomIn, ZoomOut, Plus, Settings, Trash2 } from 'lucide-react'
+import { LogOut, Users, History, ChevronRight, ChevronDown, ChevronUp, Search, Pencil, Check, X, ArrowLeftRight, ZoomIn, ZoomOut, Plus, Settings, Trash2 } from 'lucide-react'
 import { 取得所有角色 } from '../utils/roleService'
 import type { UserRole } from '../types'
 import { useAuthStore } from '../stores/authStore'
@@ -22,6 +22,8 @@ export default function DashboardPage() {
   const [顯示身份切換, set顯示身份切換] = useState(false)
   const [刪除中活動Id, set刪除中活動Id] = useState<string | null>(null)
   const [刪除錯誤, set刪除錯誤] = useState('')
+  const [展開全部, set展開全部] = useState(false)
+  const [搜尋關鍵字, set搜尋關鍵字] = useState('')
 
   // 包含個人與粉絲頁發起的活動（置於 early return 前，符合 hooks 規則）
   const 我的粉絲頁Ids = useMemo(
@@ -31,7 +33,9 @@ export default function DashboardPage() {
   const 我的活動 = useMemo(
     () => {
       if (!使用者) return []
-      return 活動列表.filter(e => e.creatorId === 使用者.id || 我的粉絲頁Ids.includes(e.creatorId))
+      return 活動列表
+        .filter(e => e.creatorId === 使用者.id || 我的粉絲頁Ids.includes(e.creatorId))
+        .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
     },
     [活動列表, 使用者, 我的粉絲頁Ids]
   )
@@ -157,52 +161,89 @@ export default function DashboardPage() {
 
         {/* 發起紀錄 */}
         <區塊標題 icon={History} title="發起紀錄" count={我的活動.length} />
+        {我的活動.length > 0 && (
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              name="search-events"
+              value={搜尋關鍵字}
+              onChange={e => { set搜尋關鍵字(e.target.value); set展開全部(true) }}
+              placeholder="搜尋活動名稱…"
+              className="w-full pl-8 pr-3 py-2 text-sm rounded-lg border border-gray-200 bg-white outline-none focus:border-strava/40 focus-visible:ring-2 focus-visible:ring-strava/40 transition-colors"
+            />
+          </div>
+        )}
         {刪除錯誤 && (
           <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
             {刪除錯誤}
           </div>
         )}
-        {我的活動.length === 0 ? (
-          <空白提示>尚無發起紀錄</空白提示>
-        ) : (
-          <div className="space-y-2">
-            {我的活動.map(e => {
-              const 已過期 = 活動已過期(e)
-              return (
-                <button
-                  key={e.id}
-                  onClick={() => navigate(`/event/${e.id}`)}
-                  className="w-full flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm text-left cursor-pointer hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{e.title}</p>
-                    <p className="text-xs text-gray-500">
-                      {format(new Date(e.date), 'yyyy/MM/dd', { locale: zhTW })} · {查找縣市(e.countyId)?.name} · {e.distance}km
-                    </p>
-                    {已過期 && (
-                      <p className="mt-1 text-[11px] text-gray-400">已過期，不可刪除</p>
-                    )}
-                  </div>
-                  {!已過期 && (
+        {(() => {
+          const 篩選後活動 = 搜尋關鍵字.trim()
+            ? 我的活動.filter(e => e.title.includes(搜尋關鍵字.trim()))
+            : 我的活動
+          const 顯示活動 = 展開全部 ? 篩選後活動 : 篩選後活動.slice(0, 5)
+          const 可展開 = !搜尋關鍵字.trim() && 篩選後活動.length > 5
+
+          if (篩選後活動.length === 0) {
+            return <空白提示>{搜尋關鍵字.trim() ? '找不到符合的活動' : '尚無發起紀錄'}</空白提示>
+          }
+
+          return (
+            <>
+              <div className="space-y-2">
+                {顯示活動.map(e => {
+                  const 已過期 = 活動已過期(e)
+                  return (
                     <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        void 處理刪除活動(e.id)
-                      }}
-                      aria-label="刪除活動"
-                      disabled={刪除中活動Id === e.id}
-                      className="p-2 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 disabled:text-gray-300 disabled:hover:bg-transparent cursor-pointer transition-colors"
+                      key={e.id}
+                      onClick={() => navigate(`/event/${e.id}`)}
+                      className="w-full flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm text-left cursor-pointer hover:bg-gray-50 transition-colors"
                     >
-                      <Trash2 size={16} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{e.title}</p>
+                        <p className="text-xs text-gray-500">
+                          {format(new Date(e.date), 'yyyy/MM/dd', { locale: zhTW })} · {查找縣市(e.countyId)?.name} · {e.distance}km
+                        </p>
+                        {已過期 && (
+                          <p className="mt-1 text-[11px] text-gray-400">已過期，不可刪除</p>
+                        )}
+                      </div>
+                      {!已過期 && (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            void 處理刪除活動(e.id)
+                          }}
+                          aria-label="刪除活動"
+                          disabled={刪除中活動Id === e.id}
+                          className="p-2 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 disabled:text-gray-300 disabled:hover:bg-transparent cursor-pointer transition-colors"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                      <ChevronRight size={16} className="text-gray-300 shrink-0" />
                     </button>
+                  )
+                })}
+              </div>
+              {可展開 && (
+                <button
+                  onClick={() => set展開全部(v => !v)}
+                  className="w-full flex items-center justify-center gap-1 py-2 text-sm text-gray-500 cursor-pointer hover:text-strava transition-colors"
+                >
+                  {展開全部 ? (
+                    <><ChevronUp size={14} /> 收合</>
+                  ) : (
+                    <><ChevronDown size={14} /> 顯示全部 {篩選後活動.length} 筆</>
                   )}
-                  <ChevronRight size={16} className="text-gray-300 shrink-0" />
                 </button>
-              )
-            })}
-          </div>
-        )}
+              )}
+            </>
+          )
+        })()}
 
         {/* 發起約騎 */}
         <button
@@ -211,6 +252,9 @@ export default function DashboardPage() {
         >
           <Plus size={18} /> 發起約騎
         </button>
+
+        {/* 軟體版本 */}
+        <p className="text-center text-xs text-gray-400 pb-2">v{import.meta.env.VITE_APP_VERSION}</p>
 
       </div>
     </div>
