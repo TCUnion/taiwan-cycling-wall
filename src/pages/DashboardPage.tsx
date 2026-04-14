@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Users, History, ChevronRight, ChevronDown, ChevronUp, Search, Pencil, Check, X, ArrowLeftRight, ZoomIn, ZoomOut, Plus, Settings, Trash2 } from 'lucide-react'
+import { LogOut, Users, History, ChevronRight, ChevronDown, ChevronUp, Search, Pencil, Check, X, ArrowLeftRight, ZoomIn, ZoomOut, Plus, Settings, Trash2, Copy } from 'lucide-react'
 import { 取得所有角色 } from '../utils/roleService'
 import type { UserRole } from '../types'
 import { useAuthStore } from '../stores/authStore'
@@ -210,6 +210,17 @@ export default function DashboardPage() {
                           <p className="mt-1 text-[11px] text-gray-400">已過期，不可刪除</p>
                         )}
                       </div>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          navigate('/create', { state: { 複製來源: e } })
+                        }}
+                        aria-label="複製為新約騎"
+                        className="p-2 rounded-full text-gray-400 hover:text-strava hover:bg-orange-50 cursor-pointer transition-colors"
+                      >
+                        <Copy size={16} />
+                      </button>
                       {!已過期 && (
                         <button
                           type="button"

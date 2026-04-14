@@ -1,7 +1,7 @@
 // 發起約騎頁面 — 支援範本快速填入與儲存
 
 import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { ArrowLeft, ExternalLink, Bike, MapPin, Link, BookmarkPlus, Bookmark, Trash2, Save, MapPinPlus, Pencil, Check, Route, StickyNote, Map, X, Repeat } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { useEventStore, 活動已過期, 取得便利貼顏色 } from '../stores/eventStore'
@@ -56,6 +56,8 @@ function 組合集合點範本名稱(topic: string, placeName: string): string {
 export default function CreateEventPage() {
   const navigate = useNavigate()
   const { id: editId } = useParams()
+  const location = useLocation()
+  const 複製來源 = (location.state as { 複製來源?: CyclingEvent } | null)?.複製來源
   const 使用者 = useAuthStore(s => s.使用者)
   const 取得目前發文身份 = useAuthStore(s => s.取得目前發文身份)
   const 目前身份 = 取得目前發文身份()
@@ -95,6 +97,8 @@ export default function CreateEventPage() {
   const 編輯中活動 = editId ? 活動列表.find(e => e.id === editId) : undefined
   const 是編輯模式 = !!編輯中活動
   const 編輯活動已過期 = 編輯中活動 ? 活動已過期(編輯中活動) : false
+  // 複製模式：從 state 取得來源活動（預填但不帶 id，視為新建）
+  const 預填來源 = 編輯中活動 ?? 複製來源
 
   // 從 description 反解備註文字
   const 解析備註文字 = (desc: string): string => {
@@ -107,25 +111,25 @@ export default function CreateEventPage() {
     return match ? match[1].trim() : ''
   }
 
-  // 表單狀態（編輯模式用既有值）
-  const [date, setDate] = useState(編輯中活動?.date ?? '')
-  const [time, setTime] = useState(編輯中活動?.time ?? '06:00')
-  const [routeName, setRouteName] = useState(編輯中活動?.title ?? '')
-  const [routeDetail, setRouteDetail] = useState(編輯中活動 ? 解析路線描述(編輯中活動.description) : '')
-  const [routeUrl, setRouteUrl] = useState(編輯中活動?.stravaRouteUrl ?? '')
-  const [spotName, setSpotName] = useState(編輯中活動?.meetingPoint ?? '')
-  const [spotUrl, setSpotUrl] = useState(編輯中活動?.meetingPointUrl ?? '')
-  const [countyId, setCountyId] = useState(編輯中活動?.countyId ?? 使用者?.countyId ?? '')
+  // 表單狀態（編輯 / 複製模式用既有值）
+  const [date, setDate] = useState(是編輯模式 ? (預填來源?.date ?? '') : '')
+  const [time, setTime] = useState(預填來源?.time ?? '06:00')
+  const [routeName, setRouteName] = useState(預填來源?.title ?? '')
+  const [routeDetail, setRouteDetail] = useState(預填來源 ? 解析路線描述(預填來源.description) : '')
+  const [routeUrl, setRouteUrl] = useState(預填來源?.stravaRouteUrl ?? '')
+  const [spotName, setSpotName] = useState(預填來源?.meetingPoint ?? '')
+  const [spotUrl, setSpotUrl] = useState(預填來源?.meetingPointUrl ?? '')
+  const [countyId, setCountyId] = useState(預填來源?.countyId ?? 使用者?.countyId ?? '')
   const 使用者圖章 = 使用者?.stampImages ?? (使用者?.stampImage ? [使用者.stampImage] : [])
-  // 編輯模式：若活動圖章是 Supabase URL（非 base64），加入選項以便正確比對
-  const 編輯中圖章 = 編輯中活動?.coverImage && !使用者圖章.includes(編輯中活動.coverImage) ? [編輯中活動.coverImage] : []
+  // 編輯 / 複製模式：若活動圖章是 Supabase URL（非 base64），加入選項以便正確比對
+  const 編輯中圖章 = 預填來源?.coverImage && !使用者圖章.includes(預填來源.coverImage) ? [預填來源.coverImage] : []
   const 所有圖章 = [...編輯中圖章, ...使用者圖章]
-  const [選中圖章, set選中圖章] = useState(編輯中活動?.coverImage || 使用者圖章[0] || '')
-  const [notes, setNotes] = useState(編輯中活動 ? 解析備註文字(編輯中活動.description) : '')
-  const [distance, setDistance] = useState(編輯中活動?.distance ?? 0)
-  const [elevation, setElevation] = useState(編輯中活動?.elevation ?? 0)
-  const [pace, setPace] = useState(編輯中活動?.pace === '自由配速' ? '' : (編輯中活動?.pace ?? ''))
-  const [maxParticipants, setMaxParticipants] = useState(編輯中活動?.maxParticipants ?? 0)
+  const [選中圖章, set選中圖章] = useState(預填來源?.coverImage || 使用者圖章[0] || '')
+  const [notes, setNotes] = useState(預填來源 ? 解析備註文字(預填來源.description) : '')
+  const [distance, setDistance] = useState(預填來源?.distance ?? 0)
+  const [elevation, setElevation] = useState(預填來源?.elevation ?? 0)
+  const [pace, setPace] = useState(預填來源?.pace === '自由配速' ? '' : (預填來源?.pace ?? ''))
+  const [maxParticipants, setMaxParticipants] = useState(預填來源?.maxParticipants ?? 0)
   const [抓取路線中, set抓取路線中] = useState(false)
   const [提交錯誤, set提交錯誤] = useState('')
   const 預設配速 = ['', '輕鬆騎', '休閒騎', '中等強度', '進階挑戰', '比賽強度']
@@ -478,7 +482,7 @@ export default function CreateEventPage() {
         <button onClick={() => navigate(-1)} aria-label="返回" className="p-2 -ml-1 rounded-full cursor-pointer hover:bg-black/5 transition-colors">
           <ArrowLeft size={22} />
         </button>
-        <h1 className="text-lg font-bold">{是編輯模式 ? '編輯活動' : '發起約騎'}</h1>
+        <h1 className="text-lg font-bold">{是編輯模式 ? '編輯活動' : 複製來源 ? '複製為新約騎' : '發起約騎'}</h1>
         <div className="ml-auto flex gap-1">
           {/* 套用範本 */}
           <button onClick={() => set顯示範本(!顯示範本)} aria-label="範本"
