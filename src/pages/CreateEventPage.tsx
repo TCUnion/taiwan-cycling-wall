@@ -13,7 +13,7 @@ import { 查找縣市, 縣市列表 } from '../data/counties'
 import { 產生ID } from '../utils/formatters'
 import type { CyclingEvent, RideTemplate, SavedRoute } from '../types'
 import { 淨化純文字, 淨化輸入文字, 安全URL } from '../utils/sanitize'
-import { 產生定期日期, 取得星期顯示 } from '../utils/recurrenceUtils'
+import { 產生定期日期, 取得星期顯示, 星期選項 } from '../utils/recurrenceUtils'
 import { 取得活動上限, 計算進行中活動數 } from '../utils/roleService'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
@@ -217,6 +217,8 @@ export default function CreateEventPage() {
   const [定期模式, set定期模式] = useState(false)
   const [定期頻率, set定期頻率] = useState<'weekly' | 'monthly'>('weekly')
   const [定期期數, set定期期數] = useState(4)
+  const [定期星期, set定期星期] = useState(() => date ? new Date(date + 'T00:00:00').getDay() : 3)
+  const [定期幾號, set定期幾號] = useState(() => date ? new Date(date + 'T00:00:00').getDate() : 1)
 
   if (!使用者) return null
   const 當前使用者 = 使用者
@@ -411,7 +413,7 @@ export default function CreateEventPage() {
 
       if (定期模式) {
         const seriesId = 產生ID()
-        const 日期列表 = 產生定期日期(date, 定期頻率, 定期期數)
+        const 日期列表 = 產生定期日期(date, 定期頻率, 定期期數, 定期星期, 定期幾號)
         const 批次活動: CyclingEvent[] = 日期列表.map((d, i) => {
           const id = 產生ID()
           return {
@@ -579,7 +581,14 @@ export default function CreateEventPage() {
         {/* ① 日期與時間 */}
         <區塊 title="日期與時間">
           <div className="grid grid-cols-2 gap-3">
-            <Input name="ride-date" label="約騎日期 *" type="date" value={date} onChange={e => setDate(e.target.value)} min={今天} />
+            <Input name="ride-date" label="約騎日期 *" type="date" value={date} onChange={e => {
+              setDate(e.target.value)
+              if (e.target.value) {
+                const d = new Date(e.target.value + 'T00:00:00')
+                set定期星期(d.getDay())
+                set定期幾號(d.getDate())
+              }
+            }} min={今天} />
             <Input name="ride-time" label="集合時間" type="time" value={time} onChange={e => setTime(e.target.value)} />
           </div>
         </區塊>
@@ -599,7 +608,7 @@ export default function CreateEventPage() {
 
             {定期模式 && (
               <div className="mt-3 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">頻率</label>
                     <select
@@ -611,6 +620,34 @@ export default function CreateEventPage() {
                       <option value="weekly">每週</option>
                       <option value="monthly">每月</option>
                     </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      {定期頻率 === 'weekly' ? '星期' : '日期'}
+                    </label>
+                    {定期頻率 === 'weekly' ? (
+                      <select
+                        name="recurrence-weekday"
+                        value={定期星期}
+                        onChange={e => set定期星期(Number(e.target.value))}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-strava/30 cursor-pointer"
+                      >
+                        {星期選項.map(opt => (
+                          <option key={opt.value} value={opt.value}>星期{opt.label}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <select
+                        name="recurrence-day"
+                        value={定期幾號}
+                        onChange={e => set定期幾號(Number(e.target.value))}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-strava/30 cursor-pointer"
+                      >
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map(n => (
+                          <option key={n} value={n}>{n} 號</option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">期數</label>
@@ -631,7 +668,7 @@ export default function CreateEventPage() {
                   <div className="rounded-lg bg-gray-50 p-3">
                     <p className="text-xs font-medium text-gray-500 mb-2">預覽日期</p>
                     <ul className="space-y-1">
-                      {產生定期日期(date, 定期頻率, 定期期數).map((d, i) => (
+                      {產生定期日期(date, 定期頻率, 定期期數, 定期星期, 定期幾號).map((d, i) => (
                         <li key={d} className="flex items-center gap-1.5 text-sm">
                           <span className="text-gray-400 w-14 shrink-0">第 {i + 1} 期</span>
                           <span className="text-gray-700">{d}</span>
