@@ -59,7 +59,7 @@ export const useRouteInfoTemplateStore = create<RouteInfoTemplateState>()((set) 
     set({ 載入中: true })
     const { data, error } = await supabase
       .from('route_info_templates')
-      .select('*')
+      .select('id,name,route_name,route_detail,route_url,distance,elevation,pace,max_participants,creator_id,creator_auth_user_id')
       .order('created_at', { ascending: false })
     if (!error && data) {
       set({ 路線範本列表: data.map(轉換為路線範本) })

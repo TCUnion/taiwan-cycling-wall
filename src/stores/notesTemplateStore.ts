@@ -47,7 +47,7 @@ export const useNotesTemplateStore = create<NotesTemplateState>()((set) => ({
     set({ 載入中: true })
     const { data, error } = await supabase
       .from('notes_templates')
-      .select('*')
+      .select('id,name,notes,creator_id,creator_auth_user_id')
       .order('created_at', { ascending: false })
     if (!error && data) {
       set({ 備註範本列表: data.map(轉換為備註範本) })

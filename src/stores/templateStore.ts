@@ -72,7 +72,7 @@ export const useTemplateStore = create<TemplateState>()((set) => ({
     set({ 載入中: true })
     const { data, error } = await supabase
       .from('ride_templates')
-      .select('*')
+      .select('id,name,route_name,route_detail,route_url,spot_name,spot_url,county_id,time,distance,elevation,pace,max_participants,notes,creator_id,creator_auth_user_id,creator_name')
       .order('created_at', { ascending: false })
     if (!error && data) {
       set({ 範本列表: data.map(轉換為範本) })

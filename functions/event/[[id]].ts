@@ -8,6 +8,8 @@ interface Env {
 
 const SITE_URL = 'https://siokiu.criterium.tw'
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`
+// OG meta 僅需最少欄位，不拉 route_coordinates 等大欄位
+const OG_SELECT = 'id,title,date,time,meeting_point,county_id,distance,elevation,cover_image'
 
 // 社群媒體爬蟲 User-Agent 特徵
 const 爬蟲特徵 = [
@@ -41,7 +43,7 @@ function escapeHtml(text: string): string {
 
 // 從 Supabase REST API 取得活動資料
 async function 取得活動(id: string, anonKey: string, supabaseUrl: string) {
-  const url = `${supabaseUrl}/rest/v1/cycling_events?id=eq.${encodeURIComponent(id)}&select=*&limit=1`
+  const url = `${supabaseUrl}/rest/v1/cycling_events?id=eq.${encodeURIComponent(id)}&select=${encodeURIComponent(OG_SELECT)}&limit=1`
   const res = await fetch(url, {
     headers: {
       'apikey': anonKey,
@@ -144,7 +146,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     return new Response(html, {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'public, max-age=300',
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=86400',
       },
     })
   } catch {

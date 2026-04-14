@@ -65,7 +65,7 @@ export const useRouteStore = create<RouteState>()((set) => ({
     set({ 載入中: true })
     let query = supabase
       .from('saved_routes')
-      .select('*')
+      .select('id,name,distance,elevation,county_id,coordinates,waypoints,source,gpx_file_name,creator_id,creator_auth_user_id,is_public,created_at,updated_at')
       .order('created_at', { ascending: false })
 
     if (creatorAuthUserId) {

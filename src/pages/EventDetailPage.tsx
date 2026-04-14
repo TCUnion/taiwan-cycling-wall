@@ -35,13 +35,15 @@ export default function EventDetailPage() {
   const 活動 = 活動列表.find(e => e.id === id)
 
   useEffect(() => {
-    if (!id || 活動) return
+    if (!id) return
+    // 每次進入詳情頁都從 DB 補抓完整資料（含 route_coordinates）
     載入單一活動(id)
       .then((result) => {
         if (!result) set載入失敗(true)
       })
       .catch(() => set載入失敗(true))
-  }, [id, 活動, 載入單一活動])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
 
   // 背景載入發起人資料（如果 store 中找不到）
   useEffect(() => {

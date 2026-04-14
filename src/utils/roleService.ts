@@ -134,7 +134,7 @@ export async function 更新使用者角色(userId: string, role: string): Promi
 export async function 取得所有使用者(): Promise<Record<string, unknown>[]> {
   const { data, error } = await supabase
     .from('users')
-    .select('id,name,avatar,county_id,auth_provider,email,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
+    .select('id,name,avatar,county_id,auth_provider,email,verified_at,merged_into,role')
     .is('merged_into', null)
     .order('name', { ascending: true })
 

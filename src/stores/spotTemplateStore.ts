@@ -51,7 +51,7 @@ export const useSpotTemplateStore = create<SpotTemplateState>()((set) => ({
     set({ 載入中: true })
     const { data, error } = await supabase
       .from('spot_templates')
-      .select('*')
+      .select('id,name,url,county_id,creator_id,creator_auth_user_id')
       .order('created_at', { ascending: false })
     if (!error && data) {
       set({ 集合點範本列表: data.map(轉換為集合點範本) })

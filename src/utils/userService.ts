@@ -1,6 +1,9 @@
 import { supabase } from './supabase'
 import type { User } from '../types'
 
+// 使用者查詢共用欄位（避免 10+ 處重複長字串）
+const USER_SELECT = 'id,auth_user_id,name,avatar,county_id,auth_provider,email,google_sub,line_user_id,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role'
+
 // 前端 User → DB row（camelCase → snake_case）
 function toDbRow(user: User) {
   return {
@@ -66,7 +69,7 @@ function fromDbRow(row: Record<string, unknown>): Partial<User> {
 export async function 取得使用者(id: string): Promise<Partial<User> | null> {
   const { data, error } = await supabase
     .from('users')
-    .select('id,auth_user_id,name,avatar,county_id,auth_provider,email,google_sub,line_user_id,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
+    .select(USER_SELECT)
     .eq('id', id)
     .single()
 
@@ -99,7 +102,7 @@ export async function 綁定GoogleAuth使用者(params: {
 
   const { data: byGoogleSub } = await supabase
     .from('users')
-    .select('id,auth_user_id,name,avatar,county_id,auth_provider,email,google_sub,line_user_id,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
+    .select(USER_SELECT)
     .eq('google_sub', params.googleSub)
     .maybeSingle()
 
@@ -108,7 +111,7 @@ export async function 綁定GoogleAuth使用者(params: {
   if (!row && email) {
     const { data: byEmail } = await supabase
       .from('users')
-      .select('id,auth_user_id,name,avatar,county_id,auth_provider,email,google_sub,line_user_id,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
+      .select(USER_SELECT)
       .eq('email', email)
       .maybeSingle()
     row = (byEmail as Record<string, unknown> | null) ?? null
@@ -131,7 +134,7 @@ export async function 綁定GoogleAuth使用者(params: {
     const { data, error } = await supabase
       .from('users')
       .upsert(newRow, { onConflict: 'id' })
-      .select('id,auth_user_id,name,avatar,county_id,auth_provider,email,google_sub,line_user_id,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
+      .select(USER_SELECT)
       .single()
 
     if (error || !data) {
@@ -157,7 +160,7 @@ export async function 綁定GoogleAuth使用者(params: {
     .from('users')
     .update(updates)
     .eq('id', row.id as string)
-    .select('id,auth_user_id,name,avatar,county_id,auth_provider,email,google_sub,line_user_id,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
+    .select(USER_SELECT)
     .single()
 
   if (error || !data) {
@@ -178,7 +181,7 @@ export async function 綁定LINEAuth使用者(params: {
 
   const { data: byLineUserId } = await supabase
     .from('users')
-    .select('id,auth_user_id,name,avatar,county_id,auth_provider,email,google_sub,line_user_id,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
+    .select(USER_SELECT)
     .eq('line_user_id', params.lineUserId)
     .maybeSingle()
 
@@ -200,7 +203,7 @@ export async function 綁定LINEAuth使用者(params: {
     const { data, error } = await supabase
       .from('users')
       .upsert(newRow, { onConflict: 'id' })
-      .select('id,auth_user_id,name,avatar,county_id,auth_provider,email,google_sub,line_user_id,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
+      .select(USER_SELECT)
       .single()
 
     if (error || !data) {
@@ -225,7 +228,7 @@ export async function 綁定LINEAuth使用者(params: {
     .from('users')
     .update(updates)
     .eq('id', row.id as string)
-    .select('id,auth_user_id,name,avatar,county_id,auth_provider,email,google_sub,line_user_id,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
+    .select(USER_SELECT)
     .single()
 
   if (error || !data) {
@@ -276,7 +279,7 @@ export async function 依Email查找帳號(email: string, 排除Id?: string): Pr
   if (!email) return []
   let query = supabase
     .from('users')
-    .select('id,auth_user_id,name,avatar,county_id,auth_provider,email,google_sub,line_user_id,strava_profile,managed_pages,stamp_image,stamp_images,social_avatar,stats,verified_at,line_verified_user_id,merged_into,role')
+    .select(USER_SELECT)
     .eq('email', email.toLowerCase().trim())
     .is('merged_into', null)
 

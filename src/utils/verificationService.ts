@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { 取得目前AuthUserId, supabase } from './supabase'
 
 /** 使用 crypto API 產生安全的 6 位數隨機認證碼 */
 function 產生認證碼(): string {
@@ -10,15 +10,27 @@ function 產生認證碼(): string {
 /** 新 token 請求最短間隔（毫秒）— 防止暴力破解者快速重複請求新 token */
 const 最短請求間隔ms = 2 * 60 * 1000 // 2 分鐘
 
+function 驗證紀錄擁有者條件查詢<T extends {
+  eq: (column: string, value: string) => T
+  or: (filters: string) => T
+}>(query: T, userId: string, authUserId: string | null): T {
+  if (authUserId) {
+    return query.or(`auth_user_id.eq.${authUserId},user_id.eq.${userId}`)
+  }
+  return query.eq('user_id', userId)
+}
+
 /** 建立認證請求：檢查速率限制 → 產生 token → 存入 Supabase */
 export async function 建立認證請求(userId: string): Promise<{ token: string; expiresAt: string } | null> {
+  const authUserId = await 取得目前AuthUserId()
+
   // 速率限制：檢查最近一筆請求（不論狀態），防止快速重複請求
-  const { data: recent } = await supabase
+  const recentQuery = supabase
     .from('user_verifications')
     .select('id, created_at, status, expires_at')
-    .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(1)
+  const { data: recent } = await 驗證紀錄擁有者條件查詢(recentQuery, userId, authUserId)
 
   if (recent && recent.length > 0) {
     const 上次建立時間 = new Date(recent[0].created_at).getTime()
@@ -33,11 +45,11 @@ export async function 建立認證請求(userId: string): Promise<{ token: strin
 
     // 將舊的 pending 請求標記為過期
     if (recent[0].status === 'pending') {
-      await supabase
+      const expireQuery = supabase
         .from('user_verifications')
         .update({ status: 'expired' })
-        .eq('user_id', userId)
         .eq('status', 'pending')
+      await 驗證紀錄擁有者條件查詢(expireQuery, userId, authUserId)
     }
   }
 
@@ -48,6 +60,7 @@ export async function 建立認證請求(userId: string): Promise<{ token: strin
     .from('user_verifications')
     .insert({
       user_id: userId,
+      auth_user_id: authUserId,
       token,
       status: 'pending',
       expires_at: expiresAt,
@@ -74,7 +87,7 @@ export async function 驗證認證碼(token: string, lineUserId: string): Promis
   // 查找 pending 且未過期的 token
   const { data, error } = await supabase
     .from('user_verifications')
-    .select('*')
+    .select('id,user_id,auth_user_id,expires_at,attempts,status')
     .eq('token', token)
     .eq('status', 'pending')
     .single()
@@ -138,14 +151,24 @@ export async function 驗證認證碼(token: string, lineUserId: string): Promis
     return { success: false, message: '更新認證狀態失敗' }
   }
 
-  // 更新 users 表（只更新 token 對應的 user_id）
-  await supabase
-    .from('users')
-    .update({
-      verified_at: now,
-      line_verified_user_id: lineUserId,
-    })
-    .eq('id', data.user_id)
+  // 更新 users 表：優先以 auth_user_id 命中，fallback 到 legacy user_id
+  if (data.auth_user_id) {
+    await supabase
+      .from('users')
+      .update({
+        verified_at: now,
+        line_verified_user_id: lineUserId,
+      })
+      .eq('auth_user_id', data.auth_user_id)
+  } else {
+    await supabase
+      .from('users')
+      .update({
+        verified_at: now,
+        line_verified_user_id: lineUserId,
+      })
+      .eq('id', data.user_id)
+  }
 
   return { success: true, message: '認證成功！' }
 }

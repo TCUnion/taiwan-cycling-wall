@@ -62,6 +62,11 @@ export const 取得旋轉角度 = (id: string): string => {
   return `sticky-rotate-${角度 < 0 ? 'n' + Math.abs(角度) : 角度}`
 }
 
+// 活動查詢欄位（列表用：不含 route_coordinates，節省 payload）
+const 活動列表欄位 = 'id,title,description,county_id,region,date,time,meeting_point,meeting_point_url,cover_image,distance,elevation,pace,max_participants,strava_route_url,moak_event_id,sticky_color,tags,creator_id,creator_auth_user_id,created_at,series_id,recurrence_type'
+// 活動查詢欄位（詳情用：含 route_coordinates，供地圖顯示）
+const 活動詳情欄位 = `${活動列表欄位},route_coordinates`
+
 // Supabase snake_case → 前端 camelCase
 function 轉換為活動(row: Record<string, unknown>): CyclingEvent {
   return {
@@ -157,21 +162,21 @@ export const useEventStore = create<EventState>()((set, get) => ({
   設定排序: (sort) => set({ 排序: sort }),
 
   載入單一活動: async (id) => {
-    // 先從 store 找
-    const 已有 = get().活動列表.find(e => e.id === id)
-    if (已有) return 已有
-    // 從 Supabase 載入
+    // 從 Supabase 載入完整資料（含 route_coordinates）
     const { data, error } = await supabase
       .from('cycling_events')
-      .select('id,title,description,county_id,region,date,time,meeting_point,meeting_point_url,cover_image,distance,elevation,pace,max_participants,strava_route_url,route_coordinates,moak_event_id,sticky_color,tags,creator_id,creator_auth_user_id,created_at,series_id,recurrence_type')
+      .select(活動詳情欄位)
       .eq('id', id)
       .single()
-    if (error || !data) return null
+    if (error || !data) {
+      // fallback：回傳 store 中已有的精簡版
+      return get().活動列表.find(e => e.id === id) ?? null
+    }
     const 活動 = 轉換為活動(data as Record<string, unknown>)
-    // merge 進 store（避免重複）
+    // merge 進 store（取代精簡版）
     set((s) => {
-      if (s.活動列表.some(e => e.id === id)) return s
-      return { 活動列表: [活動, ...s.活動列表] }
+      const 其他 = s.活動列表.filter(e => e.id !== id)
+      return { 活動列表: [活動, ...其他] }
     })
     return 活動
   },
@@ -180,7 +185,7 @@ export const useEventStore = create<EventState>()((set, get) => ({
     set({ 載入中: true })
     const { data, error } = await supabase
       .from('cycling_events')
-      .select('id,title,description,county_id,region,date,time,meeting_point,meeting_point_url,cover_image,distance,elevation,pace,max_participants,strava_route_url,route_coordinates,moak_event_id,sticky_color,tags,creator_id,creator_auth_user_id,created_at,series_id,recurrence_type')
+      .select(活動列表欄位)
       .order('created_at', { ascending: false })
     if (!error && data) {
       set({ 活動列表: data.map(轉換為活動) })
