@@ -68,8 +68,9 @@ export const useRouteStore = create<RouteState>()((set) => ({
       .select('id,name,distance,elevation,county_id,coordinates,waypoints,source,gpx_file_name,creator_id,creator_auth_user_id,is_public,created_at,updated_at')
       .order('created_at', { ascending: false })
 
+    // 同時查詢 auth_user_id 和舊 creator_id，確保回填期間舊路線不會消失
     if (creatorAuthUserId) {
-      query = query.eq('creator_auth_user_id', creatorAuthUserId)
+      query = query.or(`creator_auth_user_id.eq.${creatorAuthUserId},creator_id.eq.${creatorId}`)
     } else {
       query = query.eq('creator_id', creatorId)
     }

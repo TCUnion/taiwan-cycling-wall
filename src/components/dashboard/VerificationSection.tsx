@@ -1,6 +1,6 @@
 // 個人中心 — LINE 認證區塊
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { ShieldCheck, ExternalLink, Loader2, Copy, Check } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { 建立認證請求 } from '../../utils/verificationService'
@@ -15,6 +15,7 @@ export default function VerificationSection() {
   const [expiresAt, setExpiresAt] = useState<string | null>(null)
   const [申請中, set申請中] = useState(false)
   const [已複製, set已複製] = useState(false)
+  const [目前時間, set目前時間] = useState(() => Date.now())
 
   const 已認證 = !!使用者?.verifiedAt
   const 認證中 = !!token
@@ -26,11 +27,26 @@ export default function VerificationSection() {
     setExpiresAt(null)
   }, [更新使用者])
 
+  // 逾時：清除 token 讓使用者可重新申請
+  const 處理逾時 = useCallback(() => {
+    setToken(null)
+    setExpiresAt(null)
+  }, [])
+
   useVerificationPolling({
     token,
     enabled: 認證中,
     onVerified: 處理認證完成,
+    onTimeout: 處理逾時,
   })
+
+  useEffect(() => {
+    if (!認證中) return
+    const intervalId = window.setInterval(() => {
+      set目前時間(Date.now())
+    }, 1000)
+    return () => window.clearInterval(intervalId)
+  }, [認證中])
 
   if (!使用者) return null
 
@@ -54,7 +70,7 @@ export default function VerificationSection() {
   }
 
   // 計算剩餘秒數
-  const 剩餘秒數 = expiresAt ? Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)) : 0
+  const 剩餘秒數 = expiresAt ? Math.max(0, Math.floor((new Date(expiresAt).getTime() - 目前時間) / 1000)) : 0
   const 剩餘分鐘 = Math.floor(剩餘秒數 / 60)
   const 剩餘秒 = 剩餘秒數 % 60
 

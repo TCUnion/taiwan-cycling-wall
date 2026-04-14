@@ -5,13 +5,22 @@ interface Options {
   token: string | null
   enabled: boolean
   onVerified: () => void
+  onTimeout?: () => void
   intervalMs?: number
 }
 
-/** 每隔 intervalMs 毫秒輪詢認證狀態，verified 時觸發 callback */
-export function useVerificationPolling({ token, enabled, onVerified, intervalMs = 3000 }: Options) {
+/** 每隔 intervalMs 毫秒輪詢認證狀態，verified 時觸發 callback，逾時觸發 onTimeout */
+export function useVerificationPolling({ token, enabled, onVerified, onTimeout, intervalMs = 3000 }: Options) {
   const callbackRef = useRef(onVerified)
-  callbackRef.current = onVerified
+  const timeoutRef = useRef(onTimeout)
+
+  useEffect(() => {
+    callbackRef.current = onVerified
+  }, [onVerified])
+
+  useEffect(() => {
+    timeoutRef.current = onTimeout
+  }, [onTimeout])
 
   useEffect(() => {
     if (!enabled || !token) return
@@ -23,8 +32,11 @@ export function useVerificationPolling({ token, enabled, onVerified, intervalMs 
       }
     }, intervalMs)
 
-    // 10 分鐘後自動停止輪詢
-    const timeout = setTimeout(() => clearInterval(id), 10 * 60 * 1000)
+    // 10 分鐘後自動停止輪詢並通知逾時
+    const timeout = setTimeout(() => {
+      clearInterval(id)
+      timeoutRef.current?.()
+    }, 10 * 60 * 1000)
 
     return () => {
       clearInterval(id)

@@ -17,6 +17,7 @@ export default function LiffVerifyPage() {
   const [lineUserId, setLineUserId] = useState('')
   const [嘗試次數, set嘗試次數] = useState(0)
   const [鎖定到, set鎖定到] = useState<number | null>(null)
+  const [目前時間, set目前時間] = useState(() => Date.now())
 
   // 初始化 LIFF + 取得使用者 + 從 URL 讀取認證碼
   useEffect(() => {
@@ -38,8 +39,26 @@ export default function LiffVerifyPage() {
     init()
   }, [])
 
+  useEffect(() => {
+    if (鎖定到 === null) return
+    const intervalId = window.setInterval(() => {
+      const now = Date.now()
+      set目前時間(now)
+      // 鎖定到期：清除鎖定狀態，回復到輸入頁面
+      if (now >= 鎖定到) {
+        set鎖定到(null)
+        set嘗試次數(0)
+        set認證碼('')
+        set錯誤訊息('')
+        set狀態('輸入認證碼')
+        window.clearInterval(intervalId)
+      }
+    }, 1000)
+    return () => window.clearInterval(intervalId)
+  }, [鎖定到])
+
   // 檢查是否在鎖定期間
-  const 是否鎖定中 = 鎖定到 !== null && Date.now() < 鎖定到
+  const 是否鎖定中 = 鎖定到 !== null && 目前時間 < 鎖定到
 
   const 送出驗證 = async () => {
     if (認證碼.length !== 6 || 是否鎖定中) return
