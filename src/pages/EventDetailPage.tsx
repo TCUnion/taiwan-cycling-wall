@@ -373,7 +373,7 @@ export default function EventDetailPage() {
                   title="Ride with GPS 路線預覽"
                   src={`https://ridewithgps.com/embeds?type=route&id=${rwgpsMatch[1]}&sampleGraph=true`}
                   className="w-full border-0"
-                  style={{ height: 500 }}
+                  style={{ height: 620 }}
                   loading="lazy"
                   allowFullScreen={false}
                 />
@@ -399,7 +399,7 @@ function StravaRouteEmbed({ routeId }: { routeId: string }) {
       title="Strava 路線預覽"
       src={`https://strava-embeds.com/route/${routeId}`}
       className="w-full border-0"
-      style={{ height: 500 }}
+      style={{ height: 620 }}
       loading="lazy"
       allowFullScreen={false}
     />
