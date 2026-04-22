@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, type ComponentType } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './stores/authStore'
 import { supabase } from './utils/supabase'
@@ -6,22 +6,41 @@ import { 綁定GoogleAuth使用者, 綁定LINEAuth使用者 } from './utils/user
 
 import AppShell from './components/layout/AppShell'
 
+// 偵測 chunk 載入失敗（新版部署後舊 index.html 引用到已被取代的 JS chunk），自動 reload 一次
+function lazyWithRetry<T extends ComponentType<unknown>>(
+  factory: () => Promise<{ default: T }>,
+) {
+  return lazy(async () => {
+    try {
+      return await factory()
+    } catch (err) {
+      const key = 'chunk-reload-at'
+      const last = Number(window.sessionStorage.getItem(key) ?? 0)
+      if (Date.now() - last > 10_000) {
+        window.sessionStorage.setItem(key, String(Date.now()))
+        window.location.reload()
+      }
+      throw err
+    }
+  })
+}
+
 // 延遲載入頁面
-const SplashPage = lazy(() => import('./pages/SplashPage'))
-const LoginPage = lazy(() => import('./pages/LoginPage'))
-const WallPage = lazy(() => import('./pages/WallPage'))
-const CreateEventPage = lazy(() => import('./pages/CreateEventPage'))
-const EventDetailPage = lazy(() => import('./pages/EventDetailPage'))
-const SharePage = lazy(() => import('./pages/SharePage'))
-const DashboardPage = lazy(() => import('./pages/DashboardPage'))
-const HistoryPage = lazy(() => import('./pages/HistoryPage'))
-const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
-const DataDeletionPage = lazy(() => import('./pages/DataDeletionPage'))
-const OAuthCallbackPage = lazy(() => import('./pages/OAuthCallbackPage'))
-const LiffVerifyPage = lazy(() => import('./pages/LiffVerifyPage'))
-const AdminPage = lazy(() => import('./pages/AdminPage'))
-const RoutesPage = lazy(() => import('./pages/RoutesPage'))
-const AboutPage = lazy(() => import('./pages/AboutPage'))
+const SplashPage = lazyWithRetry(() => import('./pages/SplashPage'))
+const LoginPage = lazyWithRetry(() => import('./pages/LoginPage'))
+const WallPage = lazyWithRetry(() => import('./pages/WallPage'))
+const CreateEventPage = lazyWithRetry(() => import('./pages/CreateEventPage'))
+const EventDetailPage = lazyWithRetry(() => import('./pages/EventDetailPage'))
+const SharePage = lazyWithRetry(() => import('./pages/SharePage'))
+const DashboardPage = lazyWithRetry(() => import('./pages/DashboardPage'))
+const HistoryPage = lazyWithRetry(() => import('./pages/HistoryPage'))
+const PrivacyPage = lazyWithRetry(() => import('./pages/PrivacyPage'))
+const DataDeletionPage = lazyWithRetry(() => import('./pages/DataDeletionPage'))
+const OAuthCallbackPage = lazyWithRetry(() => import('./pages/OAuthCallbackPage'))
+const LiffVerifyPage = lazyWithRetry(() => import('./pages/LiffVerifyPage'))
+const AdminPage = lazyWithRetry(() => import('./pages/AdminPage'))
+const RoutesPage = lazyWithRetry(() => import('./pages/RoutesPage'))
+const AboutPage = lazyWithRetry(() => import('./pages/AboutPage'))
 
 // 載入中畫面 — 與 SplashPage 風格一致
 function Loading() {
