@@ -87,8 +87,10 @@ export default function EventDetailPage() {
   // 粉絲頁發起的活動：creatorId 為 page-{pageId}，發起人是管理該頁的使用者
   const 是粉絲頁活動 = 活動.creatorId.startsWith('page-')
   const 粉絲頁Id = 是粉絲頁活動 ? 活動.creatorId.replace('page-', '') : ''
+  const 是Auth發起人 = Boolean(使用者?.authUserId && 活動.creatorAuthUserId && 活動.creatorAuthUserId === 使用者.authUserId)
   const 是發起人 = 使用者 ? (
     活動.creatorId === 使用者.id ||
+    是Auth發起人 ||
     (是粉絲頁活動 && 使用者.managedPages?.some(p => p.pageId === 粉絲頁Id))
   ) : false
   const 活動過期 = 活動已過期(活動)

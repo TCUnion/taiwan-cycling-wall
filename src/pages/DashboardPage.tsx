@@ -34,7 +34,11 @@ export default function DashboardPage() {
     () => {
       if (!使用者) return []
       return 活動列表
-        .filter(e => e.creatorId === 使用者.id || 我的粉絲頁Ids.includes(e.creatorId))
+        .filter(e =>
+          e.creatorId === 使用者.id ||
+          (Boolean(使用者.authUserId) && e.creatorAuthUserId === 使用者.authUserId) ||
+          我的粉絲頁Ids.includes(e.creatorId)
+        )
         .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
     },
     [活動列表, 使用者, 我的粉絲頁Ids]

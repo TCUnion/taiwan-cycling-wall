@@ -15,10 +15,11 @@ interface Props {
   廣告列表: AdPlacement[]
   當前區域: Region | null
   onChange區域: (region: Region | null) => void
+  onOpenActivity: (活動: CyclingEvent) => void
   載入中?: boolean
 }
 
-export default function CorkBoard({ 活動列表, 廣告列表, 當前區域, onChange區域, 載入中 = false }: Props) {
+export default function CorkBoard({ 活動列表, 廣告列表, 當前區域, onChange區域, onOpenActivity, 載入中 = false }: Props) {
   // 滑動切換區域
   const swipeRef = useSwipeGesture<HTMLDivElement>({
     onSwipeLeft: () => {
@@ -60,8 +61,8 @@ export default function CorkBoard({ 活動列表, 廣告列表, 當前區域, on
 
   if (載入中) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-        <Loader2 size={32} className="text-strava animate-spin mb-3" />
+      <div className="siokiu-cork-texture flex flex-col items-center justify-center py-24 text-siokiu-ink">
+        <Loader2 size={32} className="mb-3 animate-spin text-siokiu-red" />
         <p className="text-sm">載入活動中…</p>
       </div>
     )
@@ -69,20 +70,20 @@ export default function CorkBoard({ 活動列表, 廣告列表, 當前區域, on
 
   if (活動列表.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-        <Inbox size={48} className="mb-4 text-gray-400" />
-        <p className="text-lg font-medium">目前沒有活動</p>
-        <p className="text-sm mt-1">成為第一個發起約騎的人吧！</p>
+      <div className="siokiu-cork-texture flex min-h-[60svh] flex-col items-center justify-center px-4 py-24 text-center text-siokiu-ink">
+        <Inbox size={48} className="mb-4 text-siokiu-ink/45" />
+        <p className="font-serif text-2xl font-black">目前沒有活動</p>
+        <p className="mt-1 text-sm text-siokiu-ink/65">成為第一個發起約騎的人吧！</p>
       </div>
     )
   }
 
   return (
-    <div ref={swipeRef} className="px-4 pb-4">
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 auto-rows-fr">
+    <div ref={swipeRef} className="siokiu-cork-texture min-h-[calc(100svh-112px)] px-3 pt-4 pb-24 sm:px-4">
+      <div className="grid auto-rows-fr grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
         {混合列表.map((項目, i) =>
           項目.type === 'event' ? (
-            <StickyNoteCard key={項目.data.id} 活動={項目.data} />
+            <StickyNoteCard key={項目.data.id} 活動={項目.data} onOpen={onOpenActivity} />
           ) : (
             <AdCard key={`ad-${i}`} 廣告={項目.data} />
           )
