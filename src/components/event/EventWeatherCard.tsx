@@ -175,7 +175,7 @@ export default function EventWeatherCard({
       : `依縣市：${中點.label}`
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-4 shadow-sm max-w-3xl">
+    <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-4 shadow-sm">
       <div className="flex items-center gap-2 mb-2 flex-wrap">
         <Cloud className="w-4 h-4 text-gray-600" />
         <h3 className="text-sm font-bold text-gray-700">當日天氣預報</h3>
@@ -237,11 +237,11 @@ export default function EventWeatherCard({
           </div>
 
           <div className="overflow-x-auto -mx-1 px-1">
-            <div className="inline-flex gap-1.5">
+            <div className="flex gap-1.5 min-w-full">
               {顯示預報.map((f) => (
                 <div
                   key={f.forecast_time}
-                  className="flex-shrink-0 rounded-md border border-gray-100 bg-gray-50/50 px-1.5 py-1 text-center min-w-[58px]"
+                  className="flex-1 flex-shrink-0 min-w-[58px] rounded-md border border-gray-100 bg-gray-50/50 px-1.5 py-1 text-center"
                 >
                   <div className="text-[10px] text-gray-500 leading-tight">{格式化時段(f.forecast_time)}</div>
                   <img
