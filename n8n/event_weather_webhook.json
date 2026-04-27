@@ -1,0 +1,202 @@
+{
+  "name": "Event Weather Check (Webhook)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "event-weather-check",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-720, 0],
+      "id": "wh-0001-0000-0000-000000000001",
+      "name": "Webhook",
+      "webhookId": "event-weather-check"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 解析 webhook 輸入：{ lat, lon, date, event_id?, event_name? }\n// 輸出 lat_round / lon_round（0.1° 格網）+ target_date\nconst body = $input.first().json.body ?? $input.first().json;\n\nconst lat = Number(body.lat);\nconst lon = Number(body.lon);\nconst dateStr = String(body.date || '').slice(0, 10); // YYYY-MM-DD\n\nif (!Number.isFinite(lat) || !Number.isFinite(lon)) {\n  throw new Error('lat/lon 必填且需為數字');\n}\nif (!/^\\d{4}-\\d{2}-\\d{2}$/.test(dateStr)) {\n  throw new Error('date 必填，格式 YYYY-MM-DD');\n}\n\nconst lat_round = Math.round(lat * 10) / 10;\nconst lon_round = Math.round(lon * 10) / 10;\n\nreturn [{\n  json: {\n    lat, lon,\n    lat_round, lon_round,\n    target_date: dateStr,\n    event_id:   body.event_id ?? null,\n    event_name: body.event_name ?? null,\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-512, 0],
+      "id": "code-norm-0000-0000-000000000001",
+      "name": "Normalize Input"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  forecast_time, temp, feels_like, humidity,\n  pop, rain_3h, wind_speed, wind_deg,\n  weather_main, weather_desc, icon, fetched_at\nFROM weather_points\nWHERE lat_round = $1\n  AND lon_round = $2\n  AND forecast_time::date = $3::date\n  AND fetched_at > now() - interval '6 hours'\nORDER BY forecast_time;",
+        "options": {
+          "queryReplacement": "={{ $json.lat_round }},{{ $json.lon_round }},{{ $json.target_date }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [-304, 0],
+      "id": "pg-cache-0000-0000-000000000001",
+      "name": "Check Cache",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_PG_CRED_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 聚合：把 Check Cache 的 N 筆 row 收成單一 item + has_cache 旗標\n// 過濾 alwaysOutputData 注入的空 item（沒 forecast_time 就不算 cache）\nconst rows = $input.all()\n  .map(i => i.json)\n  .filter(r => r && r.forecast_time);\nconst meta = $('Normalize Input').first().json;\nreturn [{\n  json: {\n    ...meta,\n    cached_rows: rows,\n    has_cache: rows.length > 0,\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-200, 0],
+      "id": "code-agg-0000-0000-000000000001",
+      "name": "Aggregate Cache"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "has-cache",
+              "leftValue": "={{ $json.cached_rows.length }}",
+              "rightValue": 0,
+              "operator": { "type": "number", "operation": "gt" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-96, 0],
+      "id": "if-cache-0000-0000-000000000001",
+      "name": "Has Cache?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 命中快取：從 Aggregate Cache 拿 cached_rows + meta\nconst meta = $json;\nconst rows = meta.cached_rows || [];\n\nconst pops   = rows.map(r => Number(r.pop ?? 0));\nconst winds  = rows.map(r => Number(r.wind_speed ?? 0));\nconst temps  = rows.map(r => Number(r.temp ?? 0));\nconst feels  = rows.map(r => Number(r.feels_like ?? 0));\n\nconst max_pop  = pops.length  ? Math.max(...pops)  : 0;\nconst max_wind = winds.length ? Math.max(...winds) : 0;\nconst max_temp = temps.length ? Math.max(...temps) : 0;\nconst min_temp = temps.length ? Math.min(...temps) : 0;\nconst max_feels= feels.length ? Math.max(...feels) : 0;\nconst avg_temp = temps.length ? +(temps.reduce((a,b)=>a+b,0) / temps.length).toFixed(1) : null;\n\nconst tags = [];\nif (max_pop  >= 0.6) tags.push('heavy_rain_risk');\nif (max_wind >= 10)  tags.push('strong_wind');\nelse if (max_wind >= 8) tags.push('windy');\nif (max_temp >= 35)  tags.push('hot');\nif (max_feels >= 38) tags.push('heat_stress');\nif (min_temp <= 10)  tags.push('cold');\n\nreturn [{\n  json: {\n    cached: true,\n    event_id: meta.event_id,\n    event_name: meta.event_name,\n    lat_round: meta.lat_round,\n    lon_round: meta.lon_round,\n    date: meta.target_date,\n    forecasts: rows,\n    summary: {\n      slots: rows.length,\n      max_pop, max_wind, max_temp, min_temp, max_feels, avg_temp,\n      alert_tags: tags,\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [128, -160],
+      "id": "code-cached-0000-0000-000000000001",
+      "name": "Build Cached Response"
+    },
+    {
+      "parameters": {
+        "operation": "5DayForecast",
+        "locationSelection": "coordinates",
+        "latitude": "={{ $('Normalize Input').first().json.lat }}",
+        "longitude": "={{ $('Normalize Input').first().json.lon }}",
+        "language": "zh_tw "
+      },
+      "type": "n8n-nodes-base.openWeatherMap",
+      "typeVersion": 1,
+      "position": [128, 160],
+      "id": "owm-fetch-0000-0000-000000000001",
+      "name": "OpenWeatherMap",
+      "credentials": {
+        "openWeatherMapApi": {
+          "id": "lDfjiXuQpBQqkEht",
+          "name": "OpenWeatherMap account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 直接組好完整 SQL（多行 VALUES inline），避開 queryReplacement 逗號切割問題\nconst meta = $('Normalize Input').first().json;\nconst fc = $input.first().json.list || [];\n\nconst esc = (s) => String(s).replace(/'/g, \"''\");\nconst num = (v) => (v === null || v === undefined || Number.isNaN(v)) ? 'NULL' : v;\nconst txt = (v) => (v === null || v === undefined) ? 'NULL' : `'${esc(v)}'`;\n\nconst day_forecasts = [];\nconst valueLines = [];\n\nfor (const f of fc) {\n  const ft = new Date(f.dt * 1000).toISOString();\n  const row = {\n    forecast_time: ft,\n    temp:         f.main?.temp ?? null,\n    feels_like:   f.main?.feels_like ?? null,\n    humidity:     f.main?.humidity ?? null,\n    pop:          f.pop ?? 0,\n    rain_3h:      f.rain?.['3h'] ?? 0,\n    wind_speed:   f.wind?.speed ?? null,\n    wind_deg:     f.wind?.deg ?? null,\n    weather_main: f.weather?.[0]?.main ?? null,\n    weather_desc: f.weather?.[0]?.description ?? null,\n    icon:         f.weather?.[0]?.icon ?? null,\n  };\n  if (ft.slice(0,10) === meta.target_date) day_forecasts.push(row);\n\n  valueLines.push(\n    `(${meta.lat_round}, ${meta.lon_round}, '${ft}'::timestamptz, `\n    + `${num(row.temp)}, ${num(row.feels_like)}, ${num(row.humidity)}, `\n    + `${num(row.pop)}, ${num(row.rain_3h)}, `\n    + `${num(row.wind_speed)}, ${num(row.wind_deg)}, `\n    + `${txt(row.weather_main)}, ${txt(row.weather_desc)}, ${txt(row.icon)}, `\n    + `now())`\n  );\n}\n\n// 用 CTE 包起 INSERT，最後 SELECT count → Postgres 節點剛好回 1 筆\n// 否則 INSERT 不 RETURNING 會回 0 筆，下游節點不執行\nconst sql = valueLines.length === 0 ? null : `WITH ins AS (\n  INSERT INTO weather_points (\n    lat_round, lon_round, forecast_time,\n    temp, feels_like, humidity,\n    pop, rain_3h, wind_speed, wind_deg,\n    weather_main, weather_desc, icon, fetched_at\n  ) VALUES\n${valueLines.join(',\\n')}\n  ON CONFLICT (lat_round, lon_round, forecast_time) DO UPDATE SET\n    temp = EXCLUDED.temp,\n    feels_like = EXCLUDED.feels_like,\n    humidity = EXCLUDED.humidity,\n    pop = EXCLUDED.pop,\n    rain_3h = EXCLUDED.rain_3h,\n    wind_speed = EXCLUDED.wind_speed,\n    wind_deg = EXCLUDED.wind_deg,\n    weather_main = EXCLUDED.weather_main,\n    weather_desc = EXCLUDED.weather_desc,\n    icon = EXCLUDED.icon,\n    fetched_at = now()\n  RETURNING 1\n)\nSELECT count(*) AS inserted FROM ins;`;\n\nreturn [{ json: { sql, day_forecasts } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [352, 160],
+      "id": "code-flat-0000-0000-000000000001",
+      "name": "Flatten + Build Arrays"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ $json.sql }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [576, 160],
+      "id": "pg-unnest-0000-0000-000000000001",
+      "name": "Upsert via unnest()",
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_PG_CRED_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 新抓資料：把當日的 forecasts 整理成 summary 與 cached 版本同 shape\nconst meta = $('Normalize Input').first().json;\nconst day = $('Flatten + Build Arrays').first().json.day_forecasts || [];\n\nconst pops   = day.map(r => Number(r.pop ?? 0));\nconst winds  = day.map(r => Number(r.wind_speed ?? 0));\nconst temps  = day.map(r => Number(r.temp ?? 0));\nconst feels  = day.map(r => Number(r.feels_like ?? 0));\n\nconst max_pop  = pops.length  ? Math.max(...pops)  : 0;\nconst max_wind = winds.length ? Math.max(...winds) : 0;\nconst max_temp = temps.length ? Math.max(...temps) : 0;\nconst min_temp = temps.length ? Math.min(...temps) : 0;\nconst max_feels= feels.length ? Math.max(...feels) : 0;\nconst avg_temp = temps.length ? +(temps.reduce((a,b)=>a+b,0) / temps.length).toFixed(1) : null;\n\nconst tags = [];\nif (max_pop  >= 0.6) tags.push('heavy_rain_risk');\nif (max_wind >= 10)  tags.push('strong_wind');\nelse if (max_wind >= 8) tags.push('windy');\nif (max_temp >= 35)  tags.push('hot');\nif (max_feels >= 38) tags.push('heat_stress');\nif (min_temp <= 10)  tags.push('cold');\n\nreturn [{\n  json: {\n    cached: false,\n    event_id: meta.event_id,\n    event_name: meta.event_name,\n    lat_round: meta.lat_round,\n    lon_round: meta.lon_round,\n    date: meta.target_date,\n    forecasts: day,\n    summary: {\n      slots: day.length,\n      max_pop, max_wind, max_temp, min_temp, max_feels, avg_temp,\n      alert_tags: tags,\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [800, 160],
+      "id": "code-fresh-0000-0000-000000000001",
+      "name": "Build Fresh Response"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1024, 0],
+      "id": "resp-0000-0000-0000-000000000001",
+      "name": "Respond"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Normalize Input", "type": "main", "index": 0 }]]
+    },
+    "Normalize Input": {
+      "main": [[{ "node": "Check Cache", "type": "main", "index": 0 }]]
+    },
+    "Check Cache": {
+      "main": [[{ "node": "Aggregate Cache", "type": "main", "index": 0 }]]
+    },
+    "Aggregate Cache": {
+      "main": [[{ "node": "Has Cache?", "type": "main", "index": 0 }]]
+    },
+    "Has Cache?": {
+      "main": [
+        [{ "node": "Build Cached Response", "type": "main", "index": 0 }],
+        [{ "node": "OpenWeatherMap", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Cached Response": {
+      "main": [[{ "node": "Respond", "type": "main", "index": 0 }]]
+    },
+    "OpenWeatherMap": {
+      "main": [[{ "node": "Flatten + Build Arrays", "type": "main", "index": 0 }]]
+    },
+    "Flatten + Build Arrays": {
+      "main": [[{ "node": "Upsert via unnest()", "type": "main", "index": 0 }]]
+    },
+    "Upsert via unnest()": {
+      "main": [[{ "node": "Build Fresh Response", "type": "main", "index": 0 }]]
+    },
+    "Build Fresh Response": {
+      "main": [[{ "node": "Respond", "type": "main", "index": 0 }]]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5b24bcf19ee3995c870dc7be87e249d30dd788931f2003542783f93183d9c036"
+  }
+}

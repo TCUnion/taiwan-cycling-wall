@@ -19,6 +19,7 @@ import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Avatar from '../components/ui/Avatar'
 import RoutePickerModal from '../components/route/RoutePickerModal'
+import EventWeatherCard from '../components/event/EventWeatherCard'
 
 // 從文字推斷縣市
 function 從文字推斷縣市(text: string): string {
@@ -596,6 +597,9 @@ export default function CreateEventPage() {
             <Input name="ride-time" label="集合時間" type="time" value={time} onChange={e => setTime(e.target.value)} />
           </div>
         </區塊>
+
+        {/* 天氣預報（路線中點 / 縣市中心 fallback） */}
+        <EventWeatherCard 座標={已套用路線庫座標} 日期={date} 縣市Id={countyId} 活動標題={routeName} />
 
         {/* ① 定期約騎（僅新增模式） */}
         {!是編輯模式 && (

@@ -1,0 +1,97 @@
+{
+  "name": "Taiwan Weather Prefetch (北中南東)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "hours", "hoursInterval": 12 }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [-720, 0],
+      "id": "sched-0001-0000-0000-000000000001",
+      "name": "Schedule Trigger",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// 全台 16 個熱門騎乘代表點，覆蓋北/中/南/東四區\n// 0.1° 格網（~11km）會吃下附近活動的 webhook 查詢\nconst locations = [\n  // 北部\n  { region: 'north',   name: '陽明山擎天崗', lat: 25.16, lon: 121.57 },\n  { region: 'north',   name: '北宜坪林',     lat: 24.94, lon: 121.71 },\n  { region: 'north',   name: '北橫巴陵',     lat: 24.69, lon: 121.39 },\n  { region: 'north',   name: '風櫃嘴',       lat: 25.13, lon: 121.62 },\n  // 中部\n  { region: 'central', name: '武嶺',         lat: 24.14, lon: 121.30 },\n  { region: 'central', name: '日月潭',       lat: 23.85, lon: 120.92 },\n  { region: 'central', name: '八卦山',       lat: 24.07, lon: 120.54 },\n  { region: 'central', name: '大甲海線',     lat: 24.35, lon: 120.62 },\n  // 南部\n  { region: 'south',   name: '阿里山',       lat: 23.51, lon: 120.80 },\n  { region: 'south',   name: '壽卡',         lat: 22.21, lon: 120.85 },\n  { region: 'south',   name: '高雄美濃',     lat: 22.90, lon: 120.54 },\n  { region: 'south',   name: '台南關仔嶺',   lat: 23.34, lon: 120.51 },\n  // 東部\n  { region: 'east',    name: '太魯閣',       lat: 24.16, lon: 121.62 },\n  { region: 'east',    name: '蘇花清水',     lat: 24.20, lon: 121.69 },\n  { region: 'east',    name: '花東玉里',     lat: 23.34, lon: 121.31 },\n  { region: 'east',    name: '台東鹿野',     lat: 22.91, lon: 121.13 },\n];\n\nreturn locations.map(loc => ({ json: loc }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-512, 0],
+      "id": "loc-0001-0000-0000-000000000001",
+      "name": "Locations"
+    },
+    {
+      "parameters": {
+        "operation": "5DayForecast",
+        "locationSelection": "coordinates",
+        "latitude": "={{ $json.lat }}",
+        "longitude": "={{ $json.lon }}",
+        "language": "zh_tw "
+      },
+      "type": "n8n-nodes-base.openWeatherMap",
+      "typeVersion": 1,
+      "position": [-304, 0],
+      "id": "owm-0001-0000-0000-000000000001",
+      "name": "OpenWeatherMap",
+      "credentials": {
+        "openWeatherMapApi": {
+          "id": "lDfjiXuQpBQqkEht",
+          "name": "OpenWeatherMap account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 直接在 Code 節點組好完整 SQL（多行 VALUES inline）\n// 避開 n8n queryReplacement 用逗號切參數的問題\nconst items = $input.all();\nconst out = [];\n\nconst esc = (s) => String(s).replace(/'/g, \"''\");\nconst num = (v) => (v === null || v === undefined || Number.isNaN(v)) ? 'NULL' : v;\nconst txt = (v) => (v === null || v === undefined) ? 'NULL' : `'${esc(v)}'`;\n\nfor (let i = 0; i < items.length; i++) {\n  const fc = items[i].json.list || [];\n  const loc = $('Locations').itemMatching(i).json;\n  if (fc.length === 0) continue;\n\n  const lat_round = Math.round(loc.lat * 10) / 10;\n  const lon_round = Math.round(loc.lon * 10) / 10;\n\n  const rows = fc.map(f => {\n    const ft = new Date(f.dt * 1000).toISOString();\n    return `(${lat_round}, ${lon_round}, '${ft}'::timestamptz, `\n      + `${num(f.main?.temp)}, ${num(f.main?.feels_like)}, ${num(f.main?.humidity)}, `\n      + `${num(f.pop ?? 0)}, ${num(f.rain?.['3h'] ?? 0)}, `\n      + `${num(f.wind?.speed)}, ${num(f.wind?.deg)}, `\n      + `${txt(f.weather?.[0]?.main)}, ${txt(f.weather?.[0]?.description)}, ${txt(f.weather?.[0]?.icon)}, `\n      + `now())`;\n  });\n\n  const sql = `INSERT INTO weather_points (\n  lat_round, lon_round, forecast_time,\n  temp, feels_like, humidity,\n  pop, rain_3h, wind_speed, wind_deg,\n  weather_main, weather_desc, icon, fetched_at\n) VALUES\n${rows.join(',\\n')}\nON CONFLICT (lat_round, lon_round, forecast_time) DO UPDATE SET\n  temp = EXCLUDED.temp,\n  feels_like = EXCLUDED.feels_like,\n  humidity = EXCLUDED.humidity,\n  pop = EXCLUDED.pop,\n  rain_3h = EXCLUDED.rain_3h,\n  wind_speed = EXCLUDED.wind_speed,\n  wind_deg = EXCLUDED.wind_deg,\n  weather_main = EXCLUDED.weather_main,\n  weather_desc = EXCLUDED.weather_desc,\n  icon = EXCLUDED.icon,\n  fetched_at = now();`;\n\n  out.push({ json: {\n    region: loc.region, name: loc.name,\n    lat_round, lon_round,\n    slot_count: rows.length,\n    sql,\n  }});\n}\n\nreturn out;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-96, 0],
+      "id": "build-0001-0000-0000-000000000001",
+      "name": "Build Arrays"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ $json.sql }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [128, 0],
+      "id": "pg-0001-0000-0000-000000000001",
+      "name": "Upsert via unnest()",
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_PG_CRED_ID",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [[{ "node": "Locations", "type": "main", "index": 0 }]]
+    },
+    "Locations": {
+      "main": [[{ "node": "OpenWeatherMap", "type": "main", "index": 0 }]]
+    },
+    "OpenWeatherMap": {
+      "main": [[{ "node": "Build Arrays", "type": "main", "index": 0 }]]
+    },
+    "Build Arrays": {
+      "main": [[{ "node": "Upsert via unnest()", "type": "main", "index": 0 }]]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5b24bcf19ee3995c870dc7be87e249d30dd788931f2003542783f93183d9c036"
+  }
+}
