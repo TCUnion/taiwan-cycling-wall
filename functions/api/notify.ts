@@ -31,7 +31,8 @@ export const onRequestOptions: PagesFunction = async () => {
   return new Response(null, { status: 204, headers: CORS_HEADERS })
 }
 
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+export const onRequestPost: PagesFunction<Env> = async (ctx) => {
+  const { request, env } = ctx
   let body: NotifyBody
   try {
     body = (await request.json()) as NotifyBody
@@ -70,14 +71,24 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return Response.json({ error: 'unknown event' }, { status: 400, headers: CORS_HEADERS })
   }
 
-  // 不等 Discord 回覆，立刻 200 給前端（fire and forget）
-  const ctx = (request as unknown as { ctx?: { waitUntil: (p: Promise<unknown>) => void } }).ctx
-  const sendPromise = fetch(webhook, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content: null, embeds: [embed] }),
-  }).catch(() => undefined)
-  ctx?.waitUntil?.(sendPromise)
+  // 直接 await Discord，確保送出。失敗時記回應內容方便除錯
+  let discordStatus = 0
+  let discordBody = ''
+  try {
+    const r = await fetch(webhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: null, embeds: [embed] }),
+    })
+    discordStatus = r.status
+    if (!r.ok) discordBody = await r.text()
+  } catch (e) {
+    discordStatus = -1
+    discordBody = String((e as Error)?.message ?? e)
+  }
 
-  return Response.json({ ok: true }, { headers: CORS_HEADERS })
+  return Response.json(
+    { ok: discordStatus >= 200 && discordStatus < 300, discordStatus, discordBody: discordBody || undefined },
+    { headers: CORS_HEADERS }
+  )
 }
