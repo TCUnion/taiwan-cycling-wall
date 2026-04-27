@@ -6,6 +6,7 @@ import { 查找縣市 } from '../../data/counties'
 import { useAuthStore } from '../../stores/authStore'
 import { 格式化完整日期, 格式化距離 } from '../../utils/formatters'
 import VerifiedBadge from '../ui/VerifiedBadge'
+import EventWeatherCard from '../event/EventWeatherCard'
 
 interface Props {
   活動: CyclingEvent | null
@@ -113,6 +114,16 @@ export default function RideDetailDrawer({ 活動, onClose }: Props) {
             <InfoRow icon={<Calendar size={17} />} label="集合時間" value={`${格式化完整日期(活動.date)} ${活動.time}`} />
             <InfoRow icon={<MapPin size={17} />} label="集合地點" value={活動.meetingPoint || 縣市?.name || '未填寫'} />
           </div>
+
+          <EventWeatherCard
+            座標={活動.routeCoordinates ?? []}
+            日期={活動.date}
+            時間={活動.time}
+            縣市Id={活動.countyId}
+            集合地點={活動.meetingPoint}
+            集合地點URL={活動.meetingPointUrl}
+            活動標題={活動.title}
+          />
 
           {描述摘要 && (
             <section>

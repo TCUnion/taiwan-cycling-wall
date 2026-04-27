@@ -16,7 +16,31 @@ import Avatar from '../components/ui/Avatar'
 import MoakBadge from '../components/event/MoakBadge'
 import VerifiedBadge from '../components/ui/VerifiedBadge'
 import RouteMap from '../components/route/RouteMap'
+import EventWeatherCard from '../components/event/EventWeatherCard'
 import { 安全渲染Markdown, 安全URL, 淨化純文字 } from '../utils/sanitize'
+
+interface 天氣摘要 {
+  slots: number
+  max_pop: number
+  max_wind: number
+  max_temp: number
+  min_temp: number
+  alert_tags: string[]
+}
+interface 天氣資料 {
+  summary: 天氣摘要
+  forecasts: Array<{ forecast_time: string; temp: number | string; pop: number | string; weather_desc: string }>
+}
+
+const 警示中文: Record<string, string> = {
+  heavy_rain_risk: '高降雨機率',
+  rainy: '有雨',
+  strong_wind: '強風',
+  windy: '風大',
+  hot: '高溫',
+  heat_stress: '體感酷熱',
+  cold: '低溫',
+}
 
 export default function EventDetailPage() {
   const { id } = useParams()
@@ -31,6 +55,7 @@ export default function EventDetailPage() {
   const [已複製, set已複製] = useState(false)
   const [刪除中, set刪除中] = useState(false)
   const [操作錯誤, set操作錯誤] = useState('')
+  const [天氣, set天氣] = useState<天氣資料 | null>(null)
 
   const 活動 = 活動列表.find(e => e.id === id)
 
@@ -308,13 +333,35 @@ export default function EventDetailPage() {
         </div>
       )}
 
+      {/* 當日天氣預報 */}
+      <div className="px-4 mt-4">
+        <EventWeatherCard
+          座標={活動.routeCoordinates ?? []}
+          日期={活動.date}
+          時間={活動.time}
+          縣市Id={活動.countyId}
+          集合地點={活動.meetingPoint}
+          集合地點URL={活動.meetingPointUrl}
+          活動標題={活動.title}
+          onData={set天氣}
+        />
+      </div>
+
       {/* 分享區塊 */}
       {(() => {
         const 活動連結 = `${window.location.origin}/event/${活動.id}`
+        const 天氣行 = (() => {
+          if (!天氣 || 天氣.summary.slots === 0) return ''
+          const s = 天氣.summary
+          const 警示 = s.alert_tags.map(t => 警示中文[t]).filter(Boolean).join('、')
+          const 主要 = `氣溫 ${Number(s.min_temp).toFixed(0)}–${Number(s.max_temp).toFixed(0)}° / 雨機率 ${Math.round(Number(s.max_pop) * 100)}% / 風 ${Number(s.max_wind).toFixed(1)} m/s`
+          return 警示 ? `${主要}（${警示}）` : 主要
+        })()
         const 完整文字 = [
           活動.title,
           `【集合時間】 ${格式化完整日期(活動.date)} ${活動.time}`,
           `【集合地點】 ${活動.meetingPoint}${活動.meetingPointUrl ? `\n${活動.meetingPointUrl}` : ''}`,
+          天氣行 ? `【當日天氣】 ${天氣行}` : '',
           '',
           活動.distance > 0 || 活動.elevation > 0 || (活動.pace && 活動.pace !== '自由配速') ? '【路線與騎乘資訊】' : '',
           活動.distance > 0 ? `距離：${格式化距離(活動.distance)}` : '',

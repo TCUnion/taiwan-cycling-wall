@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   CloudRain,
   CloudRainWind,
@@ -20,6 +20,8 @@ interface Props {
   集合地點?: string
   集合地點URL?: string
   活動標題?: string
+  /** 拿到資料時回呼（給外層組複製文字用） */
+  onData?: (data: WeatherResp | null) => void
 }
 
 interface ForecastSlot {
@@ -100,7 +102,7 @@ function 解析地圖座標(url: string): { lat: number; lon: number } | null {
 }
 
 export default function EventWeatherCard({
-  座標, 日期, 時間, 縣市Id, 集合地點, 集合地點URL, 活動標題,
+  座標, 日期, 時間, 縣市Id, 集合地點, 集合地點URL, 活動標題, onData,
 }: Props) {
   // 來源優先序：集合地點 URL → 路線中點 → 縣市中心
   const 中點 = useMemo(() => {
@@ -122,6 +124,9 @@ export default function EventWeatherCard({
   const [data, setData] = useState<WeatherResp | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // 用 ref 保存 onData，避免父層每次 render 重新建函式造成 effect 重跑
+  const onDataRef = useRef(onData)
+  onDataRef.current = onData
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
@@ -146,11 +151,16 @@ export default function EventWeatherCard({
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
         return (await r.json()) as WeatherResp
       })
-      .then((d) => setData(d && d.summary ? d : null))
+      .then((d) => {
+        const valid = d && d.summary ? d : null
+        setData(valid)
+        onDataRef.current?.(valid)
+      })
       .catch((e) => {
         if ((e as Error).name === 'AbortError') return
         setError('天氣查詢失敗')
         setData(null)
+        onDataRef.current?.(null)
       })
       .finally(() => setLoading(false))
 
