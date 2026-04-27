@@ -34,6 +34,32 @@ create index if not exists idx_weather_points_time
 --     on weather_points (lat_round, lon_round, ((forecast_time at time zone 'Asia/Taipei')::date));
 
 -- -------------------------------------------------------------
+-- 權限與 RLS（自架 Supabase 必要 — 見 CLAUDE.md）
+-- -------------------------------------------------------------
+grant select on weather_points to anon, authenticated;
+grant insert, update, delete on weather_points to service_role;
+
+alter table weather_points enable row level security;
+
+drop policy if exists weather_points_read on weather_points;
+create policy weather_points_read
+  on weather_points
+  for select
+  to anon, authenticated
+  using (true);
+
+drop policy if exists weather_points_service_write on weather_points;
+create policy weather_points_service_write
+  on weather_points
+  for all
+  to service_role
+  using (true)
+  with check (true);
+
+-- 註：n8n 的 Postgres 節點若以 db user（非 service_role）連線，需另外 GRANT 給該 role：
+--   grant insert, update, delete on weather_points to <n8n_db_user>;
+
+-- -------------------------------------------------------------
 -- 清理：移除超過 7 天的舊資料
 -- -------------------------------------------------------------
 create or replace function cleanup_weather_points()

@@ -1,5 +1,14 @@
-import { useEffect, useMemo, useState } from 'react'
-import { CloudRain, Loader2, MapPin, RefreshCcw, ThermometerSun, Wind } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  CloudRain,
+  CloudRainWind,
+  Loader2,
+  MapPin,
+  RefreshCcw,
+  ThermometerSnowflake,
+  ThermometerSun,
+  Wind,
+} from 'lucide-react'
 import WeatherTaiwanMap from '../components/weather/WeatherTaiwanMap'
 import { 載入縣市天氣預報, type CountyForecast, type WeatherPoint } from '../utils/weatherService'
 import type { Region } from '../types'
@@ -29,6 +38,41 @@ function 分組為天(forecasts: WeatherPoint[]): Array<{ date: string; slots: W
   return Array.from(m.entries()).map(([date, slots]) => ({ date, slots }))
 }
 
+const TAG_META: Record<string, { text: string; cls: string; Icon: typeof CloudRain }> = {
+  heavy_rain_risk: { text: '高降雨機率', cls: 'bg-blue-100 text-blue-800 border-blue-200', Icon: CloudRainWind },
+  rainy:           { text: '有雨',       cls: 'bg-blue-50 text-blue-700 border-blue-200',  Icon: CloudRain },
+  strong_wind:     { text: '強風',       cls: 'bg-amber-100 text-amber-800 border-amber-200', Icon: Wind },
+  windy:           { text: '風大',       cls: 'bg-amber-50 text-amber-700 border-amber-200',  Icon: Wind },
+  hot:             { text: '高溫',       cls: 'bg-red-100 text-red-800 border-red-200',   Icon: ThermometerSun },
+  heat_stress:     { text: '體感酷熱',   cls: 'bg-red-200 text-red-900 border-red-300',   Icon: ThermometerSun },
+  cold:            { text: '低溫',       cls: 'bg-cyan-100 text-cyan-800 border-cyan-200', Icon: ThermometerSnowflake },
+  good:            { text: '適合騎車',   cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', Icon: ThermometerSun },
+}
+
+/** 依日切的時段算騎乘建議標籤 */
+function 計算建議標籤(slots: WeatherPoint[]): string[] {
+  if (slots.length === 0) return []
+  const temps = slots.map((s) => Number(s.temp)).filter(Number.isFinite)
+  const feels = slots.map((s) => Number(s.feels_like)).filter(Number.isFinite)
+  const pops = slots.map((s) => Number(s.pop ?? 0))
+  const winds = slots.map((s) => Number(s.wind_speed ?? 0))
+  const maxT = temps.length ? Math.max(...temps) : 0
+  const minT = temps.length ? Math.min(...temps) : 0
+  const maxFeels = feels.length ? Math.max(...feels) : 0
+  const maxPop = Math.max(...pops, 0)
+  const maxWind = Math.max(...winds, 0)
+  const tags: string[] = []
+  if (maxPop >= 0.6) tags.push('heavy_rain_risk')
+  else if (maxPop >= 0.4) tags.push('rainy')
+  if (maxWind >= 10) tags.push('strong_wind')
+  else if (maxWind >= 8) tags.push('windy')
+  if (maxT >= 35) tags.push('hot')
+  if (maxFeels >= 38) tags.push('heat_stress')
+  if (minT <= 10) tags.push('cold')
+  if (tags.length === 0) tags.push('good')
+  return tags
+}
+
 function 日標題(dateStr: string) {
   const d = new Date(dateStr)
   const today = new Date()
@@ -46,6 +90,13 @@ export default function WeatherPage() {
   const [錯誤, 設錯誤] = useState<string | null>(null)
   const [區域, 設區域] = useState<'all' | Region>('all')
   const [選取縣市Id, 設選取縣市Id] = useState<string | null>(null)
+  const 詳情Ref = useRef<HTMLElement | null>(null)
+  const 使用者點擊Ref = useRef(false)
+
+  const 點選縣市 = (id: string) => {
+    使用者點擊Ref.current = true
+    設選取縣市Id(id)
+  }
 
   const 重新載入 = async () => {
     設載入中(true)
@@ -69,6 +120,16 @@ export default function WeatherPage() {
     重新載入()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // 使用者點選 → 平滑捲到詳情區（首次預設選取不捲動）
+  useEffect(() => {
+    if (!選取縣市Id || !使用者點擊Ref.current) return
+    使用者點擊Ref.current = false
+    const id = window.requestAnimationFrame(() => {
+      詳情Ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+    return () => window.cancelAnimationFrame(id)
+  }, [選取縣市Id])
 
   const 篩選資料 = useMemo(() => {
     if (區域 === 'all') return 資料
@@ -127,7 +188,7 @@ export default function WeatherPage() {
       <WeatherTaiwanMap
         資料={篩選資料}
         選取縣市Id={選取縣市Id}
-        onSelect={(id) => 設選取縣市Id(id)}
+        onSelect={點選縣市}
         className="h-[420px] sm:h-[560px]"
       />
 
@@ -138,7 +199,7 @@ export default function WeatherPage() {
           return (
             <button
               key={it.county.id}
-              onClick={() => 設選取縣市Id(it.county.id)}
+              onClick={() => 點選縣市(it.county.id)}
               className={`rounded-md px-2.5 py-1 text-xs font-medium border cursor-pointer transition-colors duration-200 ${
                 active
                   ? 'bg-gray-900 text-white border-gray-900'
@@ -156,7 +217,10 @@ export default function WeatherPage() {
 
       {/* 選取縣市詳情 */}
       {選取資料 && (
-        <section className="mt-5 rounded-xl border border-gray-200 bg-white p-3 sm:p-4 shadow-sm">
+        <section
+          ref={詳情Ref}
+          className="mt-5 scroll-mt-4 rounded-xl border border-gray-200 bg-white p-3 sm:p-4 shadow-sm"
+        >
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <MapPin className="w-4 h-4 text-strava" />
             <h2 className="text-base sm:text-lg font-bold text-gray-900">{選取資料.county.name}</h2>
@@ -219,15 +283,34 @@ export default function WeatherPage() {
                   const maxT = temps.length ? Math.max(...temps) : null
                   const minT = temps.length ? Math.min(...temps) : null
                   const maxPop = Math.max(...slots.map((s) => Number(s.pop ?? 0)))
+                  const 標籤 = 計算建議標籤(slots)
                   return (
                     <div key={date}>
-                      <div className="mb-1.5 flex items-center justify-between">
+                      <div className="mb-1.5 flex items-center justify-between gap-2">
                         <span className="text-sm font-semibold text-gray-800">{日標題(date)}</span>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 whitespace-nowrap">
                           {minT != null && maxT != null ? `${minT.toFixed(0)}–${maxT.toFixed(0)}°` : '–'}
                           <span className="ml-2 text-blue-600">雨 {Math.round(maxPop * 100)}%</span>
                         </span>
                       </div>
+                      {標籤.length > 0 && (
+                        <div className="mb-1.5 flex flex-wrap gap-1">
+                          {標籤.map((tag) => {
+                            const meta = TAG_META[tag]
+                            if (!meta) return null
+                            const { Icon, text, cls } = meta
+                            return (
+                              <span
+                                key={tag}
+                                className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium ${cls}`}
+                              >
+                                <Icon className="w-3 h-3" />
+                                {text}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      )}
                       <div className="overflow-x-auto -mx-1 px-1">
                         <div className="flex gap-1.5">
                           {slots.map((s) => (
