@@ -3,22 +3,22 @@ import {
   CloudRain,
   CloudRainWind,
   Wind,
-  Thermometer,
   ThermometerSun,
   ThermometerSnowflake,
   Loader2,
   Cloud,
+  MapPin,
 } from 'lucide-react'
 import { 查找縣市 } from '../../data/counties'
 
 interface Props {
-  /** 路線座標陣列；有的話用第一順位（路線中點） */
   座標: [number, number][]
-  /** 約騎日期 YYYY-MM-DD */
   日期: string
-  /** 縣市 ID（fallback：當沒路線時用縣市中心點） */
+  /** HH:MM；有的話預報只顯示集合時間前 3 小時起 */
+  時間?: string
   縣市Id?: string
-  /** 活動標題（給 webhook 留紀錄用，可省） */
+  集合地點?: string
+  集合地點URL?: string
   活動標題?: string
 }
 
@@ -75,25 +75,54 @@ function 格式化時段(iso: string): string {
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:00`
 }
 
-export default function EventWeatherCard({ 座標, 日期, 縣市Id, 活動標題 }: Props) {
-  // 優先用路線中點；沒路線就用縣市中心當 fallback
+// 從 Google Maps URL 抓 lat/lon。支援常見幾種格式；shortened URL（maps.app.goo.gl）無法解析
+function 解析地圖座標(url: string): { lat: number; lon: number } | null {
+  if (!url) return null
+  const decoded = (() => { try { return decodeURIComponent(url) } catch { return url } })()
+  const patterns = [
+    /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+    /!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/,
+    /[?&]q=loc:(-?\d+(?:\.\d+)?)[, ]\s*(-?\d+(?:\.\d+)?)/,
+    /[?&]q=(-?\d+(?:\.\d+)?)[, ]\s*(-?\d+(?:\.\d+)?)/,
+    /[?&]ll=(-?\d+(?:\.\d+)?)[, ]\s*(-?\d+(?:\.\d+)?)/,
+  ]
+  for (const p of patterns) {
+    const m = decoded.match(p)
+    if (m && m[1] && m[2]) {
+      const lat = Number(m[1])
+      const lon = Number(m[2])
+      if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+        return { lat, lon }
+      }
+    }
+  }
+  return null
+}
+
+export default function EventWeatherCard({
+  座標, 日期, 時間, 縣市Id, 集合地點, 集合地點URL, 活動標題,
+}: Props) {
+  // 來源優先序：集合地點 URL → 路線中點 → 縣市中心
   const 中點 = useMemo(() => {
+    if (集合地點URL) {
+      const c = 解析地圖座標(集合地點URL)
+      if (c) return { ...c, source: 'spot' as const, label: 集合地點 || '集合地點' }
+    }
     if (座標 && 座標.length > 0) {
       const mid = 座標[Math.floor(座標.length / 2)]
-      return { lat: mid[0], lon: mid[1], source: 'route' as const }
+      return { lat: mid[0], lon: mid[1], source: 'route' as const, label: '路線中點' }
     }
     if (縣市Id) {
       const c = 查找縣市(縣市Id)
-      if (c) return { lat: c.lat, lon: c.lng, source: 'county' as const }
+      if (c) return { lat: c.lat, lon: c.lng, source: 'county' as const, label: c.name }
     }
     return null
-  }, [座標, 縣市Id])
+  }, [集合地點URL, 集合地點, 座標, 縣市Id])
 
   const [data, setData] = useState<WeatherResp | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // 取天氣是合法副作用（fetch + 設 loading flag），不適用 set-state-in-effect 規則
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!中點 || !日期) return
@@ -117,13 +146,7 @@ export default function EventWeatherCard({ 座標, 日期, 縣市Id, 活動標�
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
         return (await r.json()) as WeatherResp
       })
-      .then((d) => {
-        if (!d || !d.summary) {
-          setData(null)
-          return
-        }
-        setData(d)
-      })
+      .then((d) => setData(d && d.summary ? d : null))
       .catch((e) => {
         if ((e as Error).name === 'AbortError') return
         setError('天氣查詢失敗')
@@ -134,34 +157,47 @@ export default function EventWeatherCard({ 座標, 日期, 縣市Id, 活動標�
     return () => ctrl.abort()
   }, [中點, 日期, 活動標題])
 
+  // 過濾預報：集合時間前 3 小時起
+  const 顯示預報 = useMemo(() => {
+    if (!data) return [] as ForecastSlot[]
+    const all = data.forecasts
+    if (!時間 || !/^\d{2}:\d{2}$/.test(時間)) return all
+    const startMs = new Date(`${日期}T${時間}:00`).getTime() - 3 * 3600 * 1000
+    return all.filter((f) => new Date(f.forecast_time).getTime() >= startMs)
+  }, [data, 時間, 日期])
+
   if (!中點 || !日期) return null
 
+  const 來源文字 = 中點.source === 'spot'
+    ? `集合：${中點.label}`
+    : 中點.source === 'route'
+      ? '依路線中點'
+      : `依縣市：${中點.label}`
+
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <div className="flex items-center gap-2 mb-3">
+    <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-4 shadow-sm max-w-3xl">
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
         <Cloud className="w-4 h-4 text-gray-600" />
         <h3 className="text-sm font-bold text-gray-700">當日天氣預報</h3>
-        {loading && <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />}
-        {中點?.source === 'county' && (
-          <span className="text-xs text-gray-400">縣市概估</span>
-        )}
-        {data?.cached === false && (
-          <span className="text-xs text-gray-400">即時查詢</span>
-        )}
+        <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+          <MapPin className="w-3 h-3" />
+          {來源文字}
+        </span>
+        {loading && <Loader2 className="w-4 h-4 text-gray-400 animate-spin ml-auto" />}
       </div>
 
       {error && (
         <p className="text-sm text-gray-500">{error}（不影響活動建立）</p>
       )}
 
-      {data && data.summary.slots === 0 && !loading && (
-        <p className="text-sm text-gray-500">該日期尚無預報資料（OpenWeatherMap 僅支援未來 5 天）。</p>
+      {data && 顯示預報.length === 0 && !loading && (
+        <p className="text-sm text-gray-500">該時段尚無預報資料（OpenWeatherMap 僅支援未來 5 天）。</p>
       )}
 
-      {data && data.summary.slots > 0 && (
+      {data && 顯示預報.length > 0 && (
         <>
           {data.summary.alert_tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-3">
+            <div className="flex flex-wrap gap-1.5 mb-2">
               {data.summary.alert_tags.map((tag) => {
                 const meta = TAG_LABEL[tag]
                 if (!meta) return null
@@ -169,9 +205,9 @@ export default function EventWeatherCard({ 座標, 日期, 縣市Id, 活動標�
                 return (
                   <span
                     key={tag}
-                    className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium ${cls}`}
+                    className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium ${cls}`}
                   >
-                    <Icon className="w-3.5 h-3.5" />
+                    <Icon className="w-3 h-3" />
                     {text}
                   </span>
                 )
@@ -179,54 +215,45 @@ export default function EventWeatherCard({ 座標, 日期, 縣市Id, 活動標�
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-2 mb-3 text-center">
-            <div className="rounded-lg bg-gray-50 p-2">
-              <div className="flex items-center justify-center gap-1 text-xs text-gray-500">
-                <Thermometer className="w-3 h-3" />
-                氣溫
-              </div>
-              <div className="text-sm font-bold text-gray-800">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-700 mb-2">
+            <span>
+              氣溫{' '}
+              <span className="font-semibold text-gray-900">
                 {Number(data.summary.min_temp).toFixed(0)}–{Number(data.summary.max_temp).toFixed(0)}°
-              </div>
-            </div>
-            <div className="rounded-lg bg-gray-50 p-2">
-              <div className="flex items-center justify-center gap-1 text-xs text-gray-500">
-                <CloudRain className="w-3 h-3" />
-                最高雨機率
-              </div>
-              <div className="text-sm font-bold text-gray-800">
+              </span>
+            </span>
+            <span>
+              雨機率{' '}
+              <span className="font-semibold text-gray-900">
                 {Math.round(Number(data.summary.max_pop) * 100)}%
-              </div>
-            </div>
-            <div className="rounded-lg bg-gray-50 p-2">
-              <div className="flex items-center justify-center gap-1 text-xs text-gray-500">
-                <Wind className="w-3 h-3" />
-                最大風速
-              </div>
-              <div className="text-sm font-bold text-gray-800">
+              </span>
+            </span>
+            <span>
+              最大風速{' '}
+              <span className="font-semibold text-gray-900">
                 {Number(data.summary.max_wind).toFixed(1)} m/s
-              </div>
-            </div>
+              </span>
+            </span>
           </div>
 
-          <div className="overflow-x-auto -mx-2 px-2">
-            <div className="inline-flex gap-2 min-w-full">
-              {data.forecasts.map((f) => (
+          <div className="overflow-x-auto -mx-1 px-1">
+            <div className="inline-flex gap-1.5">
+              {顯示預報.map((f) => (
                 <div
                   key={f.forecast_time}
-                  className="flex-shrink-0 rounded-lg border border-gray-100 bg-white px-2 py-1.5 text-center min-w-[64px]"
+                  className="flex-shrink-0 rounded-md border border-gray-100 bg-gray-50/50 px-1.5 py-1 text-center min-w-[58px]"
                 >
-                  <div className="text-[10px] text-gray-500">{格式化時段(f.forecast_time)}</div>
+                  <div className="text-[10px] text-gray-500 leading-tight">{格式化時段(f.forecast_time)}</div>
                   <img
                     src={`https://openweathermap.org/img/wn/${f.icon}.png`}
                     alt={f.weather_desc}
-                    className="w-8 h-8 mx-auto"
+                    className="w-7 h-7 mx-auto"
                     loading="lazy"
                   />
-                  <div className="text-xs font-medium text-gray-700">
+                  <div className="text-xs font-medium text-gray-700 leading-tight">
                     {Number(f.temp).toFixed(0)}°
                   </div>
-                  <div className="text-[10px] text-blue-600">
+                  <div className="text-[10px] text-blue-600 leading-tight">
                     {Math.round(Number(f.pop) * 100)}%
                   </div>
                 </div>

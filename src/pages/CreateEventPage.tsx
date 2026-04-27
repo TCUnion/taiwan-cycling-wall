@@ -613,8 +613,16 @@ export default function CreateEventPage() {
           </div>
         </區塊>
 
-        {/* 天氣預報（路線中點 / 縣市中心 fallback） */}
-        <EventWeatherCard 座標={已套用路線庫座標} 日期={date} 縣市Id={countyId} 活動標題={routeName} />
+        {/* 天氣預報（集合地點 → 路線中點 → 縣市中心 fallback；集合時間前 3h 起） */}
+        <EventWeatherCard
+          座標={已套用路線庫座標}
+          日期={date}
+          時間={time}
+          縣市Id={countyId}
+          集合地點={spotName}
+          集合地點URL={spotUrl}
+          活動標題={routeName}
+        />
 
         {/* ① 定期約騎（僅新增模式） */}
         {!是編輯模式 && (
