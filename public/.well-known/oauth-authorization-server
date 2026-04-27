@@ -1,0 +1,12 @@
+{
+  "issuer": "https://jxubndwcralkrbunxokf.supabase.co/auth/v1",
+  "authorization_endpoint": "https://jxubndwcralkrbunxokf.supabase.co/auth/v1/authorize",
+  "token_endpoint": "https://jxubndwcralkrbunxokf.supabase.co/auth/v1/token",
+  "jwks_uri": "https://jxubndwcralkrbunxokf.supabase.co/auth/v1/.well-known/jwks.json",
+  "response_types_supported": ["code", "token"],
+  "grant_types_supported": ["authorization_code", "refresh_token", "urn:ietf:params:oauth:grant-type:jwt-bearer"],
+  "token_endpoint_auth_methods_supported": ["client_secret_basic", "client_secret_post", "none"],
+  "code_challenge_methods_supported": ["S256", "plain"],
+  "scopes_supported": ["openid", "profile", "email", "offline_access"],
+  "service_documentation": "https://siokiu.criterium.tw/about"
+}

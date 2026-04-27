@@ -1,0 +1,39 @@
+{
+  "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/modelcontextprotocol/main/schema/server-card.schema.json",
+  "serverInfo": {
+    "name": "siokiu-webmcp",
+    "version": "1.0.0",
+    "description": "相揪約騎公布欄 — 透過 WebMCP（瀏覽器內 navigator.modelContext）暴露站點工具給 AI agent"
+  },
+  "transport": {
+    "type": "webmcp",
+    "endpoint": "https://siokiu.criterium.tw/",
+    "notes": "本站不提供獨立 MCP server (stdio / sse)；改用 WebMCP（webmachinelearning.github.io/webmcp）。瀏覽器中 AI agent 在訪問本網域時可透過 navigator.modelContext 取得下列工具。"
+  },
+  "capabilities": {
+    "tools": {
+      "list": [
+        {
+          "name": "list_active_rides",
+          "description": "列出公布欄上所有進行中的約騎活動（未過期的），可依縣市篩選"
+        },
+        {
+          "name": "get_route_info",
+          "description": "從 Strava 或 Ride with GPS 路線連結取得距離（公里）與爬升（公尺）"
+        },
+        {
+          "name": "check_event_weather",
+          "description": "查詢特定地點 + 日期的天氣預報（OpenWeatherMap 5 天 / 3 小時）"
+        }
+      ]
+    },
+    "resources": {
+      "list": [
+        { "uri": "https://siokiu.criterium.tw/llms.txt", "name": "site-description", "mimeType": "text/plain" },
+        { "uri": "https://siokiu.criterium.tw/.well-known/api-catalog", "name": "api-catalog", "mimeType": "application/linkset+json" },
+        { "uri": "https://siokiu.criterium.tw/.well-known/agent-skills/index.json", "name": "agent-skills", "mimeType": "application/json" }
+      ]
+    },
+    "prompts": { "list": [] }
+  }
+}

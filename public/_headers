@@ -47,6 +47,24 @@
   Content-Type: application/json
   Cache-Control: public, max-age=3600
 
+# OAuth / OIDC Discovery（無副檔名，需明確指定 type）
+/.well-known/openid-configuration
+  Content-Type: application/json
+  Cache-Control: public, max-age=3600
+
+/.well-known/oauth-authorization-server
+  Content-Type: application/json
+  Cache-Control: public, max-age=3600
+
+/.well-known/oauth-protected-resource
+  Content-Type: application/json
+  Cache-Control: public, max-age=3600
+
+# MCP Server Card
+/.well-known/mcp/server-card.json
+  Content-Type: application/json
+  Cache-Control: public, max-age=3600
+
 # llms.txt 給 AI 解析（純文字 / markdown）
 /llms.txt
   Content-Type: text/plain; charset=utf-8
