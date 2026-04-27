@@ -165,23 +165,6 @@ export default function EventWeatherCard({
     return () => ctrl.abort()
   }, [中點, 日期, 活動標題])
 
-  // 把窗口內重算後的資料回呼給外層（給複製文字用）
-  useEffect(() => {
-    if (!data) {
-      onDataRef.current?.(null)
-      return
-    }
-    if (!摘要) {
-      onDataRef.current?.(null)
-      return
-    }
-    onDataRef.current?.({
-      ...data,
-      summary: { ...data.summary, ...摘要 },
-      forecasts: 顯示預報,
-    })
-  }, [data, 摘要, 顯示預報])
-
   // 預報窗口：集合時間 -3h ~ +6h（含活動前後緩衝）
   const 顯示預報 = useMemo(() => {
     if (!data) return [] as ForecastSlot[]
@@ -219,6 +202,19 @@ export default function EventWeatherCard({
     if (min_temp <= 10)  tags.push('cold')
     return { slots: slots.length, max_temp, min_temp, max_feels, max_pop, max_wind, alert_tags: tags }
   }, [顯示預報])
+
+  // 把窗口內重算後的資料回呼給外層（給複製文字用）
+  useEffect(() => {
+    if (!data || !摘要) {
+      onDataRef.current?.(null)
+      return
+    }
+    onDataRef.current?.({
+      ...data,
+      summary: { ...data.summary, ...摘要 },
+      forecasts: 顯示預報,
+    })
+  }, [data, 摘要, 顯示預報])
 
   if (!中點 || !日期) return null
 
