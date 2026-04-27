@@ -26,6 +26,17 @@ export default defineConfig({
     'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion),
     'import.meta.env.VITE_COMMIT_SHA': JSON.stringify(commitSha),
   },
+  server: {
+    proxy: {
+      // 本地 dev（npm run dev）把 /api/* 轉發到正式環境，
+      // 不必另外跑 wrangler 也能測 Cloudflare Pages Functions（route-info / notify）
+      '/api': {
+        target: 'https://siokiu.criterium.tw',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
   build: {
     rollupOptions: {
       output: {
