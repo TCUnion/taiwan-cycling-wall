@@ -1,0 +1,31 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://siokiu.criterium.tw/",
+      "service-desc": [
+        {
+          "href": "https://siokiu.criterium.tw/llms.txt",
+          "type": "text/plain",
+          "title": "Site description for AI agents"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://siokiu.criterium.tw/about",
+          "type": "text/html",
+          "title": "關於相揪約騎公布欄"
+        }
+      ],
+      "item": [
+        {
+          "href": "https://siokiu.criterium.tw/api/route-info",
+          "type": "application/json",
+          "title": "從 Strava / Ride with GPS 路線連結抓取距離與爬升",
+          "describedby": [
+            { "href": "https://siokiu.criterium.tw/llms.txt" }
+          ]
+        }
+      ]
+    }
+  ]
+}

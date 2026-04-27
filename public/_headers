@@ -4,6 +4,17 @@
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
 
+# 首頁 / index — 加入 RFC 8288 Link headers 給 AI Agent 探索用
+# describedby：站點語意描述（給 agent 理解內容）
+# sitemap：標準 robots/sitemap 關係
+# manifest：PWA 應用清單
+# api-catalog：公開 API 目錄（RFC 9727）
+/
+  Link: </llms.txt>; rel="describedby"; type="text/plain", </sitemap.xml>; rel="sitemap"; type="application/xml", </manifest.webmanifest>; rel="manifest"; type="application/manifest+json", </.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"
+
+/index.html
+  Link: </llms.txt>; rel="describedby"; type="text/plain", </sitemap.xml>; rel="sitemap"; type="application/xml", </manifest.webmanifest>; rel="manifest"; type="application/manifest+json", </.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"
+
 # 靜態資源長期快取（Vite 會加 hash）
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
@@ -25,3 +36,13 @@
 # Service Worker 不快取
 /sw.js
   Cache-Control: no-cache, no-store, must-revalidate
+
+# api-catalog 給 AI Agent 自動發現用
+/.well-known/api-catalog
+  Content-Type: application/linkset+json
+  Cache-Control: public, max-age=3600
+
+# llms.txt 給 AI 解析（純文字）
+/llms.txt
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=3600
