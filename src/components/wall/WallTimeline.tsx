@@ -114,18 +114,6 @@ export default function WallTimeline({ 活動列表, onOpenActivity, 載入中 =
                           <span className="text-siokiu-smoke">{r.pace || '自由'}</span>
                         </div>
                       </div>
-                      {/* 名額 */}
-                      <div className="min-w-[52px] shrink-0 text-right">
-                        <div className="font-serif text-[1.05rem] font-black leading-none text-siokiu-ink">
-                          {r.maxParticipants > 0 ? r.maxParticipants : '∞'}
-                          {r.maxParticipants > 0 && (
-                            <span className="text-[11px] font-normal text-siokiu-smoke"> 位</span>
-                          )}
-                        </div>
-                        <div className="mt-1 text-[7.5px] uppercase tracking-[0.25em] text-siokiu-smoke">
-                          名額
-                        </div>
-                      </div>
                     </div>
                   </button>
                 )

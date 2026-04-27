@@ -110,13 +110,6 @@ export default function WallNewsprint({ 活動列表, onOpenActivity, 載入中 
                     {r.pace || '自由'}
                   </div>
                 </div>
-                <div className="flex-1" />
-                <div className="text-right">
-                  <div className="text-[8.5px] uppercase tracking-[0.25em] text-siokiu-smoke">SEATS</div>
-                  <div className="text-[14px] font-medium leading-none text-siokiu-ink">
-                    {r.maxParticipants > 0 ? `≤ ${r.maxParticipants}` : '不限'}
-                  </div>
-                </div>
               </div>
 
               {/* Row 5：發起人 */}
