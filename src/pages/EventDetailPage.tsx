@@ -17,6 +17,7 @@ import MoakBadge from '../components/event/MoakBadge'
 import VerifiedBadge from '../components/ui/VerifiedBadge'
 import RouteMap from '../components/route/RouteMap'
 import EventWeatherCard from '../components/event/EventWeatherCard'
+import { useRouteInfo } from '../hooks/useRouteInfo'
 import { 安全渲染Markdown, 安全URL, 淨化純文字 } from '../utils/sanitize'
 
 interface 天氣摘要 {
@@ -58,6 +59,11 @@ export default function EventDetailPage() {
   const [天氣, set天氣] = useState<天氣資料 | null>(null)
 
   const 活動 = 活動列表.find(e => e.id === id)
+
+  // 距離 / 爬升 fallback：DB 存 0 但有 Strava URL → 現場補抓 /api/route-info 顯示（不寫回 DB）
+  const 路線資訊補抓 = useRouteInfo(活動?.stravaRouteUrl, !!活動 && (活動.distance === 0 && 活動.elevation === 0))
+  const 顯示距離 = (活動?.distance ?? 0) > 0 ? 活動!.distance : (路線資訊補抓?.distance ?? 0)
+  const 顯示爬升 = (活動?.elevation ?? 0) > 0 ? 活動!.elevation : (路線資訊補抓?.elevation ?? 0)
 
   useEffect(() => {
     if (!id) return
@@ -225,8 +231,8 @@ export default function EventDetailPage() {
               /ridewithgps\.com\/routes\/\d+/.test(活動.stravaRouteUrl)
             )
             const 數據項: { icon: React.ReactNode; label: string; value: string }[] = []
-            if (!有路線嵌入 && 活動.distance > 0) 數據項.push({ icon: <Route size={16} />, label: '距離', value: 格式化距離(活動.distance) })
-            if (!有路線嵌入 && 活動.elevation > 0) 數據項.push({ icon: <Mountain size={16} />, label: '爬升', value: `${活動.elevation} m` })
+            if (!有路線嵌入 && 顯示距離 > 0) 數據項.push({ icon: <Route size={16} />, label: '距離', value: 格式化距離(顯示距離) })
+            if (!有路線嵌入 && 顯示爬升 > 0) 數據項.push({ icon: <Mountain size={16} />, label: '爬升', value: `${顯示爬升} m` })
             if (活動.pace !== '自由配速') {
               const 配速描述: Record<string, string> = {
                 '輕鬆騎': '邊騎邊聊天，享受風景',
@@ -363,9 +369,9 @@ export default function EventDetailPage() {
           `【集合地點】 ${活動.meetingPoint}${活動.meetingPointUrl ? `\n${活動.meetingPointUrl}` : ''}`,
           天氣行 ? `【當日天氣】 ${天氣行}` : '',
           '',
-          活動.distance > 0 || 活動.elevation > 0 || (活動.pace && 活動.pace !== '自由配速') ? '【路線與騎乘資訊】' : '',
-          活動.distance > 0 ? `距離：${格式化距離(活動.distance)}` : '',
-          活動.elevation > 0 ? `爬升：${活動.elevation}m` : '',
+          顯示距離 > 0 || 顯示爬升 > 0 || (活動.pace && 活動.pace !== '自由配速') ? '【路線與騎乘資訊】' : '',
+          顯示距離 > 0 ? `距離：${格式化距離(顯示距離)}` : '',
+          顯示爬升 > 0 ? `爬升：${顯示爬升}m` : '',
           活動.pace && 活動.pace !== '自由配速' ? `配速：${活動.pace}` : '',
           活動.stravaRouteUrl ? `路線連結： ${活動.stravaRouteUrl}` : '',
           '',

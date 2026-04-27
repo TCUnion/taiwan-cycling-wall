@@ -7,6 +7,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { 格式化完整日期, 格式化距離 } from '../../utils/formatters'
 import VerifiedBadge from '../ui/VerifiedBadge'
 import EventWeatherCard from '../event/EventWeatherCard'
+import { useRouteInfo } from '../../hooks/useRouteInfo'
 
 interface Props {
   活動: CyclingEvent | null
@@ -40,9 +41,14 @@ export default function RideDetailDrawer({ 活動, onClose }: Props) {
     return () => document.removeEventListener('keydown', 處理鍵盤)
   }, [活動, onClose])
 
+  // 距離 / 爬升 fallback：DB 存 0 但有 Strava URL → 現場補抓
+  const 路線資訊補抓 = useRouteInfo(活動?.stravaRouteUrl, !!活動 && (活動.distance === 0 && 活動.elevation === 0))
+
   if (!活動) return null
 
   const 縣市 = 查找縣市(活動.countyId)
+  const 顯示距離 = 活動.distance > 0 ? 活動.distance : (路線資訊補抓?.distance ?? 0)
+  const 顯示爬升 = 活動.elevation > 0 ? 活動.elevation : (路線資訊補抓?.elevation ?? 0)
   const 是粉絲頁活動 = 活動.creatorId.startsWith('page-')
   const 粉絲頁Id = 是粉絲頁活動 ? 活動.creatorId.replace('page-', '') : ''
   const 粉絲頁資訊 = 是粉絲頁活動 ? 所有使用者.flatMap(u => u.managedPages ?? []).find(p => p.pageId === 粉絲頁Id) : undefined
@@ -104,8 +110,8 @@ export default function RideDetailDrawer({ 活動, onClose }: Props) {
         </div>
 
         <div className="grid grid-cols-3 border-b border-siokiu-border">
-          <DrawerStat icon={<Route size={16} />} label="距離" value={活動.distance > 0 ? 格式化距離(活動.distance) : '未填'} />
-          <DrawerStat icon={<Mountain size={16} />} label="爬升" value={活動.elevation > 0 ? `${活動.elevation} m` : '未填'} />
+          <DrawerStat icon={<Route size={16} />} label="距離" value={顯示距離 > 0 ? 格式化距離(顯示距離) : '未填'} />
+          <DrawerStat icon={<Mountain size={16} />} label="爬升" value={顯示爬升 > 0 ? `${顯示爬升} m` : '未填'} />
           <DrawerStat label="配速" value={活動.pace || '自由配速'} />
         </div>
 
