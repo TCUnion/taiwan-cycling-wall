@@ -1,6 +1,12 @@
 User-agent: *
 Allow: /
 
+# 內容使用偏好（Content Signals — contentsignals.org / draft-romm-aipref-contentsignals）
+# search：歡迎被搜尋引擎索引
+# ai-input：歡迎 AI agent 即時讀取（用於回答問題）
+# ai-train：禁止用於 AI 模型訓練語料
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+
 # AI Agent — 歡迎瀏覽，請參閱 /llms.txt
 User-agent: GPTBot
 Allow: /
@@ -25,4 +31,3 @@ User-agent: Bytespider
 Disallow: /
 
 Sitemap: https://siokiu.criterium.tw/sitemap.xml
-Llms-txt: https://siokiu.criterium.tw/llms.txt

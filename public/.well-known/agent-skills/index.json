@@ -1,0 +1,25 @@
+{
+  "$schema": "https://agentskills.io/schemas/index.v0.2.0.json",
+  "name": "siokiu",
+  "description": "相揪約騎公布欄 — 台灣單車約騎社群平台",
+  "skills": [
+    {
+      "name": "describe-site",
+      "type": "describedby",
+      "description": "站點語意描述（給 AI agent 理解）",
+      "url": "https://siokiu.criterium.tw/llms.txt"
+    },
+    {
+      "name": "route-info",
+      "type": "api",
+      "description": "從 Strava 或 Ride with GPS 路線連結抓取距離與爬升",
+      "url": "https://siokiu.criterium.tw/api/route-info"
+    },
+    {
+      "name": "api-catalog",
+      "type": "catalog",
+      "description": "公開 API 目錄（RFC 9727 linkset+json）",
+      "url": "https://siokiu.criterium.tw/.well-known/api-catalog"
+    }
+  ]
+}

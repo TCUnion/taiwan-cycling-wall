@@ -42,7 +42,17 @@
   Content-Type: application/linkset+json
   Cache-Control: public, max-age=3600
 
-# llms.txt 給 AI 解析（純文字）
+# Agent Skills 索引
+/.well-known/agent-skills/index.json
+  Content-Type: application/json
+  Cache-Control: public, max-age=3600
+
+# llms.txt 給 AI 解析（純文字 / markdown）
 /llms.txt
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=3600
+
+# robots.txt 標準型別 + 短快取（內含 Content-Signal）
+/robots.txt
   Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=3600

@@ -4,6 +4,7 @@ import { useAuthStore } from './stores/authStore'
 import { supabase } from './utils/supabase'
 import { 綁定GoogleAuth使用者, 綁定LINEAuth使用者 } from './utils/userService'
 import { 通知網站造訪 } from './utils/notify'
+import { 註冊WebMCPTools } from './utils/webmcp'
 
 import AppShell from './components/layout/AppShell'
 
@@ -114,6 +115,11 @@ export default function App() {
       user: 使用者?.name ?? 使用者?.id ?? undefined,
     })
   }, [使用者])
+
+  useEffect(() => {
+    // WebMCP — 對支援的瀏覽器（Chrome EPP）暴露站點工具給 AI agent
+    註冊WebMCPTools()
+  }, [])
 
   useEffect(() => {
     let active = true
