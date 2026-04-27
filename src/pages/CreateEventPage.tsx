@@ -133,6 +133,7 @@ export default function CreateEventPage() {
   const [pace, setPace] = useState(預填來源?.pace === '自由配速' ? '' : (預填來源?.pace ?? ''))
   const [maxParticipants, setMaxParticipants] = useState(預填來源?.maxParticipants ?? 0)
   const [抓取路線中, set抓取路線中] = useState(false)
+  const [抓取錯誤, set抓取錯誤] = useState<{ code: string; message: string } | null>(null)
   const [提交錯誤, set提交錯誤] = useState('')
   const 預設配速 = ['', '輕鬆騎', '休閒騎', '中等強度', '進階挑戰', '比賽強度']
   const [自訂配速模式, set自訂配速模式] = useState(!預設配速.includes(pace))
@@ -141,21 +142,42 @@ export default function CreateEventPage() {
   const 抓取路線資訊 = async (url: string) => {
     const isStrava = /strava\.com\/routes\/\d+/.test(url)
     const isRwgps = /ridewithgps\.com\/routes\/\d+/.test(url)
-    if (!isStrava && !isRwgps) return
+    if (!isStrava && !isRwgps) {
+      set抓取錯誤(null)
+      return
+    }
 
     set抓取路線中(true)
+    set抓取錯誤(null)
     try {
       const apiUrl = `/api/route-info?url=${encodeURIComponent(url)}`
       const res = await fetch(apiUrl)
-      const info = await res.json() as { distance?: number; elevation?: number; title?: string; error?: string }
-      if (info.error) {
-        console.warn('[路線抓取] API 錯誤:', info.error)
+      const ct = res.headers.get('content-type') || ''
+      // API 沒部署或被 SPA fallback 攔截 → 回的是 HTML，不是 JSON
+      if (!ct.includes('application/json')) {
+        set抓取錯誤({
+          code: 'api_unavailable',
+          message: 'API 端點不可用（可能是本地開發環境未啟動 wrangler），請手動填入距離/爬升',
+        })
         return
+      }
+      const info = await res.json() as {
+        distance?: number; elevation?: number; title?: string
+        errorCode?: string; message?: string; error?: string
       }
       if (info.distance) setDistance(info.distance)
       if (info.elevation) setElevation(info.elevation)
       if (info.title && !routeName) setRouteName(info.title)
+      // 沒抓到任何數據 → 視為失敗，顯示原因
+      if (!info.distance && !info.elevation) {
+        set抓取錯誤({
+          code: info.errorCode || 'unknown',
+          message: info.message || info.error || '無法取得路線資料，請手動填入',
+        })
+        console.warn('[路線抓取] 失敗:', info)
+      }
     } catch (err) {
+      set抓取錯誤({ code: 'network', message: `連線失敗：${(err as Error).message}` })
       console.warn('[路線抓取] 失敗:', err)
     } finally {
       set抓取路線中(false)
@@ -1180,29 +1202,38 @@ export default function CreateEventPage() {
           <hr className="my-3 border-gray-200" />
           {(() => {
             const 有自動抓取 = /strava\.com\/routes\/\d+/.test(routeUrl) || /ridewithgps\.com\/routes\/\d+/.test(routeUrl)
-            return 有自動抓取 ? (
-              <div className="flex items-center justify-between gap-3 mb-2">
-                <p className="text-xs text-gray-500">
-                  {抓取路線中
-                    ? '正在抓取路線資訊…'
-                    : distance || elevation
-                      ? `距離 ${distance} km · 爬升 ${elevation} m（自動抓取）`
-                      : '貼入路線連結即會自動填入距離 / 爬升。若沒出現，請按右側「重新抓取」或下方手動填入。'}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => 抓取路線資訊(routeUrl.trim())}
-                  disabled={抓取路線中}
-                  className="text-xs text-strava hover:text-strava/80 disabled:text-gray-300 cursor-pointer transition-colors"
-                >
-                  {抓取路線中 ? '抓取中…' : '重新抓取'}
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                <Input name="distance" label="距離 (km)" type="number" inputMode="decimal" min="0" value={distance || ''} onChange={e => { setDistance(Math.max(0, Number(e.target.value))); set選中路線範本('') }} placeholder="例：55…" />
-                <Input name="elevation" label="爬升 (m)" type="number" inputMode="numeric" min="0" value={elevation || ''} onChange={e => { setElevation(Math.max(0, Number(e.target.value))); set選中路線範本('') }} placeholder="例：400…" />
-              </div>
+            const 抓取成功 = !!(distance || elevation) && !抓取錯誤
+            // 抓取成功時只顯示結果列；其他情況（無連結 / 抓取中 / 抓取失敗）都顯示手動輸入框
+            return (
+              <>
+                {有自動抓取 && (
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <p className={`text-xs ${抓取錯誤 ? 'text-amber-600' : 'text-gray-500'}`}>
+                      {抓取路線中
+                        ? '正在抓取路線資訊…'
+                        : 抓取成功
+                          ? `距離 ${distance} km · 爬升 ${elevation} m（自動抓取）`
+                          : 抓取錯誤
+                            ? `自動抓取失敗：${抓取錯誤.message}。請按右側「重新抓取」或下方手動填入。`
+                            : '貼入路線連結即會自動填入距離 / 爬升。若沒出現，請按右側「重新抓取」或下方手動填入。'}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => 抓取路線資訊(routeUrl.trim())}
+                      disabled={抓取路線中}
+                      className="text-xs text-strava hover:text-strava/80 disabled:text-gray-300 cursor-pointer transition-colors"
+                    >
+                      {抓取路線中 ? '抓取中…' : '重新抓取'}
+                    </button>
+                  </div>
+                )}
+                {!抓取成功 && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input name="distance" label="距離 (km)" type="number" inputMode="decimal" min="0" value={distance || ''} onChange={e => { setDistance(Math.max(0, Number(e.target.value))); set選中路線範本('') }} placeholder="例：55…" />
+                    <Input name="elevation" label="爬升 (m)" type="number" inputMode="numeric" min="0" value={elevation || ''} onChange={e => { setElevation(Math.max(0, Number(e.target.value))); set選中路線範本('') }} placeholder="例：400…" />
+                  </div>
+                )}
+              </>
             )
           })()}
           <div className={`${/strava\.com\/routes\/\d+/.test(routeUrl) || /ridewithgps\.com\/routes\/\d+/.test(routeUrl) ? '' : 'mt-3'}`}>
