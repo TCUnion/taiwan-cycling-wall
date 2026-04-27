@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './stores/authStore'
 import { supabase } from './utils/supabase'
 import { 綁定GoogleAuth使用者, 綁定LINEAuth使用者 } from './utils/userService'
+import { 通知網站造訪 } from './utils/notify'
 
 import AppShell from './components/layout/AppShell'
 
@@ -105,6 +106,13 @@ export default function App() {
   const 已登入 = useAuthStore(s => s.已登入)
   const 使用者 = useAuthStore(s => s.使用者)
   const 登出 = useAuthStore(s => s.登出)
+
+  useEffect(() => {
+    通知網站造訪({
+      path: window.location.pathname,
+      user: 使用者?.name ?? 使用者?.id ?? undefined,
+    })
+  }, [使用者])
 
   useEffect(() => {
     let active = true

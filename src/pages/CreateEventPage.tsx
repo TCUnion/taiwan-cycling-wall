@@ -20,6 +20,7 @@ import Input from '../components/ui/Input'
 import Avatar from '../components/ui/Avatar'
 import RoutePickerModal from '../components/route/RoutePickerModal'
 import EventWeatherCard from '../components/event/EventWeatherCard'
+import { 通知活動建立 } from '../utils/notify'
 
 // 從文字推斷縣市
 function 從文字推斷縣市(text: string): string {
@@ -445,6 +446,13 @@ export default function CreateEventPage() {
           }
         })
         await 批次新增活動(批次活動)
+        通知活動建立({
+          title: `${安全標題}（定期 ${定期期數} 期）`,
+          date,
+          spot: 安全集合點,
+          county: 縣市?.name,
+          creator: 目前身份.name,
+        })
         navigate('/wall', { replace: true })
         return
       }
@@ -471,6 +479,13 @@ export default function CreateEventPage() {
         createdAt: new Date().toISOString(),
       }
       await 新增活動(新活動)
+      通知活動建立({
+        title: 安全標題,
+        date,
+        spot: 安全集合點,
+        county: 縣市?.name,
+        creator: 目前身份.name,
+      })
       navigate('/wall', { replace: true })
     } catch (err) {
       set提交錯誤(err instanceof Error ? err.message : '存檔失敗，請稍後再試')
