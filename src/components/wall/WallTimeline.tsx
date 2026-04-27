@@ -3,6 +3,7 @@ import { Loader2, Inbox } from 'lucide-react'
 import type { CyclingEvent } from '../../types'
 import { 查找縣市 } from '../../data/counties'
 import { 解析日期, REGION_INK } from './wallShared'
+import EventWeatherInline from '../event/EventWeatherInline'
 
 interface Props {
   活動列表: CyclingEvent[]
@@ -112,6 +113,9 @@ export default function WallTimeline({ 活動列表, onOpenActivity, 載入中 =
                           </span>
                           <span className="text-siokiu-border">|</span>
                           <span className="text-siokiu-smoke">{r.pace || '自由'}</span>
+                        </div>
+                        <div className="mt-1.5">
+                          <EventWeatherInline 活動={r} />
                         </div>
                       </div>
                     </div>

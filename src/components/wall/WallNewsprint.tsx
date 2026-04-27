@@ -4,6 +4,7 @@ import { 查找縣市 } from '../../data/counties'
 import { useAuthStore } from '../../stores/authStore'
 import { 解析日期, 解析發起人, REGION_INK } from './wallShared'
 import VerifiedBadge from '../ui/VerifiedBadge'
+import EventWeatherInline from '../event/EventWeatherInline'
 
 interface Props {
   活動列表: CyclingEvent[]
@@ -109,6 +110,9 @@ export default function WallNewsprint({ 活動列表, onOpenActivity, 載入中 
                   <div className="mt-[3px] text-[13px] font-medium leading-none text-siokiu-ink">
                     {r.pace || '自由'}
                   </div>
+                </div>
+                <div className="ml-auto">
+                  <EventWeatherInline 活動={r} />
                 </div>
               </div>
 

@@ -3,6 +3,7 @@ import { Loader2, Inbox } from 'lucide-react'
 import type { CyclingEvent, Region } from '../../types'
 import { 查找縣市 } from '../../data/counties'
 import { 解析日期, REGION_INK } from './wallShared'
+import EventWeatherInline from '../event/EventWeatherInline'
 
 interface Props {
   活動列表: CyclingEvent[]
@@ -210,6 +211,9 @@ export default function WallAtlas({
               >
                 查看 →
               </button>
+            </div>
+            <div className="mt-2">
+              <EventWeatherInline 活動={顯示中} />
             </div>
           </div>
         )
