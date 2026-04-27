@@ -154,27 +154,71 @@ export default function EventWeatherCard({
       .then((d) => {
         const valid = d && d.summary ? d : null
         setData(valid)
-        onDataRef.current?.(valid)
       })
       .catch((e) => {
         if ((e as Error).name === 'AbortError') return
         setError('天氣查詢失敗')
         setData(null)
-        onDataRef.current?.(null)
       })
       .finally(() => setLoading(false))
 
     return () => ctrl.abort()
   }, [中點, 日期, 活動標題])
 
-  // 過濾預報：集合時間前 3 小時起
+  // 把窗口內重算後的資料回呼給外層（給複製文字用）
+  useEffect(() => {
+    if (!data) {
+      onDataRef.current?.(null)
+      return
+    }
+    if (!摘要) {
+      onDataRef.current?.(null)
+      return
+    }
+    onDataRef.current?.({
+      ...data,
+      summary: { ...data.summary, ...摘要 },
+      forecasts: 顯示預報,
+    })
+  }, [data, 摘要, 顯示預報])
+
+  // 預報窗口：集合時間 -3h ~ +6h（含活動前後緩衝）
   const 顯示預報 = useMemo(() => {
     if (!data) return [] as ForecastSlot[]
     const all = data.forecasts
     if (!時間 || !/^\d{2}:\d{2}$/.test(時間)) return all
-    const startMs = new Date(`${日期}T${時間}:00`).getTime() - 3 * 3600 * 1000
-    return all.filter((f) => new Date(f.forecast_time).getTime() >= startMs)
+    const meet = new Date(`${日期}T${時間}:00`).getTime()
+    const start = meet - 3 * 3600 * 1000
+    const end   = meet + 6 * 3600 * 1000
+    return all.filter((f) => {
+      const t = new Date(f.forecast_time).getTime()
+      return t >= start && t <= end
+    })
   }, [data, 時間, 日期])
+
+  // 用窗口內的時段重算摘要（後端的 summary 是整天，不符使用者期待）
+  const 摘要 = useMemo(() => {
+    const slots = 顯示預報
+    if (slots.length === 0) return null
+    const temps = slots.map(s => Number(s.temp)).filter(Number.isFinite)
+    const feels = slots.map(s => Number(s.feels_like)).filter(Number.isFinite)
+    const pops  = slots.map(s => Number(s.pop)).filter(Number.isFinite)
+    const winds = slots.map(s => Number(s.wind_speed)).filter(Number.isFinite)
+    const max_temp  = temps.length ? Math.max(...temps) : 0
+    const min_temp  = temps.length ? Math.min(...temps) : 0
+    const max_feels = feels.length ? Math.max(...feels) : 0
+    const max_pop   = pops.length  ? Math.max(...pops)  : 0
+    const max_wind  = winds.length ? Math.max(...winds) : 0
+    const tags: string[] = []
+    if (max_pop  >= 0.6) tags.push('heavy_rain_risk')
+    else if (max_pop >= 0.4) tags.push('rainy')
+    if (max_wind >= 10)  tags.push('strong_wind')
+    else if (max_wind >= 8) tags.push('windy')
+    if (max_temp >= 35)  tags.push('hot')
+    if (max_feels >= 38) tags.push('heat_stress')
+    if (min_temp <= 10)  tags.push('cold')
+    return { slots: slots.length, max_temp, min_temp, max_feels, max_pop, max_wind, alert_tags: tags }
+  }, [顯示預報])
 
   if (!中點 || !日期) return null
 
@@ -204,11 +248,11 @@ export default function EventWeatherCard({
         <p className="text-sm text-gray-500">該時段尚無預報資料（OpenWeatherMap 僅支援未來 5 天）。</p>
       )}
 
-      {data && 顯示預報.length > 0 && (
+      {data && 摘要 && 顯示預報.length > 0 && (
         <>
-          {data.summary.alert_tags.length > 0 && (
+          {摘要.alert_tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-2">
-              {data.summary.alert_tags.map((tag) => {
+              {摘要.alert_tags.map((tag) => {
                 const meta = TAG_LABEL[tag]
                 if (!meta) return null
                 const { Icon, text, cls } = meta
@@ -229,19 +273,19 @@ export default function EventWeatherCard({
             <span>
               氣溫{' '}
               <span className="font-semibold text-gray-900">
-                {Number(data.summary.min_temp).toFixed(0)}–{Number(data.summary.max_temp).toFixed(0)}°
+                {摘要.min_temp.toFixed(0)}–{摘要.max_temp.toFixed(0)}°
               </span>
             </span>
             <span>
               雨機率{' '}
               <span className="font-semibold text-gray-900">
-                {Math.round(Number(data.summary.max_pop) * 100)}%
+                {Math.round(摘要.max_pop * 100)}%
               </span>
             </span>
             <span>
               最大風速{' '}
               <span className="font-semibold text-gray-900">
-                {Number(data.summary.max_wind).toFixed(1)} m/s
+                {摘要.max_wind.toFixed(1)} m/s
               </span>
             </span>
           </div>
