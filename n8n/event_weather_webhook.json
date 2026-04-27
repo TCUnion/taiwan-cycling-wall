@@ -157,6 +157,28 @@
       "position": [1024, 0],
       "id": "resp-0000-0000-0000-000000000001",
       "name": "Respond"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://discord.com/api/webhooks/1498258453347700917/1Ven8e3xqbZyjjCr7qu7ZT5vl-4RDt6AtJTaJypNAEmBhNxr9EpnUXqhLx_DmlhY6wAs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": null,\n  \"embeds\": [{\n    \"title\": \"約騎天氣查詢\",\n    \"color\": {{ $json.has_cache ? 3447003 : 15158332 }},\n    \"fields\": [\n      { \"name\": \"活動\", \"value\": \"{{ ($json.event_name || '未命名').replace(/\"/g, '\\\\\"') }}\", \"inline\": true },\n      { \"name\": \"日期\", \"value\": \"{{ $json.target_date }}\", \"inline\": true },\n      { \"name\": \"格網\", \"value\": \"{{ $json.lat_round }}, {{ $json.lon_round }}\", \"inline\": true },\n      { \"name\": \"快取命中\", \"value\": \"{{ $json.has_cache ? '是（讀 DB）' : '否（呼叫 OWM）' }}\", \"inline\": true }\n    ],\n    \"timestamp\": \"{{ $now.toISO() }}\"\n  }]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [128, 320],
+      "id": "discord-0000-0000-0000-000000000001",
+      "name": "Discord Notify",
+      "continueOnFail": true
     }
   ],
   "connections": {
@@ -170,7 +192,10 @@
       "main": [[{ "node": "Aggregate Cache", "type": "main", "index": 0 }]]
     },
     "Aggregate Cache": {
-      "main": [[{ "node": "Has Cache?", "type": "main", "index": 0 }]]
+      "main": [[
+        { "node": "Has Cache?", "type": "main", "index": 0 },
+        { "node": "Discord Notify", "type": "main", "index": 0 }
+      ]]
     },
     "Has Cache?": {
       "main": [
