@@ -5,6 +5,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { 格式化距離 } from '../../utils/formatters'
 import { 取得旋轉角度 } from '../../stores/eventStore'
 import VerifiedBadge from '../ui/VerifiedBadge'
+import EventWeatherInline from '../event/EventWeatherInline'
 
 // 便利貼背景色對照
 const 背景色: Record<StickyColor, string> = {
@@ -112,9 +113,13 @@ export default function StickyNoteCard({ 活動, onOpen }: Props) {
         <Calendar size={12} className="shrink-0" />
         <span className="truncate">{活動.date} {活動.time}</span>
       </div>
-      <div className="mb-3 flex items-center gap-1.5 text-[0.68rem] text-siokiu-ink/70">
+      <div className="mb-2 flex items-center gap-1.5 text-[0.68rem] text-siokiu-ink/70">
         <MapPin size={12} className="shrink-0" />
         <span className="truncate">{活動.meetingPoint || 縣市?.name || '集合地點未填'}</span>
+      </div>
+
+      <div className="mb-3">
+        <EventWeatherInline 活動={活動} />
       </div>
 
       {名稱 && (
