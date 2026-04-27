@@ -1181,9 +1181,13 @@ export default function CreateEventPage() {
           {(() => {
             const 有自動抓取 = /strava\.com\/routes\/\d+/.test(routeUrl) || /ridewithgps\.com\/routes\/\d+/.test(routeUrl)
             return 有自動抓取 ? (
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-gray-400">
-                  {抓取路線中 ? '正在抓取路線資訊…' : distance || elevation ? `距離 ${distance} km · 爬升 ${elevation} m（自動抓取）` : '距離與爬升將自動從路線抓取'}
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <p className="text-xs text-gray-500">
+                  {抓取路線中
+                    ? '正在抓取路線資訊…'
+                    : distance || elevation
+                      ? `距離 ${distance} km · 爬升 ${elevation} m（自動抓取）`
+                      : '貼入路線連結即會自動填入距離 / 爬升。若沒出現，請按右側「重新抓取」或下方手動填入。'}
                 </p>
                 <button
                   type="button"
