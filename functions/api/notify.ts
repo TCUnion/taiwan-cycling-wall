@@ -43,6 +43,18 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   const webhook = env.DISCORD_WEBHOOK_URL || FALLBACK_WEBHOOK
   const payload = body.payload ?? {}
 
+  // Cloudflare 提供的訪客資訊
+  const ip = request.headers.get('cf-connecting-ip') || '未知'
+  const ua = request.headers.get('user-agent') || ''
+  const cf = (request as unknown as { cf?: Record<string, unknown> }).cf || {}
+  const country = String(cf.country ?? request.headers.get('cf-ipcountry') ?? '-')
+  const city = String(cf.city ?? '-')
+  const region = String(cf.region ?? '-')
+  const asn = String(cf.asOrganization ?? '-')
+  const ipInfo = `${ip}\n${country} / ${region} / ${city}\n${asn}`
+  // 截短 UA：Discord 欄位上限 1024 字元
+  const uaShort = ua.length > 200 ? ua.slice(0, 200) + '…' : ua
+
   let embed: Record<string, unknown>
   if (body.event === 'visit') {
     embed = {
@@ -51,6 +63,8 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
       fields: [
         { name: '頁面', value: String(payload.path ?? '/'), inline: true },
         { name: '使用者', value: String(payload.user ?? '未登入'), inline: true },
+        { name: 'IP / 位置', value: ipInfo, inline: false },
+        { name: 'User-Agent', value: uaShort || '-', inline: false },
       ],
       timestamp: new Date().toISOString(),
     }
@@ -64,6 +78,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
         { name: '集合', value: String(payload.spot ?? '-'), inline: true },
         { name: '縣市', value: String(payload.county ?? '-'), inline: true },
         { name: '發起人', value: String(payload.creator ?? '-'), inline: true },
+        { name: 'IP / 位置', value: ipInfo, inline: false },
       ],
       timestamp: new Date().toISOString(),
     }
