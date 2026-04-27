@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import type { Region } from '../../types'
 import { ArrowDownUp, Archive, Circle } from 'lucide-react'
+import WallLayoutSwitcher from './WallLayoutSwitcher'
 
 type 排序方式 = '最新' | '最熱門'
 
@@ -50,6 +51,7 @@ export default function WallFilters({ 篩選區域, 排序, onChange區域, onCh
             <ArrowDownUp size={13} />
             {排序}
           </button>
+          <WallLayoutSwitcher />
         </div>
       </div>
 

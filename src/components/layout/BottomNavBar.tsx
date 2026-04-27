@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Home, PlusCircle, User, Shield, Map } from 'lucide-react'
+import { Home, PlusCircle, User, Shield, Map, CloudSun } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 
 const 導航項目 = [
   { path: '/wall', icon: Home, label: '公布欄', 需登入: false, 需管理員: false, 未登入隱藏: false },
+  { path: '/weather', icon: CloudSun, label: '天氣', 需登入: false, 需管理員: false, 未登入隱藏: false },
   { path: '/routes', icon: Map, label: '路線', 需登入: true, 需管理員: false, 未登入隱藏: true },
   { path: '/create', icon: PlusCircle, label: '發起', 需登入: true, 需管理員: false, 未登入隱藏: false },
   { path: '/dashboard', icon: User, label: '我的', 需登入: true, 需管理員: false, 未登入隱藏: false },
