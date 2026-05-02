@@ -1,8 +1,9 @@
-import { Calendar, Gauge, MapPin, Mountain, Route } from 'lucide-react'
+import { useState } from 'react'
+import { Calendar, Gauge, MapPin, Mountain, Route, Share2, Check } from 'lucide-react'
 import type { CyclingEvent, StickyColor } from '../../types'
 import { 查找縣市 } from '../../data/counties'
 import { useAuthStore } from '../../stores/authStore'
-import { 格式化距離 } from '../../utils/formatters'
+import { 格式化距離, 格式化完整日期 } from '../../utils/formatters'
 import { 取得旋轉角度 } from '../../stores/eventStore'
 import VerifiedBadge from '../ui/VerifiedBadge'
 import EventWeatherInline from '../event/EventWeatherInline'
@@ -32,6 +33,31 @@ export default function StickyNoteCard({ 活動, onOpen }: Props) {
   const 所有使用者 = useAuthStore(s => s.所有使用者)
   const 縣市 = 查找縣市(活動.countyId)
   const 旋轉class = 取得旋轉角度(活動.id)
+  const [已複製, set已複製] = useState(false)
+
+  const 處理分享 = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const 活動連結 = `${window.location.origin}/event/${活動.id}`
+    const 完整文字 = [
+      活動.title,
+      `【集合時間】 ${格式化完整日期(活動.date)} ${活動.time}`,
+      活動.meetingPoint ? `【集合地點】 ${活動.meetingPoint}${活動.meetingPointUrl ? `\n${活動.meetingPointUrl}` : ''}` : '',
+      活動.distance > 0 ? `距離：${格式化距離(活動.distance)}` : '',
+      活動.elevation > 0 ? `爬升：${活動.elevation}m` : '',
+      活動.pace && 活動.pace !== '自由配速' ? `配速：${活動.pace}` : '',
+      活動.stravaRouteUrl ? `路線連結： ${活動.stravaRouteUrl}` : '',
+      '',
+      '#siokiu #相揪 #明天騎哪 #約騎資訊',
+      `【更多資訊請看】 ${活動連結}`,
+    ].filter(Boolean).join('\n')
+    try {
+      await navigator.clipboard.writeText(完整文字)
+      set已複製(true)
+      setTimeout(() => set已複製(false), 2000)
+    } catch {
+      // ignore clipboard error
+    }
+  }
 
   // 粉絲頁發起人資訊
   const 是粉絲頁活動 = 活動.creatorId.startsWith('page-')
@@ -49,8 +75,11 @@ export default function StickyNoteCard({ 活動, onOpen }: Props) {
     : `${String(日期.getMonth() + 1).padStart(2, '0')}.${String(日期.getDate()).padStart(2, '0')}`
 
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onOpen(活動)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(活動) } }}
       className={`
         ${背景色[活動.stickyColor]} ${旋轉class}
         relative min-h-[190px] w-full overflow-visible rounded-none border-0
@@ -62,6 +91,15 @@ export default function StickyNoteCard({ 活動, onOpen }: Props) {
       `}
     >
       <div className={`absolute inset-y-0 left-0 w-1 ${區域色帶[活動.region]}`} />
+
+      <button
+        type="button"
+        onClick={處理分享}
+        aria-label={已複製 ? '已複製活動內容' : '複製活動內容'}
+        className="absolute top-2 right-2 z-20 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/70 text-siokiu-ink shadow-sm hover:bg-white cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-siokiu-red/40"
+      >
+        {已複製 ? <Check size={14} className="text-green-600" /> : <Share2 size={14} />}
+      </button>
 
       <span className="siokiu-pushpin absolute -top-1.5 left-1/2 z-10 -translate-x-1/2" aria-hidden="true" />
 
@@ -133,7 +171,7 @@ export default function StickyNoteCard({ 活動, onOpen }: Props) {
           </div>
         </div>
       )}
-    </button>
+    </div>
   )
 }
 

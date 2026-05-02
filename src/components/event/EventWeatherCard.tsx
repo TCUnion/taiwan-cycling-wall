@@ -10,11 +10,12 @@ import {
   MapPin,
 } from 'lucide-react'
 import { 查找縣市 } from '../../data/counties'
+import { 解析地圖座標 } from '../../utils/geoUtils'
 
 interface Props {
   座標: [number, number][]
   日期: string
-  /** HH:MM；有的話預報只顯示集合時間前 3 小時起 */
+  /** HH:MM；有的話預報只顯示集合時間前後 6 小時的時段 */
   時間?: string
   縣市Id?: string
   集合地點?: string
@@ -77,30 +78,6 @@ function 格式化時段(iso: string): string {
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:00`
 }
 
-// 從 Google Maps URL 抓 lat/lon。支援常見幾種格式；shortened URL（maps.app.goo.gl）無法解析
-function 解析地圖座標(url: string): { lat: number; lon: number } | null {
-  if (!url) return null
-  const decoded = (() => { try { return decodeURIComponent(url) } catch { return url } })()
-  const patterns = [
-    /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
-    /!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/,
-    /[?&]q=loc:(-?\d+(?:\.\d+)?)[, ]\s*(-?\d+(?:\.\d+)?)/,
-    /[?&]q=(-?\d+(?:\.\d+)?)[, ]\s*(-?\d+(?:\.\d+)?)/,
-    /[?&]ll=(-?\d+(?:\.\d+)?)[, ]\s*(-?\d+(?:\.\d+)?)/,
-  ]
-  for (const p of patterns) {
-    const m = decoded.match(p)
-    if (m && m[1] && m[2]) {
-      const lat = Number(m[1])
-      const lon = Number(m[2])
-      if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
-        return { lat, lon }
-      }
-    }
-  }
-  return null
-}
-
 export default function EventWeatherCard({
   座標, 日期, 時間, 縣市Id, 集合地點, 集合地點URL, 活動標題, onData,
 }: Props) {
@@ -136,24 +113,36 @@ export default function EventWeatherCard({
     setLoading(true)
     setError(null)
 
-    fetch(WEBHOOK_URL, {
+    // 後端依 UTC 日期切片，台灣凌晨/深夜時段會落在前後一天 → 平行抓 date-1 / date / date+1 後合併
+    // 用 UTC 算術避免時區漂移（new Date(YYYY-MM-DDT00:00:00) 在 +8 區會被 toISOString 轉成前一天）
+    const 偏移日期 = (offset: number): string => {
+      const [y, m, d] = 日期.split('-').map(Number)
+      const ms = Date.UTC(y, m - 1, d) + offset * 86400000
+      return new Date(ms).toISOString().split('T')[0]
+    }
+    const 抓單日 = (d: string) => fetch(WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        lat: 中點.lat,
-        lon: 中點.lon,
-        date: 日期,
-        event_name: 活動標題,
-      }),
+      body: JSON.stringify({ lat: 中點.lat, lon: 中點.lon, date: d, event_name: 活動標題 }),
       signal: ctrl.signal,
+    }).then(async (r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      return (await r.json()) as WeatherResp
+    }).catch((e) => {
+      if ((e as Error).name === 'AbortError') throw e
+      return null
     })
-      .then(async (r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`)
-        return (await r.json()) as WeatherResp
-      })
-      .then((d) => {
-        const valid = d && d.summary ? d : null
-        setData(valid)
+
+    Promise.all([偏移日期(-1), 日期, 偏移日期(1)].map(抓單日))
+      .then((results) => {
+        const valid = results.filter((r): r is WeatherResp => !!(r && r.summary))
+        if (valid.length === 0) { setData(null); return }
+        const map = new Map<string, ForecastSlot>()
+        for (const r of valid) for (const f of r.forecasts) map.set(f.forecast_time, f)
+        const merged = Array.from(map.values()).sort((a, b) =>
+          new Date(a.forecast_time).getTime() - new Date(b.forecast_time).getTime()
+        )
+        setData({ ...valid[0], date: 日期, forecasts: merged, summary: { ...valid[0].summary, slots: merged.length } })
       })
       .catch((e) => {
         if ((e as Error).name === 'AbortError') return
@@ -165,13 +154,13 @@ export default function EventWeatherCard({
     return () => ctrl.abort()
   }, [中點, 日期, 活動標題])
 
-  // 預報窗口：集合時間 -3h ~ +6h（含活動前後緩衝）
+  // 預報窗口：集合時間 ±6h（含活動前後緩衝）
   const 顯示預報 = useMemo(() => {
     if (!data) return [] as ForecastSlot[]
     const all = data.forecasts
     if (!時間 || !/^\d{2}:\d{2}$/.test(時間)) return all
     const meet = new Date(`${日期}T${時間}:00`).getTime()
-    const start = meet - 3 * 3600 * 1000
+    const start = meet - 6 * 3600 * 1000
     const end   = meet + 6 * 3600 * 1000
     return all.filter((f) => {
       const t = new Date(f.forecast_time).getTime()

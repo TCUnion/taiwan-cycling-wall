@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import type { CyclingEvent } from '../../types'
 import { 查找縣市 } from '../../data/counties'
+import { 解析地圖座標 } from '../../utils/geoUtils'
 
 interface ForecastSlot {
   forecast_time: string
@@ -21,30 +22,6 @@ interface WeatherResp {
 const WEBHOOK_URL =
   import.meta.env.VITE_WEATHER_WEBHOOK_URL ||
   'https://service.criterium.tw/webhook/event-weather-check'
-
-// 解析 Google Maps URL 抓 lat/lon
-function 解析地圖座標(url?: string): { lat: number; lon: number } | null {
-  if (!url) return null
-  const decoded = (() => { try { return decodeURIComponent(url) } catch { return url } })()
-  const patterns = [
-    /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
-    /!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/,
-    /[?&]q=loc:(-?\d+(?:\.\d+)?)[, ]\s*(-?\d+(?:\.\d+)?)/,
-    /[?&]q=(-?\d+(?:\.\d+)?)[, ]\s*(-?\d+(?:\.\d+)?)/,
-    /[?&]ll=(-?\d+(?:\.\d+)?)[, ]\s*(-?\d+(?:\.\d+)?)/,
-  ]
-  for (const p of patterns) {
-    const m = decoded.match(p)
-    if (m && m[1] && m[2]) {
-      const lat = Number(m[1])
-      const lon = Number(m[2])
-      if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
-        return { lat, lon }
-      }
-    }
-  }
-  return null
-}
 
 interface Props {
   活動: CyclingEvent

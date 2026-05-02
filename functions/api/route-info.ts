@@ -11,10 +11,33 @@ interface RouteInfo {
   title?: string
   distance?: number  // 公里
   elevation?: number // 公尺
+  startCoordinate?: { lat: number; lon: number }  // 路線起點座標（供集合點/起點一致性檢查）
   source: 'strava' | 'ridewithgps' | 'unknown'
   // 解析失敗時的明確錯誤碼，前端可顯示對應提示
   errorCode?: 'strava_no_ssr_data' | 'private_or_not_found' | 'parser_failed' | 'network_failed' | 'unsupported_platform'
   message?: string
+}
+
+// Google polyline encoding 解碼器，只需要第一個點就好（O(n) 但 early-return）
+function decodeFirstPoint(encoded: string): { lat: number; lon: number } | null {
+  let idx = 0
+  const decodeOne = (): number => {
+    let b: number, shift = 0, result = 0
+    do {
+      if (idx >= encoded.length) return NaN
+      b = encoded.charCodeAt(idx++) - 63
+      result |= (b & 0x1f) << shift
+      shift += 5
+    } while (b >= 0x20)
+    return (result & 1) ? ~(result >> 1) : (result >> 1)
+  }
+  const dLat = decodeOne()
+  const dLng = decodeOne()
+  if (!Number.isFinite(dLat) || !Number.isFinite(dLng)) return null
+  const lat = dLat / 1e5
+  const lon = dLng / 1e5
+  if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null
+  return { lat, lon }
 }
 
 const ALLOWED_ORIGIN = 'https://siokiu.criterium.tw'
@@ -115,8 +138,24 @@ async function fetchStravaRoute(routeId: string): Promise<RouteInfo> {
     if (m) distance = Math.round(parseFloat(m[1]) / 10) / 100
   }
 
+  // 嘗試抓起點座標：(1) "start_latlng":[lat,lng] (2) summary_polyline / polyline 解碼第一點
+  let startCoordinate: { lat: number; lon: number } | undefined
+  const startLatLng = html.match(/"start_latlng":\s*\[\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)\s*\]/)
+  if (startLatLng) {
+    const lat = Number(startLatLng[1])
+    const lon = Number(startLatLng[2])
+    if (Math.abs(lat) <= 90 && Math.abs(lon) <= 180) startCoordinate = { lat, lon }
+  }
+  if (!startCoordinate) {
+    const polyMatch = html.match(/"(?:summary_polyline|polyline)":"([^"]+)"/)
+    if (polyMatch) {
+      const decoded = decodeFirstPoint(polyMatch[1].replace(/\\\\/g, '\\'))
+      if (decoded) startCoordinate = decoded
+    }
+  }
+
   if (distance || elevation) {
-    return { source: 'strava', distance, elevation }
+    return { source: 'strava', distance, elevation, startCoordinate }
   }
 
   // 完全抓不到（路線私人或 embed 也擋）
@@ -149,9 +188,22 @@ async function fetchRwgpsRoute(routeId: string): Promise<RouteInfo> {
       return { source: 'ridewithgps', errorCode: 'parser_failed', message: 'JSON 回應未含距離/爬升欄位' }
     }
 
+    // 抓起點座標：track_points[0] 用 x=經度, y=緯度
+    let startCoordinate: { lat: number; lon: number } | undefined
+    const trackPoints = route.track_points as Array<{ x?: number; y?: number; lat?: number; lng?: number }> | undefined
+    if (Array.isArray(trackPoints) && trackPoints.length > 0) {
+      const p = trackPoints[0]
+      const lat = Number(p.y ?? p.lat)
+      const lon = Number(p.x ?? p.lng)
+      if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+        startCoordinate = { lat, lon }
+      }
+    }
+
     return {
       source: 'ridewithgps',
       title: (route.name as string) || undefined,
+      startCoordinate,
       distance: distanceM ? Math.round(distanceM / 10) / 100 : undefined,
       elevation: elevationM ? Math.round(elevationM) : undefined,
     }

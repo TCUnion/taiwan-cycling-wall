@@ -1,8 +1,8 @@
 // 發起約騎頁面 — 支援範本快速填入與儲存
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
-import { ArrowLeft, ExternalLink, Bike, MapPin, Link, BookmarkPlus, Bookmark, Trash2, Save, MapPinPlus, Pencil, Check, Route, StickyNote, Map, X, Repeat } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Bike, MapPin, Link, BookmarkPlus, Bookmark, Trash2, Save, MapPinPlus, Pencil, Check, Route, StickyNote, Map, X, Repeat, AlertTriangle } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { useEventStore, 活動已過期, 取得便利貼顏色 } from '../stores/eventStore'
 import { useTemplateStore } from '../stores/templateStore'
@@ -13,6 +13,7 @@ import { 查找縣市, 縣市列表 } from '../data/counties'
 import { 產生ID } from '../utils/formatters'
 import type { CyclingEvent, RideTemplate, SavedRoute } from '../types'
 import { 淨化純文字, 淨化輸入文字, 安全URL } from '../utils/sanitize'
+import { 建立集合點路線起點警告 } from '../utils/geoUtils'
 import { 產生定期日期, 取得星期顯示, 星期選項 } from '../utils/recurrenceUtils'
 import { 取得活動上限, 計算進行中活動數 } from '../utils/roleService'
 import Button from '../components/ui/Button'
@@ -113,8 +114,13 @@ export default function CreateEventPage() {
     return match ? match[1].trim() : ''
   }
 
-  // 表單狀態（編輯 / 複製模式用既有值）
-  const [date, setDate] = useState(是編輯模式 ? (預填來源?.date ?? '') : '')
+  // 表單狀態（編輯 / 複製模式用既有值；新建時預設為明天）
+  const 明天日期 = (() => {
+    const d = new Date()
+    d.setDate(d.getDate() + 1)
+    return d.toISOString().split('T')[0]
+  })()
+  const [date, setDate] = useState(是編輯模式 ? (預填來源?.date ?? '') : 明天日期)
   const [time, setTime] = useState(預填來源?.time ?? '06:00')
   const [routeName, setRouteName] = useState(預填來源?.title ?? '')
   const [routeDetail, setRouteDetail] = useState(預填來源 ? 解析路線描述(預填來源.description) : '')
@@ -134,6 +140,7 @@ export default function CreateEventPage() {
   const [maxParticipants, setMaxParticipants] = useState(預填來源?.maxParticipants ?? 0)
   const [抓取路線中, set抓取路線中] = useState(false)
   const [抓取錯誤, set抓取錯誤] = useState<{ code: string; message: string } | null>(null)
+  const [外部路線起點座標, set外部路線起點座標] = useState<{ lat: number; lon: number } | null>(null)
   const [提交錯誤, set提交錯誤] = useState('')
   const 預設配速 = ['', '輕鬆騎', '休閒騎', '中等強度', '進階挑戰', '比賽強度']
   const [自訂配速模式, set自訂配速模式] = useState(!預設配速.includes(pace))
@@ -144,6 +151,7 @@ export default function CreateEventPage() {
     const isRwgps = /ridewithgps\.com\/routes\/\d+/.test(url)
     if (!isStrava && !isRwgps) {
       set抓取錯誤(null)
+      set外部路線起點座標(null)
       return
     }
 
@@ -163,11 +171,13 @@ export default function CreateEventPage() {
       }
       const info = await res.json() as {
         distance?: number; elevation?: number; title?: string
+        startCoordinate?: { lat: number; lon: number }
         errorCode?: string; message?: string; error?: string
       }
       if (info.distance) setDistance(info.distance)
       if (info.elevation) setElevation(info.elevation)
       if (info.title && !routeName) setRouteName(info.title)
+      set外部路線起點座標(info.startCoordinate ?? null)
       // 沒抓到任何數據 → 視為失敗，顯示原因
       if (!info.distance && !info.elevation) {
         set抓取錯誤({
@@ -206,7 +216,7 @@ export default function CreateEventPage() {
   // 路線庫 Modal
   const [顯示路線庫, set顯示路線庫] = useState(false)
   const [已套用路線庫路線名, set已套用路線庫路線名] = useState('')
-  const [已套用路線庫座標, set已套用路線庫座標] = useState<[number, number][]>([])
+  const [已套用路線庫座標, set已套用路線庫座標] = useState<[number, number][]>(預填來源?.routeCoordinates ?? [])
 
   const 套用路線庫路線 = (route: SavedRoute) => {
     if (route.distance) setDistance(route.distance)
@@ -247,6 +257,15 @@ export default function CreateEventPage() {
   const [定期期數, set定期期數] = useState(4)
   const [定期星期, set定期星期] = useState(() => date ? new Date(date + 'T00:00:00').getDay() : 3)
   const [定期幾號, set定期幾號] = useState(() => date ? new Date(date + 'T00:00:00').getDate() : 1)
+
+  // 集合點與路線起點不一致警告（純前端，距離 > 1 km 時提醒）
+  const 集合點警告 = useMemo(() => 建立集合點路線起點警告({
+    集合點URL: spotUrl,
+    路線座標: 已套用路線庫座標,
+    外部路線起點: 外部路線起點座標,
+    閾值公里: 1,
+  }), [spotUrl, 已套用路線庫座標, 外部路線起點座標])
+  const [已忽略集合點警告, set已忽略集合點警告] = useState(false)
 
   if (!使用者) return null
   const 當前使用者 = 使用者
@@ -552,6 +571,25 @@ export default function CreateEventPage() {
           </div>
         )}
 
+        {集合點警告 && !已忽略集合點警告 && (
+          <div role="alert" className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800">
+            <div className="flex items-start gap-2">
+              <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="font-bold mb-1">集合點與路線起點可能不一致</p>
+                <p>兩點相距約 {集合點警告.距離公里.toFixed(1)} 公里，請確認 Google Maps 連結與路線庫起點是否一致。此提醒不會阻擋發布。</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => set已忽略集合點警告(true)}
+                className="shrink-0 text-xs text-amber-700 hover:text-amber-900 underline cursor-pointer"
+              >
+                我知道了
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* 範本選擇器（共用範本） */}
         {顯示範本 && (
           <div className="rounded-xl bg-white p-4 shadow-sm space-y-3 border-2 border-strava/20">
@@ -580,6 +618,12 @@ export default function CreateEventPage() {
                       <p className="text-xs text-gray-500 mt-0.5">
                         {t.routeName} · {查找縣市(t.countyId)?.name ?? ''} · {t.time}
                       </p>
+                      {t.spotName && (
+                        <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                          <MapPin size={12} className="text-gray-400 shrink-0" />
+                          <span className="truncate">{t.spotName}</span>
+                        </p>
+                      )}
                       {t.creatorName && (
                         <p className="text-xs text-gray-400 mt-0.5">by {t.creatorName}</p>
                       )}
