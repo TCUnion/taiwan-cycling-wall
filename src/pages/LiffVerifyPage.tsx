@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { ShieldCheck, Loader2, CheckCircle2, XCircle } from 'lucide-react'
-import { 初始化LIFF, 取得LINE使用者, 關閉LIFF } from '../utils/liff'
+import { 初始化LIFF, 取得LINE使用者, 關閉LIFF, 檢查LIFF環境 } from '../utils/liff'
 import { 驗證認證碼 } from '../utils/verificationService'
 
 type 頁面狀態 = '載入中' | '輸入認證碼' | '驗證中' | '成功' | '失敗' | '已鎖定'
@@ -30,7 +30,12 @@ export default function LiffVerifyPage() {
       }
       const 使用者 = await 取得LINE使用者()
       if (!使用者) {
-        // login() 會跳轉，這裡不需要處理
+        const env = 檢查LIFF環境()
+        if (env.是否異常版本 && env.訊息) {
+          set狀態('失敗')
+          set錯誤訊息(env.訊息)
+        }
+        // 否則 login() 會跳轉，不需處理
         return
       }
       setLineUserId(使用者.userId)

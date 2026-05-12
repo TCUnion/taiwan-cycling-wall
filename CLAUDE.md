@@ -100,6 +100,7 @@ GIS 回傳的 id_token 中文欄位需用 `decodeURIComponent` + 逐位元組 `%
 - LIFF Endpoint：`https://siokiu.criterium.tw/liff/verify`
 - Supabase 表：`user_verifications`（token / status / user_id / line_user_id）
 - 輪詢：`useVerificationPolling` hook，每 3 秒，10 分鐘後自動停止
+- **LINE Android 26.6.0 / 26.6.1 已知異常**（2026-05-11 LINE 官方公告）：透過 Intent / App Link 開啟 LIFF + 另一實例同時開啟時，`liff.getProfile()` 失敗。已在 `src/utils/liff.ts` 加 `檢查LIFF環境()`，並在 `LiffVerifyPage.tsx` 顯示友善提示。詳見 `handover_liff_android_bug_2026-05.md`
 
 ### 會員等級（user_roles 表）
 - Supabase 表 `user_roles`：`id` / `name` / `max_active_events` / `sort_order`
