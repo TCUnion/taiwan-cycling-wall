@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Home, PlusCircle, User, Shield, Map, CloudSun } from 'lucide-react'
+import { Home, PlusCircle, User, Shield, Map, CloudSun, Compass } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 
 const 導航項目 = [
   { path: '/wall', icon: Home, label: '公布欄', 需登入: false, 需管理員: false, 未登入隱藏: false },
   { path: '/weather', icon: CloudSun, label: '天氣', 需登入: false, 需管理員: false, 未登入隱藏: false },
+  { path: '/explore', icon: Compass, label: '探索', 需登入: false, 需管理員: false, 未登入隱藏: false },
   { path: '/routes', icon: Map, label: '路線', 需登入: true, 需管理員: false, 未登入隱藏: true },
   { path: '/create', icon: PlusCircle, label: '發起', 需登入: true, 需管理員: false, 未登入隱藏: false },
   { path: '/dashboard', icon: User, label: '我的', 需登入: true, 需管理員: false, 未登入隱藏: false },
@@ -55,7 +56,7 @@ export default function BottomNavBar() {
               key={path}
               onClick={() => navigate(需登入 && !已登入 ? '/login' : path)}
               aria-label={label}
-              className={`flex flex-col items-center gap-0.5 px-5 py-2 min-h-[44px] min-w-[44px] cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-strava/40 focus-visible:outline-none rounded-lg ${
+              className={`flex flex-col items-center gap-0.5 px-3 py-2 min-h-[44px] min-w-[44px] cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-strava/40 focus-visible:outline-none rounded-lg ${
                 啟用 ? 'text-strava' : 'text-gray-400 hover:text-gray-600'
               }`}
             >

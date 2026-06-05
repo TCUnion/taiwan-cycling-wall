@@ -44,6 +44,7 @@ const AdminPage = lazyWithRetry(() => import('./pages/AdminPage'))
 const RoutesPage = lazyWithRetry(() => import('./pages/RoutesPage'))
 const AboutPage = lazyWithRetry(() => import('./pages/AboutPage'))
 const WeatherPage = lazyWithRetry(() => import('./pages/WeatherPage'))
+const ExplorePage = lazyWithRetry(() => import('./pages/ExplorePage'))
 
 // 載入中畫面 — 與 SplashPage 風格一致
 function Loading() {
@@ -212,6 +213,7 @@ export default function App() {
         <Route element={<AppShell />}>
           <Route path="/wall" element={<WallPage />} />
           <Route path="/weather" element={<WeatherPage />} />
+          <Route path="/explore" element={<ExplorePage />} />
           <Route path="/event/:id" element={<EventDetailPage />} />
           <Route path="/event/:id/share" element={<SharePage />} />
           <Route path="/history" element={<HistoryPage />} />
