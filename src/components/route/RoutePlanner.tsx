@@ -37,7 +37,16 @@ export default function RoutePlanner({ onSaved }: Props) {
   }, [])
 
   const 刪除航點 = useCallback((i: number) => {
-    setWaypoints(prev => prev.filter((_, idx) => idx !== i))
+    setWaypoints(prev => {
+      const next = prev.filter((_, idx) => idx !== i)
+      if (next.length < 2) {
+        setRouteCoords([])
+        setDistance(0)
+        setDuration(0)
+        setShowSaveForm(false)
+      }
+      return next
+    })
     setSaved(false)
   }, [])
 
@@ -52,12 +61,7 @@ export default function RoutePlanner({ onSaved }: Props) {
 
   // 航點變化時 debounce 呼叫 OSRM
   useEffect(() => {
-    if (waypoints.length < 2) {
-      setRouteCoords([])
-      setDistance(0)
-      setDuration(0)
-      return
-    }
+    if (waypoints.length < 2) return
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(async () => {
       setPlanning(true)
@@ -85,6 +89,7 @@ export default function RoutePlanner({ onSaved }: Props) {
       waypoints,
       source: 'planned',
       creatorId: 使用者.id,
+      creatorAuthUserId: 使用者.authUserId,
       isPublic: false,
       createdAt: now,
       updatedAt: now,

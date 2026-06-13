@@ -18,7 +18,7 @@ export default function RoutePickerModal({ 開啟, 關閉, onSelect }: Props) {
 
   useEffect(() => {
     if (開啟 && 使用者) {
-      載入路線(使用者.id)
+      載入路線(使用者.id, 使用者.authUserId)
     }
   }, [開啟, 使用者, 載入路線])
 

@@ -53,25 +53,27 @@ export default function AdminPage() {
   const [篩選角色, set篩選角色] = useState<string>('')
 
   // 檢查管理員權限
-  if (!使用者 || 使用者.role !== 'admin') {
-    navigate('/wall', { replace: true })
-    return null
-  }
+  useEffect(() => {
+    if (!使用者 || 使用者.role !== 'admin') {
+      navigate('/wall', { replace: true })
+    }
+  }, [navigate, 使用者])
 
   // 載入資料
   useEffect(() => {
-    載入資料()
+    void (async () => {
+      const [角色, 使用者資料] = await Promise.all([
+        取得所有角色(),
+        取得所有使用者(),
+      ])
+      set角色列表(角色)
+      set所有使用者(使用者資料.map(fromRow))
+      set載入中(false)
+    })()
   }, [])
 
-  async function 載入資料() {
-    set載入中(true)
-    const [角色, 使用者資料] = await Promise.all([
-      取得所有角色(),
-      取得所有使用者(),
-    ])
-    set角色列表(角色)
-    set所有使用者(使用者資料.map(fromRow))
-    set載入中(false)
+  if (!使用者 || 使用者.role !== 'admin') {
+    return null
   }
 
   // 篩選使用者
@@ -134,7 +136,7 @@ export default function AdminPage() {
             <div className="w-8 h-8 border-3 border-strava border-t-transparent rounded-full animate-spin" />
           </div>
         ) : 分頁 === 'users' ? (
-          <使用者管理分頁
+          <UserManagementTab
             使用者列表={篩選後使用者}
             角色列表={角色列表}
             搜尋={搜尋}
@@ -154,7 +156,7 @@ export default function AdminPage() {
             }}
           />
         ) : (
-          <角色設定分頁
+          <RoleSettingsTab
             角色列表={角色列表}
             onUpdate={async (id, fields) => {
               const 成功 = await 更新角色設定(id, fields)
@@ -183,7 +185,7 @@ export default function AdminPage() {
 
 // ========== 使用者管理分頁 ==========
 
-function 使用者管理分頁({
+function UserManagementTab({
   使用者列表,
   角色列表,
   搜尋,
@@ -279,7 +281,7 @@ function 使用者管理分頁({
 
 // ========== 角色設定分頁 ==========
 
-function 角色設定分頁({
+function RoleSettingsTab({
   角色列表,
   onUpdate,
   onAdd,

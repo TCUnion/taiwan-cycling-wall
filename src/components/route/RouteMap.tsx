@@ -86,7 +86,7 @@ export default function RouteMap({
         hasFitRef.current = true
       }
     }
-  }, [coordinates])
+  }, [coordinates, interactive])
 
   // 更新航點 Markers
   useEffect(() => {

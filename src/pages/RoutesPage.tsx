@@ -20,7 +20,7 @@ export default function RoutesPage() {
   const { 路線列表, 載入中, 載入路線, 刪除路線 } = useRouteStore()
 
   useEffect(() => {
-    if (使用者) 載入路線(使用者.id)
+    if (使用者) 載入路線(使用者.id, 使用者.authUserId)
   }, [使用者, 載入路線])
 
   return (
@@ -81,7 +81,7 @@ export default function RoutesPage() {
         {/* 規劃路線 */}
         {目前分頁 === '規劃路線' && (
           <RoutePlanner onSaved={() => {
-            if (使用者) 載入路線(使用者.id)
+            if (使用者) 載入路線(使用者.id, 使用者.authUserId)
             set目前分頁('我的路線')
           }} />
         )}
@@ -89,7 +89,7 @@ export default function RoutesPage() {
         {/* 上傳軌跡 */}
         {目前分頁 === '上傳軌跡' && (
           <GpxUploader onSaved={() => {
-            if (使用者) 載入路線(使用者.id)
+            if (使用者) 載入路線(使用者.id, 使用者.authUserId)
             set目前分頁('我的路線')
           }} />
         )}

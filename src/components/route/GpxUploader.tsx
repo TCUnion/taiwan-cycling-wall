@@ -68,6 +68,7 @@ export default function GpxUploader({ onSaved }: Props) {
       source: 'gpx',
       gpxFileName,
       creatorId: 使用者.id,
+      creatorAuthUserId: 使用者.authUserId,
       isPublic: false,
       createdAt: now,
       updatedAt: now,
