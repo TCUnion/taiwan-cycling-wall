@@ -24,15 +24,21 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 }
 
-// fallback：env 沒設時用這個（user 提供的 webhook，已 commit 在 git，不算秘密）
-const FALLBACK_WEBHOOK = 'https://discord.com/api/webhooks/1498258453347700917/1Ven8e3xqbZyjjCr7qu7ZT5vl-4RDt6AtJTaJypNAEmBhNxr9EpnUXqhLx_DmlhY6wAs'
-
 export const onRequestOptions: PagesFunction = async () => {
   return new Response(null, { status: 204, headers: CORS_HEADERS })
 }
 
 export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   const { request, env } = ctx
+
+  // origin/referer 白名單：擋非本站來源的直打，防洗版（資安評估 2026-07-04 [MED]）
+  const origin = request.headers.get('origin')
+  const referer = request.headers.get('referer')
+  const fromAllowedSite = origin === ALLOWED_ORIGIN || (referer?.startsWith(`${ALLOWED_ORIGIN}/`) ?? false)
+  if (!fromAllowedSite) {
+    return Response.json({ error: 'forbidden' }, { status: 403, headers: CORS_HEADERS })
+  }
+
   let body: NotifyBody
   try {
     body = (await request.json()) as NotifyBody
@@ -40,7 +46,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     return Response.json({ error: 'invalid json' }, { status: 400, headers: CORS_HEADERS })
   }
 
-  const webhook = env.DISCORD_WEBHOOK_URL || FALLBACK_WEBHOOK
+  const webhook = env.DISCORD_WEBHOOK_URL
   const payload = body.payload ?? {}
 
   // Cloudflare 提供的訪客資訊
@@ -89,17 +95,21 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   // 直接 await Discord，確保送出。失敗時記回應內容方便除錯
   let discordStatus = 0
   let discordBody = ''
-  try {
-    const r = await fetch(webhook, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: null, embeds: [embed] }),
-    })
-    discordStatus = r.status
-    if (!r.ok) discordBody = await r.text()
-  } catch (e) {
-    discordStatus = -1
-    discordBody = String((e as Error)?.message ?? e)
+  if (!webhook) {
+    console.error('[notify] DISCORD_WEBHOOK_URL 未設定，略過 Discord 通知')
+  } else {
+    try {
+      const r = await fetch(webhook, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: null, embeds: [embed] }),
+      })
+      discordStatus = r.status
+      if (!r.ok) discordBody = await r.text()
+    } catch (e) {
+      discordStatus = -1
+      discordBody = String((e as Error)?.message ?? e)
+    }
   }
 
   return Response.json(
