@@ -2,7 +2,7 @@
 
 ## 會話規則
 
-新對話開始時讀取 `/Volumes/OWC 2T/ClaudeCode/MyObsidian/brain/handoffs/約騎系統.md`（先看「立即上手」即可上工）。
+新對話開始時讀取 `/vol2/ai/brain/brain/handoffs/約騎系統.md`（先看「立即上手」即可上工）。
 
 收工時更新同一份 handoff，使用 Read/Write 工具直接操作，不走 obsidian MCP。
 
