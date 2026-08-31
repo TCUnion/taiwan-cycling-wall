@@ -88,7 +88,13 @@ describe('取得旋轉角度', () => {
 
 describe('活動過期邏輯（已過期 / 取得篩選後活動 / 取得歷史活動）', () => {
   beforeEach(() => {
-    useEventStore.setState({ 活動列表: [], 載入中: false, 已載入: true })
+    useEventStore.setState({
+      活動列表: [],
+      歷史活動列表: [],
+      我的活動列表: [],
+      載入中: false,
+      已載入: true,
+    })
   })
 
   it('昨天的活動應視為已過期，出現在歷史、不出現在公告欄', () => {
@@ -145,5 +151,33 @@ describe('活動過期邏輯（已過期 / 取得篩選後活動 / 取得歷史�
     expect(取得篩選後活動()[0].id).toBe('future')
     expect(取得歷史活動()).toHaveLength(1)
     expect(取得歷史活動()[0].id).toBe('past')
+  })
+
+  it('伺服器端撈回的歷史活動也要出現在歷史清單', () => {
+    const 上個月 = new Date()
+    上個月.setMonth(上個月.getMonth() - 1)
+
+    useEventStore.setState({
+      歷史活動列表: [建立活動({ id: 'server-past', date: 上個月.toISOString().split('T')[0], time: '08:00' })],
+    })
+
+    const { 取得篩選後活動, 取得歷史活動 } = useEventStore.getState()
+    expect(取得歷史活動()).toHaveLength(1)
+    expect(取得歷史活動()[0].id).toBe('server-past')
+    // 公布欄只看 活動列表，不應該被歷史資料污染
+    expect(取得篩選後活動()).toHaveLength(0)
+  })
+
+  it('同一筆活動同時存在兩份清單時只算一次', () => {
+    const 昨天 = new Date()
+    昨天.setDate(昨天.getDate() - 1)
+    const 日期 = 昨天.toISOString().split('T')[0]
+
+    useEventStore.setState({
+      活動列表: [建立活動({ id: 'dup', date: 日期, time: '08:00' })],
+      歷史活動列表: [建立活動({ id: 'dup', date: 日期, time: '08:00' })],
+    })
+
+    expect(useEventStore.getState().取得歷史活動()).toHaveLength(1)
   })
 })

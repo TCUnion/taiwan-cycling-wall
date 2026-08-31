@@ -14,15 +14,42 @@ export function 活動已過期(活動: Pick<CyclingEvent, 'date' | 'time'>): bo
   return new Date() >= 約騎時間
 }
 
+export interface 我的活動識別 {
+  creatorId?: string
+  authUserId?: string
+  粉絲頁Ids?: string[]
+}
+
+/**
+ * 查詢用的日期界線（YYYY-MM-DD）。
+ * 過期判定是「約騎日 + 時間 + 12 小時」，最晚可以拖到隔天中午，
+ * 所以未過期活動的伺服器端界線要往前抓一天，再交給 活動已過期() 做精確判斷。
+ */
+function 未過期查詢界線(): string {
+  const d = new Date()
+  d.setDate(d.getDate() - 1)
+  return d.toISOString().split('T')[0]
+}
+
 interface EventState {
+  /** 未過期活動（公布欄用）。過期的不在這裡，見 歷史活動列表 */
   活動列表: CyclingEvent[]
+  歷史活動列表: CyclingEvent[]
+  歷史總數: number
+  我的活動列表: CyclingEvent[]
   載入中: boolean
   已載入: boolean
+  歷史載入中: boolean
+  歷史已載入: boolean
+  我的活動載入中: boolean
   篩選區域: Region | null
   排序: 排序方式
   設定篩選區域: (region: Region | null) => void
   設定排序: (sort: 排序方式) => void
   載入活動: () => Promise<void>
+  載入歷史活動: (上限?: number) => Promise<void>
+  載入歷史總數: () => Promise<void>
+  載入我的活動: (識別: 我的活動識別) => Promise<void>
   載入單一活動: (id: string) => Promise<CyclingEvent | null>
   新增活動: (event: CyclingEvent) => Promise<void>
   批次新增活動: (events: CyclingEvent[]) => Promise<{ 成功數: number; 失敗數: number }>
@@ -30,6 +57,32 @@ interface EventState {
   刪除活動: (eventId: string) => Promise<void>
   取得篩選後活動: () => CyclingEvent[]
   取得歷史活動: () => CyclingEvent[]
+}
+
+/**
+ * 歷史來源有兩份：伺服器端撈回來的 歷史活動列表，
+ * 以及 活動列表 裡剛好在瀏覽期間跨過過期線的那幾筆。合併後去重再排序。
+ */
+export function 合併歷史活動(
+  活動列表: CyclingEvent[],
+  歷史活動列表: CyclingEvent[],
+): CyclingEvent[] {
+  const 合併 = new Map<string, CyclingEvent>()
+  for (const e of [...歷史活動列表, ...活動列表]) {
+    if (活動已過期(e)) 合併.set(e.id, e)
+  }
+  return [...合併.values()]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+}
+
+// 活動可能只存在於其中一份清單（公布欄／歷史／個人中心），三份都要找
+function 於各清單尋找(
+  s: Pick<EventState, '活動列表' | '歷史活動列表' | '我的活動列表'>,
+  eventId: string,
+): CyclingEvent | undefined {
+  return s.活動列表.find(e => e.id === eventId)
+    ?? s.我的活動列表.find(e => e.id === eventId)
+    ?? s.歷史活動列表.find(e => e.id === eventId)
 }
 
 async function 取得必要AuthUserId(): Promise<string> {
@@ -153,8 +206,14 @@ function 轉換部分更新(更新: Partial<CyclingEvent>) {
 
 export const useEventStore = create<EventState>()((set, get) => ({
   活動列表: [],
+  歷史活動列表: [],
+  歷史總數: 0,
+  我的活動列表: [],
   載入中: false,
   已載入: false,
+  歷史載入中: false,
+  歷史已載入: false,
+  我的活動載入中: false,
   篩選區域: null,
   排序: '最新',
 
@@ -181,16 +240,68 @@ export const useEventStore = create<EventState>()((set, get) => ({
     return 活動
   },
 
+  // 公布欄只需要未過期活動。過去抓全表（含所有 base64 圖章）讓首屏要下載
+  // 1 MB 以上、而且會隨活動數無上限成長，其中絕大多數會被 取得篩選後活動 濾掉。
   載入活動: async () => {
     set({ 載入中: true })
     const { data, error } = await supabase
       .from('cycling_events')
       .select(活動列表欄位)
+      .gte('date', 未過期查詢界線())
       .order('created_at', { ascending: false })
     if (!error && data) {
       set({ 活動列表: data.map(轉換為活動) })
     }
     set({ 載入中: false, 已載入: true })
+  },
+
+  載入歷史活動: async (上限 = 200) => {
+    set({ 歷史載入中: true })
+    const { data, error } = await supabase
+      .from('cycling_events')
+      .select(活動列表欄位)
+      .lt('date', 未過期查詢界線())
+      .order('date', { ascending: false })
+      .limit(上限)
+    if (!error && data) {
+      set({ 歷史活動列表: data.map(轉換為活動) })
+    }
+    set({ 歷史載入中: false, 歷史已載入: true })
+  },
+
+  // 公布欄右上角的歷史筆數只需要數字，不必把資料抓下來
+  載入歷史總數: async () => {
+    const { count, error } = await supabase
+      .from('cycling_events')
+      .select('id', { count: 'exact', head: true })
+      .lt('date', 未過期查詢界線())
+    if (!error && typeof count === 'number') {
+      set({ 歷史總數: count })
+    }
+  },
+
+  // 個人中心要看自己的活動（含已過期），改用伺服器端條件撈，不再依賴整張表在記憶體裡
+  載入我的活動: async (識別) => {
+    const 條件: string[] = []
+    if (識別.creatorId) 條件.push(`creator_id.eq.${識別.creatorId}`)
+    if (識別.authUserId) 條件.push(`creator_auth_user_id.eq.${識別.authUserId}`)
+    for (const pageId of 識別.粉絲頁Ids ?? []) {
+      條件.push(`creator_id.eq.${pageId}`)
+    }
+    if (條件.length === 0) {
+      set({ 我的活動列表: [] })
+      return
+    }
+    set({ 我的活動載入中: true })
+    const { data, error } = await supabase
+      .from('cycling_events')
+      .select(活動列表欄位)
+      .or(條件.join(','))
+      .order('date', { ascending: false })
+    if (!error && data) {
+      set({ 我的活動列表: data.map(轉換為活動) })
+    }
+    set({ 我的活動載入中: false })
   },
 
   新增活動: async (event) => {
@@ -211,7 +322,10 @@ export const useEventStore = create<EventState>()((set, get) => ({
       throw new Error(error.message || '新增活動失敗')
     }
     // 本地 store 保留原始 base64，UI 顯示不需網路
-    set((s) => ({ 活動列表: [localEvent, ...s.活動列表] }))
+    set((s) => ({
+      活動列表: [localEvent, ...s.活動列表],
+      我的活動列表: [localEvent, ...s.我的活動列表],
+    }))
   },
 
   批次新增活動: async (events) => {
@@ -245,12 +359,15 @@ export const useEventStore = create<EventState>()((set, get) => ({
       creatorAuthUserId: authUserId,
       coverImage: events[0].coverImage, // 保留原始 base64
     }))
-    set((s) => ({ 活動列表: [...localEvents, ...s.活動列表] }))
+    set((s) => ({
+      活動列表: [...localEvents, ...s.活動列表],
+      我的活動列表: [...localEvents, ...s.我的活動列表],
+    }))
     return { 成功數: events.length, 失敗數: 0 }
   },
 
   更新活動: async (eventId, 更新) => {
-    const 既有活動 = get().活動列表.find(e => e.id === eventId)
+    const 既有活動 = 於各清單尋找(get(), eventId)
     if (!既有活動) {
       throw new Error('找不到活動資料，請重新整理後再試')
     }
@@ -270,13 +387,17 @@ export const useEventStore = create<EventState>()((set, get) => ({
       throw new Error(error.message || '更新活動失敗')
     }
     // 本地 store 保留原始 base64，UI 顯示不需網路
+    const 套用更新 = (清單: CyclingEvent[]) =>
+      清單.map(e => e.id === eventId ? { ...e, ...更新 } : e)
     set((s) => ({
-      活動列表: s.活動列表.map(e => e.id === eventId ? { ...e, ...更新 } : e),
+      活動列表: 套用更新(s.活動列表),
+      歷史活動列表: 套用更新(s.歷史活動列表),
+      我的活動列表: 套用更新(s.我的活動列表),
     }))
   },
 
   刪除活動: async (eventId) => {
-    const 既有活動 = get().活動列表.find(e => e.id === eventId)
+    const 既有活動 = 於各清單尋找(get(), eventId)
     if (!既有活動) {
       throw new Error('找不到活動資料，請重新整理後再試')
     }
@@ -288,8 +409,11 @@ export const useEventStore = create<EventState>()((set, get) => ({
     if (error) {
       throw new Error(error.message || '刪除活動失敗')
     }
+    const 移除 = (清單: CyclingEvent[]) => 清單.filter(e => e.id !== eventId)
     set((s) => ({
-      活動列表: s.活動列表.filter(e => e.id !== eventId),
+      活動列表: 移除(s.活動列表),
+      歷史活動列表: 移除(s.歷史活動列表),
+      我的活動列表: 移除(s.我的活動列表),
     }))
   },
 
@@ -307,9 +431,7 @@ export const useEventStore = create<EventState>()((set, get) => ({
   },
 
   取得歷史活動: () => {
-    const { 活動列表 } = get()
-    return 活動列表
-      .filter(e => 活動已過期(e))
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    const { 活動列表, 歷史活動列表 } = get()
+    return 合併歷史活動(活動列表, 歷史活動列表)
   },
 }))

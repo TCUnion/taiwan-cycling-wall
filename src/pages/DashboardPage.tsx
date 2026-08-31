@@ -18,7 +18,7 @@ import { zhTW } from 'date-fns/locale'
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { 使用者, 登出, 目前身份, 使用中的粉絲頁, 切換到粉絲頁, 切換回個人 } = useAuthStore()
-  const { 活動列表, 刪除活動 } = useEventStore()
+  const { 我的活動列表, 載入我的活動, 刪除活動 } = useEventStore()
   const [顯示身份切換, set顯示身份切換] = useState(false)
   const [刪除中活動Id, set刪除中活動Id] = useState<string | null>(null)
   const [刪除錯誤, set刪除錯誤] = useState('')
@@ -30,18 +30,22 @@ export default function DashboardPage() {
     () => (使用者?.managedPages ?? []).map(p => `page-${p.pageId}`),
     [使用者?.managedPages]
   )
+  // 自己的活動（含已過期）由伺服器端條件撈回，不再依賴整張表載入到記憶體
+  useEffect(() => {
+    if (!使用者) return
+    載入我的活動({
+      creatorId: 使用者.id,
+      authUserId: 使用者.authUserId,
+      粉絲頁Ids: 我的粉絲頁Ids,
+    })
+  }, [使用者, 我的粉絲頁Ids, 載入我的活動])
+
   const 我的活動 = useMemo(
     () => {
       if (!使用者) return []
-      return 活動列表
-        .filter(e =>
-          e.creatorId === 使用者.id ||
-          (Boolean(使用者.authUserId) && e.creatorAuthUserId === 使用者.authUserId) ||
-          我的粉絲頁Ids.includes(e.creatorId)
-        )
-        .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
+      return [...我的活動列表].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
     },
-    [活動列表, 使用者, 我的粉絲頁Ids]
+    [我的活動列表, 使用者]
   )
 
   if (!使用者) return null

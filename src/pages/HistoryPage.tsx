@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Calendar, MapPin, Route, Mountain, ExternalLink } from 'lucide-react'
-import { useEventStore } from '../stores/eventStore'
+import { useEventStore, 合併歷史活動 } from '../stores/eventStore'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useAds } from '../hooks/useAds'
 import { 查找縣市 } from '../data/counties'
@@ -11,15 +11,22 @@ import Badge from '../components/ui/Badge'
 
 export default function HistoryPage() {
   const navigate = useNavigate()
-  const 載入活動 = useEventStore(s => s.載入活動)
-  const 歷史活動 = useEventStore(s => s.取得歷史活動)()
+  const 載入歷史活動 = useEventStore(s => s.載入歷史活動)
+  // 只訂閱 取得歷史活動 這個函式的話，函式參考不變 → 資料回來也不會重新 render，
+  // 畫面會一直停在「目前沒有歷史活動」。要訂閱資料本身。
+  const 歷史活動列表 = useEventStore(s => s.歷史活動列表)
+  const 活動列表 = useEventStore(s => s.活動列表)
+  const 歷史活動 = useMemo(
+    () => 合併歷史活動(活動列表, 歷史活動列表),
+    [活動列表, 歷史活動列表],
+  )
   const { 廣告列表 } = useAds()
 
   usePageMeta('歷史活動 — 相揪約騎公布欄', '查看已結束的約騎活動紀錄。')
 
   useEffect(() => {
-    載入活動()
-  }, [載入活動])
+    載入歷史活動()
+  }, [載入歷史活動])
   const 廣告 = 廣告列表[0]
 
   return (

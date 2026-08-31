@@ -12,10 +12,10 @@ import WallAtlas from '../components/wall/WallAtlas'
 import RideDetailDrawer from '../components/wall/RideDetailDrawer'
 
 export default function WallPage() {
-  const { 篩選區域, 排序, 載入中, 已載入, 設定篩選區域, 設定排序, 取得篩選後活動, 取得歷史活動, 載入活動 } = useEventStore()
+  const { 篩選區域, 排序, 載入中, 已載入, 設定篩選區域, 設定排序, 取得篩選後活動, 歷史總數, 載入活動, 載入歷史總數 } = useEventStore()
   const 版型 = useWallLayoutStore(s => s.版型)
   const 活動列表 = 取得篩選後活動()
-  const 歷史數量 = 取得歷史活動().length
+  const 歷史數量 = 歷史總數
   const { 廣告列表 } = useAds()
   const [選取活動, set選取活動] = useState<CyclingEvent | null>(null)
   const 是否載入中 = 載入中 || !已載入
@@ -24,7 +24,8 @@ export default function WallPage() {
 
   useEffect(() => {
     載入活動()
-  }, [載入活動])
+    載入歷史總數()
+  }, [載入活動, 載入歷史總數])
 
   // 非 classic 版型背景改用 paper 色（非軟木）
   const 底色 = 版型 === 'classic' ? 'bg-cork' : 'bg-siokiu-paper'
