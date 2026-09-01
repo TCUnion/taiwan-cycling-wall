@@ -204,6 +204,32 @@ export default function AboutPage() {
           </ul>
         </section>
 
+        {/* L2 情境連結：約騎累積的是里程，往保養與賽事帶；相揪本身是 TCU 生態圈的一環。
+            寫在關於頁的內文裡，不是頁尾清單。一律 dofollow，NEVER 加 nofollow。
+            對應關係見 /vol2/ai/brain/notes/生態鏈計劃.md 第九節。 */}
+        <section className="space-y-2">
+          <h2 className="text-base font-bold text-gray-900">相揪在 TCU 生態圈裡的位置</h2>
+          <p className="text-sm text-gray-700 leading-relaxed">
+            相揪負責的是非賽事日的那一段。週末揪團騎完，里程會累積成耗材的消耗，
+            <a href="https://gear.criterium.tw" target="_blank" rel="noopener noreferrer" className="text-strava underline mx-1">
+              gear 單車保養
+            </a>
+            串接同一份 Strava 資料，推算鏈條與來令片該換的時機。想把日常騎乘變成有名次的比賽，
+            <a href="https://miaoli2026.criterium.tw" target="_blank" rel="noopener noreferrer" className="text-strava underline mx-1">
+              2026 苗栗圓樓繞圈賽
+            </a>
+            是今年的主賽事，完賽成績會上
+            <a href="https://events.seh.com.tw" target="_blank" rel="noopener noreferrer" className="text-strava underline mx-1">
+              events
+            </a>
+            。整條鏈路怎麼串的，
+            <a href="https://seh.com.tw/tcu" target="_blank" rel="noopener noreferrer" className="text-strava underline mx-1">
+              生態圈總覽
+            </a>
+            有完整說明。
+          </p>
+        </section>
+
         {/* 聯絡我們 */}
         <section className="space-y-2">
           <h2 className="text-base font-bold text-gray-900">聯絡我們</h2>
