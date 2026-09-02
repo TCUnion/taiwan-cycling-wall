@@ -34,3 +34,6 @@ dist-ssr
 .claude/worktrees/
 .claude/.ccg-changes
 *.afpub
+
+# Contains real personal data (names/emails/LINE ids) — never commit
+supabase/siokiu_*
