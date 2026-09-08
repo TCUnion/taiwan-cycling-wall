@@ -1,0 +1,3 @@
+# AI 代理會探測 /llms-full.txt。SPA fallback 會讓它回 200 加一份 HTML，
+# 等於給出一份假的完整索引，所以在 fallback 之前先打回 404。
+/llms-full.txt   /404.html   404
