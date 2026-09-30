@@ -1,5 +1,7 @@
 // Cloudflare Pages Middleware
-// 1) 攔截 squirrel 等工具自動探測的假 sitemap 路徑，回傳 404 避免誤報
+// 1) 攔截 squirrel 等工具自動探測的假 sitemap 路徑，以及 AI 代理探測的 /llms-full.txt，
+//    回傳 404 避免誤報。不能用 public/404.html + _redirects 做：根目錄一有 404.html，
+//    Pages 就關掉 SPA fallback，所有深連結都會變 404（2026-09-09～09-30 的事故）
 // 2) Markdown for Agents（cloudflare.com/.../markdown-for-agents/）
 //    當 client 帶 Accept: text/markdown 訪問 / 或 /index.html 時，
 //    回傳 llms.txt 的純文字內容，並用 Content-Type: text/markdown
@@ -12,6 +14,8 @@ const FAKE_SITEMAP = new Set([
   '/post-sitemap.xml',
   '/page-sitemap.xml',
   '/news-sitemap.xml',
+  // SPA fallback 會讓它回 200 加一份 HTML，等於給 AI 代理一份假的完整索引
+  '/llms-full.txt',
 ])
 
 const MD_PATHS = new Set(['/', '/index.html', '/about', '/wall'])
