@@ -16,6 +16,8 @@ export default function ExplorePage() {
   const [景點, set景點] = useState<觀光景點[]>([])
   const [載入中, set載入中] = useState(false)
   const [錯誤, set錯誤] = useState<string | null>(null)
+  // 景點失敗不擋車道：TDX 已下架 ScenicSpot API（2026-10 起整組 404），只在統計列提示
+  const [景點錯誤, set景點錯誤] = useState<string | null>(null)
 
   const 中心 = useMemo<[number, number]>(() => {
     const c = 縣市列表.find((x) => x.id === 縣市id)
@@ -27,16 +29,17 @@ export default function ExplorePage() {
     const 載入 = async () => {
       set載入中(true)
       set錯誤(null)
-      try {
-        const [道, 點] = await Promise.all([取得自行車道(縣市id), 取得觀光景點(縣市id)])
-        if (!active) return
-        set車道(道)
-        set景點(點)
-      } catch (err) {
-        if (active) set錯誤((err as Error).message)
-      } finally {
-        if (active) set載入中(false)
+      set景點錯誤(null)
+      const [道, 點] = await Promise.allSettled([取得自行車道(縣市id), 取得觀光景點(縣市id)])
+      if (!active) return
+      if (道.status === 'fulfilled') set車道(道.value)
+      else set錯誤((道.reason as Error).message)
+      if (點.status === 'fulfilled') set景點(點.value)
+      else {
+        set景點([])
+        set景點錯誤((點.reason as Error).message)
       }
+      set載入中(false)
     }
     載入()
     return () => {
@@ -125,7 +128,7 @@ export default function ExplorePage() {
             </span>
             <span className="flex items-center gap-1">
               <MapPin size={13} className="text-strava" />
-              {景點.length} 個景點
+              {景點錯誤 ? '景點資料暫時無法取得' : `${景點.length} 個景點`}
             </span>
           </div>
         )}
