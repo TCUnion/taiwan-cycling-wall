@@ -69,10 +69,10 @@ export default function AboutPage() {
             '@context': 'https://schema.org',
             '@type': 'SportsOrganization',
             '@id': 'https://www.criterium.tw/#organization',
-            'name': 'TCU — Taiwan Cyclist United',
+            'name': 'TCU — Taiwan Cycling Union',
             'alternateName': '台灣單車聯盟',
             'url': 'https://www.criterium.tw',
-            'description': 'TCU（Taiwan Cyclist United）台灣單車聯盟，致力推廣台灣自行車運動，舉辦賽事並提供社群平台服務。',
+            'description': 'TCU（Taiwan Cycling Union）台灣單車聯盟，致力推廣台灣自行車運動，舉辦賽事並提供社群平台服務。',
             'foundingDate': '2020',
             'sport': 'Cycling',
             'areaServed': { '@type': 'Country', 'name': 'Taiwan' },
@@ -161,7 +161,7 @@ export default function AboutPage() {
         <section className="space-y-3">
           <h2 className="text-base font-bold text-gray-900">關於 TCU</h2>
           <p className="text-sm text-gray-700 leading-relaxed">
-            相揪由 <strong>TCU（Taiwan Cyclist United）台灣單車聯盟</strong> 開發與維運。
+            相揪由 <strong>TCU（Taiwan Cycling Union）台灣單車聯盟</strong> 開發與維運。
             TCU 成立於 2020 年，致力於推廣台灣自行車運動，旗下包含苗栗繞圈賽、仙山 KOM
             等賽事，以及 ProBikeStores 車店目錄、TCU 小幫手等服務。
           </p>
