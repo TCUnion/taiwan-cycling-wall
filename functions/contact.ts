@@ -29,7 +29,7 @@ export async function onRequestGet(): Promise<Response> {
     "mainEntity": {
       "@type": "SportsOrganization",
       "@id": "https://www.criterium.tw/#organization",
-      "name": "TCU — Taiwan Cyclist United",
+      "name": "TCU — Taiwan Cycling Union",
       "alternateName": "台灣單車聯盟",
       "email": "service@tsu.com.tw",
       "url": "https://www.criterium.tw",
@@ -73,7 +73,7 @@ export async function onRequestGet(): Promise<Response> {
       <p class="label">Facebook 粉絲頁</p>
       <p class="value">
         <a href="https://www.facebook.com/criterium.tw" target="_blank" rel="noopener noreferrer" class="link">
-          TCU — Taiwan Cyclist United
+          TCU — Taiwan Cycling Union
         </a>
       </p>
     </div>
@@ -81,7 +81,7 @@ export async function onRequestGet(): Promise<Response> {
     <div class="card">
       <p class="label">主辦單位</p>
       <p class="value">
-        TCU（Taiwan Cyclist United）台灣單車聯盟<br />
+        TCU（Taiwan Cycling Union）台灣單車聯盟<br />
         憲動工作室有限公司<br />
         統一編號：90011062<br />
         地址：臺中市南屯區五權西路二段 666 號 6 樓之 4
@@ -102,7 +102,7 @@ export async function onRequestGet(): Promise<Response> {
       <a href="${SITE_URL}/about" class="link">關於我們</a> ·
       <a href="${SITE_URL}/privacy" class="link">隱私政策</a>
     </nav>
-    <p style="margin-top:8px;">© TCU — Taiwan Cyclist United</p>
+    <p style="margin-top:8px;">© TCU — Taiwan Cycling Union</p>
   </footer>
 </body>
 </html>`
